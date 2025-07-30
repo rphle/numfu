@@ -36,6 +36,10 @@ def _tokpos(token: Token):
     return Pos(token.start_pos, token.end_pos)
 
 
+def _2tokpos(token1: Token, token2: Token):
+    return Pos(token1.start_pos, token2.end_pos)
+
+
 @dataclass
 class Expr:
     pass
@@ -104,13 +108,19 @@ class AstGenerator(Transformer):
         return list(exprs)
 
     def bin_op(self, left, op, right):
-        # print(left)
-        # print(left.pos.line)
-        return Call(Variable(str(op), pos=_tokpos(op)), [left, right], pos=_tokpos(op))
+        return Call(
+            Variable(str(op), pos=_tokpos(op)),
+            [left, right],
+            pos=Pos(left.pos.start, right.pos.end),
+        )
 
     def comp(self, *args):
         left, op, right = args[0], args[1], args[2]
-        expr = Call(Variable(str(op), pos=_tokpos(op)), [left, right], pos=_tokpos(op))
+        expr = Call(
+            Variable(str(op), pos=_tokpos(op)),
+            [left, right],
+            pos=Pos(args[0].pos.start, args[-1].pos.end),
+        )
 
         if len(args) > 3:
             for i in range(3, len(args), 2):
@@ -125,7 +135,9 @@ class AstGenerator(Transformer):
                 )
 
                 expr = Call(
-                    Variable("&&", pos=_tokpos(op)), [expr, next_comp], pos=_tokpos(op)
+                    Variable("&&", pos=_tokpos(op)),
+                    [expr, next_comp],
+                    pos=Pos(args[0].pos.start, args[-1].pos.end),
                 )
 
         return expr

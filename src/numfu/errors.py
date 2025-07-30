@@ -87,8 +87,8 @@ class Error:
 
                     highlighted = (
                         f"{src[start:_cpos.col-1]}"
-                        f"[red]{src[_cpos.col-1:_cpos.end_col-1]}[/red]"
-                        f"{src[_cpos.end_col-1:end]}"
+                        f"[red]{src[_cpos.col-1:_cpos.end_col]}[/red]"
+                        f"{src[_cpos.end_col:end]}"
                     )
                     prefix = "..." if start > 0 else ""
                     suffix = "..." if end < len(src) else ""

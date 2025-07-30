@@ -2,3 +2,7 @@
   if n <= 1 then 1
   else n * fact[n - 1]
 )
+
+(xor: a, b ->
+  (a && !b) || (!a && b)
+)
