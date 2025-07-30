@@ -54,6 +54,12 @@ class Number(Expr):
 
 
 @dataclass
+class Bool(Expr):
+    value: bool
+    pos: Pos = DEFAULT_POS
+
+
+@dataclass
 class Import(Expr):
     name: str
 
@@ -132,9 +138,16 @@ class AstGenerator(Transformer):
     def number(self, n):
         return Number(str(n), pos=_tokpos(n))
 
+    def boolean(self, n):
+        return Bool(str(n) == "true", pos=_tokpos(n))
+
     def lambda_def(self, *args):
         name, params, body = (None, *args) if len(args) == 2 else args
-        pos = _tokpos(name) if name else _tokpos(params.children[0])
+        pos = (
+            _tokpos(name)
+            if name
+            else (_tokpos(params.children[0]) if params.children else body.pos)
+        )
         arg_names = [str(t) for t in params.children]
         return Lambda(arg_names, body, name=str(name) if name else None, pos=pos)
 

@@ -1,5 +1,4 @@
 import importlib.resources
-import operator
 import pickle
 import sys
 from pathlib import Path
@@ -7,68 +6,11 @@ from typing import Any, Callable
 
 import mpmath
 
+from .builtins import Builtins, Operators
 from .errors import nNameError, nTypeError, nValueError
-from .parser import Call, Conditional, Expr, Import, Lambda, Number, Pos, Variable
+from .parser import Bool, Call, Conditional, Expr, Import, Lambda, Number, Pos, Variable
 
 sys.setrecursionlimit(100000)
-
-
-class Builtins:
-    def __init__(self, tree: list[Expr]):
-        self.env: dict[str, Expr] = {
-            node.name: node for node in tree if isinstance(node, Lambda) and node.name
-        }
-
-        self.funcs = {
-            "+": mpmath.fadd,
-            "-": lambda a, b=None: mpmath.fsub(0, a)
-            if b is None
-            else mpmath.fsub(a, b),
-            "*": mpmath.fmul,
-            "/": mpmath.fdiv,
-            "^": mpmath.power,
-            "%": mpmath.fmod,
-            "&&": lambda a, b: mpmath.mpf(bool(a) and bool(b)),
-            "||": lambda a, b: mpmath.mpf(bool(a) or bool(b)),
-            "!": lambda a: mpmath.mpf(not bool(a)),
-            ">": operator.gt,
-            "<": operator.lt,
-            ">=": operator.ge,
-            "<=": operator.le,
-            "==": operator.eq,
-            "!=": operator.ne,
-            **{
-                name: getattr(mpmath, name)
-                for name in [
-                    "sin",
-                    "cos",
-                    "tan",
-                    "sinh",
-                    "cosh",
-                    "tanh",
-                    "asin",
-                    "acos",
-                    "atan",
-                    "atan2",
-                    "asinh",
-                    "acosh",
-                    "atanh",
-                    "exp",
-                    "log",
-                    "log10",
-                    "sqrt",
-                    "fabs",
-                    "ceil",
-                    "floor",
-                    "sign",
-                ]
-            },
-        }
-        self.constants = {
-            "pi": mpmath.mpf(mpmath.pi),
-            "e": mpmath.mpf(mpmath.e),
-        }
-        self.booleans = {"true": mpmath.mpf(1), "false": mpmath.mpf(0)}
 
 
 class Interpreter:
@@ -89,21 +31,11 @@ class Interpreter:
         self.code = code
 
         self.resolve_imports()
-        self.builtins = Builtins(self.tree)
         self.glob: dict[Any, Any] = {
-            op: self.external(op) for op in self.builtins.funcs
+            Operators.get(name, name): v
+            for name, v in Builtins.__dict__.items()
+            if not name.startswith("__")
         }
-        self.glob.update(self.builtins.booleans)
-        self.glob.update(self.builtins.constants)
-
-    def external(self, op: str):
-        def extern_func(*args, env={}):
-            r = self.builtins.funcs[op](*[self._eval(arg, env=env) for arg in args])
-            if isinstance(r, bool):
-                return mpmath.mpf(r)
-            return r
-
-        return extern_func
 
     def exception(self, error, message, pos: Pos = Pos(-1, -1)) -> None:
         error(message, self.file_name, pos=pos, code=self.code)
@@ -123,25 +55,24 @@ class Interpreter:
         # Handle short-circuiting
         if isinstance(this.func, Variable) and this.func.name in ("&&", "||"):
             op = this.func.name
-            if len(this.args) != 2:
-                self.exception(
-                    nValueError,
-                    f"Operator '{op}' requires 2 arguments, but got {len(this.args)}",
-                    pos=this.pos,
+            if op == "&&":
+                return (
+                    bool(self._eval(this.args[1], env=env))
+                    if self._eval(this.args[0], env=env)
+                    else False
                 )
-
-            left = self._eval(this.args[0], env=env)
-
-            if (op == "&&" and not bool(left)) or (op == "||" and bool(left)):
-                return left
-
-            return self._eval(this.args[1], env=env)
+            elif op == "||":
+                return (
+                    True
+                    if self._eval(this.args[0], env=env)
+                    else bool(self._eval(this.args[1], env=env))
+                )
 
         func = self._eval(this.func, env=env)
         args = [self._eval(arg, env=env) for arg in this.args]
 
         if isinstance(func, Callable):
-            return func(*args, env=env)
+            return func(*[self._eval(arg, env=env) for arg in args])
         elif not isinstance(func, Lambda):
             self.exception(
                 nTypeError, f"{type(func).__name__} is not callable", pos=this.pos
@@ -175,6 +106,9 @@ class Interpreter:
     def _number(self, this: Number, env: dict = {}):
         return mpmath.mpf(this.value)
 
+    def _bool(self, this: Bool, env: dict = {}):
+        return this.value
+
     def _eval(self, node: Expr, env: dict = {}):
         if isinstance(node, Lambda):
             lambda_copy = Lambda(
@@ -185,7 +119,7 @@ class Interpreter:
                 pos=node.pos,
             )
             return lambda_copy
-        elif isinstance(node, (float, int, str, mpmath.mpf)):
+        elif isinstance(node, (float, int, mpmath.mpf)):
             return mpmath.mpf(node)
         elif node is None:
             return mpmath.mpf(0)
