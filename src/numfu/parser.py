@@ -29,7 +29,7 @@ OPERATORS = [
     "||",
 ]
 
-DEFAULT_POS = field(default_factory=Pos)
+DEFAULT_POS = field(default_factory=Pos, repr=False)
 
 
 def _tokpos(token: Token):
@@ -63,8 +63,8 @@ class Lambda(Expr):
     arg_names: list[str]
     body: Expr
     pos: Pos = DEFAULT_POS
-    name: str | None = None
-    curry: dict[str, Expr] = field(default_factory=lambda: {})
+    name: str | None = field(default_factory=lambda: None, repr=False)
+    curry: dict[str, Expr] = field(default_factory=lambda: {}, repr=False)
 
 
 @dataclass
@@ -206,6 +206,28 @@ class Parser:
 
         ast_tree = imports + ast_tree
         return ast_tree
+
+    def clean_ast(self, tree: list[Expr]) -> list[Expr]:
+        def clean(e):
+            for attr in ("pos", "curry"):
+                try:
+                    delattr(e, attr)
+                except AttributeError:
+                    pass
+            if isinstance(e, Lambda):
+                if e.name is None:
+                    del e.name
+                e.body = clean(e.body)
+            elif isinstance(e, Call):
+                e.func = clean(e.func)
+                e.args = [clean(a) for a in e.args]
+            elif isinstance(e, Conditional):
+                e.test = clean(e.test)
+                e.then_body = clean(e.then_body)
+                e.else_body = clean(e.else_body)
+            return e
+
+        return [clean(e) for e in tree]
 
     def curry(self, tree: list[Expr]) -> list[Expr]:
         def c(e):

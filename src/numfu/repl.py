@@ -34,11 +34,14 @@ class REPL:
         tree=None,
         file_name: str | Path = "REPL",
         actually_print=True,
+        clean=False,
     ) -> tuple[Expr | list[Expr] | None, rich.pretty.Pretty | None]:
         if tree is None:
             tree = self.parser.parse(code, file=file_name, curry=self.curry)
         if tree is None:
             return (None, None)
+        if clean:
+            tree = self.parser.clean_ast(tree)
 
         output = rich.pretty.Pretty(
             tree,

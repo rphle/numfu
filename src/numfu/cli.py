@@ -111,7 +111,9 @@ def ast(source, output, imports, max_depth, indent, curry):
     repl = REPL(
         imports=imports, max_depth=max_depth, indent=indent, curry=curry, fatal=False
     )
-    tree, _ = repl.print_ast(code, file_name=source_path, actually_print=not output)
+    tree, _ = repl.print_ast(
+        code, file_name=source_path, actually_print=not output, clean=not output
+    )
 
     if output:
         with open(output, "wb") as f:
@@ -132,7 +134,8 @@ def repl(ctx, precision):
     if ctx.invoked_subcommand is None:
         # Default to evaluation REPL
         def _interpret(code):
-            tree = Parser(fatal=False).parse(code, file="REPL")
+            parser = Parser(fatal=False)
+            tree = parser.parse(code, file="REPL")
             if tree is None:
                 return
 
@@ -142,8 +145,9 @@ def repl(ctx, precision):
 
             for o in (o for o in output if o is not None):
                 if isinstance(o, Lambda):
-                    o.curry = {}
-                print(o)
+                    print(parser.clean_ast([o])[0])
+                else:
+                    print(o)
 
         repl_instance = REPL()
         repl_instance.start(_interpret)
@@ -181,7 +185,8 @@ def repl_ast(max_depth, indent, curry):
 def run_file(source, precision, curry):
     source_path = Path(source)
     code = source_path.read_text()
-    tree = Parser().parse(code, file=source_path, curry=curry)
+    parser = Parser()
+    tree = parser.parse(code, file=source_path, curry=curry)
 
     if tree is None:
         return
@@ -190,5 +195,6 @@ def run_file(source, precision, curry):
 
     for o in (o for o in output if o is not None):
         if isinstance(o, Lambda):
-            o.curry = {}
-        print(o)
+            print(parser.clean_ast([o])[0])
+        else:
+            print(o)
