@@ -1,0 +1,51 @@
+?start: expr*
+?expr: logic_or
+
+?logic_or: logic_and | logic_or OR logic_and -> bin_op
+?logic_and: comp | logic_and AND comp -> bin_op
+
+?comp: arith ( (EQ | NE | LT | GT | LE | GE) arith )*
+?arith: term | arith (ADD | SUB) term -> bin_op
+?term: factor | term (MUL | DIV | MOD) factor -> bin_op
+?factor: power | ADD factor -> pos | SUB factor -> neg | NOT factor -> not_op
+?power: call | call POW power -> bin_op
+
+?call: atom | call call_args
+call_args: "[" [expr ("," expr)*] "]"
+
+?atom: NUMBER -> number
+        | NAME   -> variable
+        | "(" expr ")"
+        | lambda_def
+        | conditional
+        | let_binding
+
+lambda_def: "(" (NAME ":")? lambda_params "->" expr ")"
+lambda_params: (NAME ("," NAME)*)?
+conditional: "if" expr "then" expr "else" expr
+let_binding: "let" let_params"in" expr
+let_params: (NAME "=" expr ("," NAME "=" expr)*)?
+
+ADD: "+"
+SUB: "-"
+MUL: "*"
+DIV: "/"
+MOD: "%"
+POW: "^"
+EQ: "=="
+NE: "!="
+NOT: "!"
+LT: "<"
+GT: ">"
+LE: "<="
+GE: ">="
+AND: "&&"
+OR: "||"
+
+NUMBER: /((0|[1-9][\d_]*)(\.[\d_]+)?|\.[\d_]+)([eE][+-]?[\d_]+)?/
+NAME: /[a-zA-Z_][a-zA-Z0-9_]*/
+
+%import common.WS
+%ignore WS
+%ignore /\/\/[^\n]*/
+%ignore /\/\*(.|\n)*?\*\//
