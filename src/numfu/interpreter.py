@@ -7,8 +7,19 @@ from typing import Any, Callable
 import mpmath
 
 from .builtins import Builtins, Operators
-from .errors import nNameError, nTypeError, nValueError
-from .parser import Bool, Call, Conditional, Expr, Import, Lambda, Number, Pos, Variable
+from .errors import nNameError, nSyntaxError, nTypeError, nValueError
+from .parser import (
+    Bool,
+    Call,
+    Conditional,
+    Constant,
+    Expr,
+    Import,
+    Lambda,
+    Number,
+    Pos,
+    Variable,
+)
 
 sys.setrecursionlimit(100000)
 
@@ -19,6 +30,7 @@ class Interpreter:
         tree: list[Expr],
         precision: int = 20,
         file_name: str | Path = "",
+        repr=True,
         fatal: bool = True,
         code: str = "",
     ):
@@ -27,6 +39,7 @@ class Interpreter:
         self.tree: list[Expr] = tree
         self.precision = precision
         self.file_name = file_name
+        self.repr = repr
         self.fatal = fatal
         self.code = code
 
@@ -106,6 +119,13 @@ class Interpreter:
     def _number(self, this: Number, env: dict = {}):
         return mpmath.mpf(this.value)
 
+    def _constant(self, this: Constant, env: dict = {}):
+        self.exception(
+            nSyntaxError,
+            "Constant definitions must be placed at the top level of the module",
+            this.pos,
+        )
+
     def _bool(self, this: Bool, env: dict = {}):
         return this.value
 
@@ -147,6 +167,17 @@ class Interpreter:
                 break
         self.tree = imports + self.tree
 
+    def get_repr(self, output: list[Number | Bool]):
+        o = []
+        for node in output:
+            if isinstance(node, Number):
+                o.append(node.value.removesuffix(".0"))
+            elif isinstance(node, Bool):
+                o.append("true" if node.value else "false")
+            else:
+                o.append(str(node))
+        return o
+
     def run(self):
         try:
             r = []
@@ -154,8 +185,20 @@ class Interpreter:
                 if isinstance(node, Lambda):
                     if node.name:
                         self.glob[node.name] = node
+                elif isinstance(node, Constant):
+                    self.glob[node.name] = node.value
                 else:
                     r.append(self._eval(node, self.glob))
+
+            for i, res in enumerate(r):
+                if isinstance(res, mpmath.mpf):
+                    r[i] = Number(mpmath.nstr(res, self.precision))
+                elif isinstance(res, bool):
+                    r[i] = Bool(res)
+
+            if self.repr:
+                return self.get_repr(r)
+
             return r
         except SystemExit:
             if self.fatal:

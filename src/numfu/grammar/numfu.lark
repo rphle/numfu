@@ -20,11 +20,13 @@ call_args: "[" [expr ("," expr)*] "]"
      | lambda_def
      | conditional
      | let_binding
+     | constant_def
 
 lambda_def: "(" (NAME ":")? lambda_params "->" expr ")"
 lambda_params: (NAME ("," NAME)*)?
 conditional: "if" expr "then" expr "else" expr
 let_binding: "let" let_params "in" expr
+constant_def: "const" NAME "=" expr
 let_params: (NAME "=" expr ("," NAME "=" expr)*)?
 
 ADD: "+"

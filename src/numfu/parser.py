@@ -74,6 +74,13 @@ class Lambda(Expr):
 
 
 @dataclass
+class Constant(Expr):
+    name: str
+    value: str
+    pos: Pos = DEFAULT_POS
+
+
+@dataclass
 class Conditional(Expr):
     test: Expr
     then_body: Expr
@@ -160,6 +167,9 @@ class AstGenerator(Transformer):
             values,
             pos=_tokpos(names[0]),
         )
+
+    def constant_def(self, name, value):
+        return Constant(name, value, pos=Pos(name.start_pos - 6, name.end_pos))
 
     def conditional(self, test, then_body, else_body):
         return Conditional(test, then_body, else_body, pos=test.pos)
