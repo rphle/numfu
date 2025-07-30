@@ -21,19 +21,19 @@ from .parser import (
     Variable,
 )
 
-sys.setrecursionlimit(100000)
-
 
 class Interpreter:
     def __init__(
         self,
         tree: list[Expr],
         precision: int = 20,
+        rec_depth: int = 10000,
         file_name: str | Path = "",
         repr=True,
         fatal: bool = True,
         code: str = "",
     ):
+        sys.setrecursionlimit(rec_depth)
         mpmath.mp.dps = precision
 
         self.tree: list[Expr] = tree

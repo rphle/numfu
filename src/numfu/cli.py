@@ -44,11 +44,20 @@ def cli(ctx):
 )
 @click.argument("source", type=click.Path(exists=True, dir_okay=False))
 @click.option(
+    "-p",
     "--precision",
     default=20,
     show_default=True,
     type=int,
     help="Floating point precision",
+)
+@click.option(
+    "-r",
+    "--rec-depth",
+    default=10000,
+    show_default=True,
+    type=int,
+    help="Maximum recursion depth in the evaluation process",
 )
 @click.option(
     "--curry",
@@ -57,9 +66,9 @@ def cli(ctx):
     help="Whether to curry",
 )
 @click.pass_context
-def default(ctx, source, precision, curry):
+def default(ctx, source, precision, rec_depth, curry):
     """Parse and run a NumFu source file."""
-    run_file(source, precision, curry)
+    run_file(source, precision, rec_depth, curry)
 
 
 @cli.command()
@@ -122,14 +131,23 @@ def ast(source, output, imports, max_depth, indent, curry):
 
 @cli.group(cls=click.Group, invoke_without_command=True)
 @click.option(
+    "-p",
     "--precision",
     default=20,
     show_default=True,
     type=int,
     help="Floating point precision",
 )
+@click.option(
+    "-r",
+    "--rec-depth",
+    default=10000,
+    show_default=True,
+    type=int,
+    help="Maximum recursion depth in the evaluation process",
+)
 @click.pass_context
-def repl(ctx, precision):
+def repl(ctx, precision, rec_depth):
     """Start an interactive REPL."""
     if ctx.invoked_subcommand is None:
         # Default to evaluation REPL
@@ -140,7 +158,7 @@ def repl(ctx, precision):
                 return
 
             output = Interpreter(
-                tree, precision, file_name="REPL", fatal=False, code=code
+                tree, precision, rec_depth, file_name="REPL", fatal=False, code=code
             ).run()
 
             for o in (o for o in output if o is not None):
@@ -182,7 +200,7 @@ def repl_ast(max_depth, indent, curry):
     )
 
 
-def run_file(source, precision, curry):
+def run_file(source, precision, rec_depth, curry):
     source_path = Path(source)
     code = source_path.read_text()
     parser = Parser()
@@ -191,7 +209,9 @@ def run_file(source, precision, curry):
     if tree is None:
         return
 
-    output = Interpreter(tree, precision, file_name=source_path, code=code).run()
+    output = Interpreter(
+        tree, precision, rec_depth, file_name=source_path, code=code
+    ).run()
 
     for o in (o for o in output if o is not None):
         if isinstance(o, Lambda):
