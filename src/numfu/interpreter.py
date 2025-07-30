@@ -7,9 +7,8 @@ from typing import Any, Callable
 
 import mpmath
 
-from .errors import NameError, TypeError
-from .errors import ValueError as nValueError
-from .parser import Call, Conditional, Expr, Import, Lambda, Number, Variable
+from .errors import nNameError, nTypeError, nValueError
+from .parser import Call, Conditional, Expr, Import, Lambda, Number, Pos, Variable
 
 sys.setrecursionlimit(100000)
 
@@ -79,6 +78,7 @@ class Interpreter:
         precision: int = 20,
         file_name: str | Path = "",
         fatal: bool = True,
+        code: str = "",
     ):
         mpmath.mp.dps = precision
 
@@ -86,6 +86,7 @@ class Interpreter:
         self.precision = precision
         self.file_name = file_name
         self.fatal = fatal
+        self.code = code
 
         self.resolve_imports()
         self.builtins = Builtins(self.tree)
@@ -104,20 +105,18 @@ class Interpreter:
 
         return extern_func
 
-    def exception(self, error, message) -> None:
-        error(
-            message,
-            self.file_name,
-        )
-        if self.fatal:
-            sys.exit(1)
+    def exception(self, error, message, pos: Pos = Pos(-1, -1)) -> None:
+        error(message, self.file_name, pos=pos, code=self.code)
+        sys.exit(1)
 
     def _variable(self, this: Variable, env: dict = {}) -> Expr | None:
         try:
             return env[this.name]
         except KeyError:
             self.exception(
-                NameError, f"'{this.name}' is not defined in the current scope"
+                nNameError,
+                f"'{this.name}' is not defined in the current scope",
+                pos=this.pos,
             )
 
     def _call(self, this: Call, env: dict = {}):
@@ -128,6 +127,7 @@ class Interpreter:
                 self.exception(
                     nValueError,
                     f"Operator '{op}' requires 2 arguments, but got {len(this.args)}",
+                    pos=this.pos,
                 )
 
             left = self._eval(this.args[0], env=env)
@@ -143,8 +143,17 @@ class Interpreter:
         if isinstance(func, Callable):
             return func(*args, env=env)
         elif not isinstance(func, Lambda):
-            self.exception(TypeError, f"{type(func).__name__} is not callable")
+            self.exception(
+                nTypeError, f"{type(func).__name__} is not callable", pos=this.pos
+            )
         else:
+            if len(args) != len(func.arg_names):
+                self.exception(
+                    nValueError,
+                    f"Wrong number of arguments for '{func.name if func.name else ', '.join(func.arg_names) + '-> ...'}': {len(args)} != {len(func.arg_names)}",
+                    pos=this.pos,
+                )
+
             return self._lambda(func, args, env=env)
 
     def _conditional(self, this: Conditional, env: dict = {}):
@@ -158,13 +167,6 @@ class Interpreter:
             new_env[this.name] = this
 
         new_env.update(this.curry)
-
-        if len(args) != len(this.arg_names):
-            self.exception(
-                nValueError,
-                f"Wrong number of arguments for '{this.name if this.name else ', '.join(this.arg_names) + '-> ...'}': {len(args)} != {len(this.arg_names)}",
-            )
-            sys.exit(1)
 
         new_env.update(zip(this.arg_names, args))
 
@@ -212,11 +214,16 @@ class Interpreter:
         self.tree = imports + self.tree
 
     def run(self):
-        r = []
-        for node in self.tree:
-            if isinstance(node, Lambda):
-                if node.name:
-                    self.glob[node.name] = node
-            else:
-                r.append(self._eval(node, self.glob))
-        return r
+        try:
+            r = []
+            for node in self.tree:
+                if isinstance(node, Lambda):
+                    if node.name:
+                        self.glob[node.name] = node
+                else:
+                    r.append(self._eval(node, self.glob))
+            return r
+        except SystemExit:
+            if self.fatal:
+                sys.exit(1)
+            return []

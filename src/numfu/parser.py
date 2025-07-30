@@ -10,7 +10,7 @@ from pathlib import Path
 
 from lark import Lark, Token, Transformer, v_args
 
-from .errors import LarkError
+from .errors import LarkError, Pos
 
 OPERATORS = [
     "+",
@@ -29,20 +29,11 @@ OPERATORS = [
     "||",
 ]
 
-
-@dataclass
-class Pos:
-    line: int = 0
-    col: int = 0
-    end_line: int = 0
-    end_col: int = 0
-
-
 DEFAULT_POS = field(default_factory=Pos)
 
 
 def _tokpos(token: Token):
-    return Pos(token.line, token.column, token.end_line, token.end_column)  # type: ignore
+    return Pos(token.start_pos, token.end_pos)
 
 
 @dataclass
@@ -163,7 +154,14 @@ class AstGenerator(Transformer):
     def call(self, func, args=None):
         if args is None:
             return func
-        return Call(func, args, pos=func.pos)
+        return Call(
+            func,
+            args,
+            pos=Pos(
+                args[0].pos.start - 1,
+                args[-1].pos.end + 1,
+            ),
+        )
 
     def call_args(self, *args):
         return list(args)

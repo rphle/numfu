@@ -137,10 +137,7 @@ def repl(ctx, precision):
                 return
 
             output = Interpreter(
-                tree,
-                precision,
-                file_name="REPL",
-                fatal=False,
+                tree, precision, file_name="REPL", fatal=False, code=code
             ).run()
 
             for o in (o for o in output if o is not None):
@@ -189,11 +186,7 @@ def run_file(source, precision, curry):
     if tree is None:
         return
 
-    output = Interpreter(
-        tree,
-        precision,
-        file_name=source_path,
-    ).run()
+    output = Interpreter(tree, precision, file_name=source_path, code=code).run()
 
     for o in (o for o in output if o is not None):
         if isinstance(o, Lambda):

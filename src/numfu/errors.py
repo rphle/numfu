@@ -1,4 +1,5 @@
 import re
+from dataclasses import dataclass
 from pathlib import Path
 
 from rich.console import Console
@@ -8,37 +9,116 @@ from rich.theme import Theme
 console = Console(theme=Theme({"blue": "#39bae5", "red": "#ef7177"}))
 
 
+@dataclass
+class Pos:
+    start: int = 0
+    end: int = 1
+
+
+class CPos:
+    def __init__(
+        self, line: int = 1, col: int = 1, end_line: int = 1, end_col: int = 2
+    ):
+        self.line = line
+        self.col = col
+        self.end_line = end_line
+        self.end_col = end_col
+
+    @classmethod
+    def frompos(cls, pos: Pos, code: str):
+        self = cls()
+        self.line = code.count("\n", 0, pos.start) + 1
+        self.col = pos.start - code.rfind("\n", 0, pos.start)
+        self.end_line = code.count("\n", 0, pos.end) + 1
+        self.end_col = pos.end - code.rfind("\n", 0, pos.end)
+        return self
+
+    def split(self) -> list["CPos"]:
+        return [
+            CPos(
+                line=line,
+                col=self.col if line == self.line else 1,
+                end_line=line,
+                end_col=-1 if line != self.end_line else self.end_col,
+            )
+            for line in range(self.line, self.end_line + 1)
+        ]
+
+    def __repr__(self):
+        return f"CPos(line={self.line}, col={self.col}, end_line={self.end_line}, end_col={self.end_col})"
+
+
 class Error:
     def __init__(
-        self, message, file: str | Path = "", loc=("?", "?"), preview="", name=None
+        self,
+        message,
+        file: str | Path = "",
+        pos: Pos | CPos | None = None,
+        code="",
+        name=None,
     ):
+        if pos is None:
+            cpos = None
+        elif isinstance(pos, Pos):
+            cpos = CPos.frompos(pos, code)
+        elif isinstance(pos, CPos):
+            cpos = pos
+        else:
+            raise TypeError(f"Invalid position type: {type(pos)}")
+
         console.print(
-            f"[reset][at [blue]<{file or 'unknown'}>[/blue]:{loc[0]}:{loc[1]}]"
+            f"[reset][at [blue]<{file or 'unknown'}>[/blue]:{cpos.line if cpos else '?'}:{cpos.col if cpos else '?'}]"
         )
-        if preview:
-            console.print(preview)
+        if cpos is not None:
+            if code and 0 < cpos.end_line <= len(code.splitlines()):
+                for _cpos in cpos.split():
+                    _cpos.end_line = (
+                        _cpos.end_line if _cpos.end_line > 0 else len(code.splitlines())
+                    )
+                    _cpos.end_col = (
+                        _cpos.end_col
+                        if _cpos.end_col > 0
+                        else len(code.splitlines()[_cpos.line - 1]) + 1
+                    )
+
+                    src = escape(code.splitlines()[_cpos.line - 1])
+                    start = max(0, _cpos.col - 30)
+                    end = min(len(src), _cpos.col + 30)
+
+                    highlighted = (
+                        f"{src[start:_cpos.col-1]}"
+                        f"[red]{src[_cpos.col-1:_cpos.end_col-1]}[/red]"
+                        f"{src[_cpos.end_col-1:end]}"
+                    )
+                    prefix = "..." if start > 0 else ""
+                    suffix = "..." if end < len(src) else ""
+                    console.print(
+                        f"[reset][dim][{_cpos.line}][/dim]   {prefix}[reset]{highlighted}{suffix}\n"
+                        f"    {' ' * (_cpos.col - start + len(prefix)+len(str(_cpos.line)))}[red bold]{'^' * (_cpos.end_col - _cpos.col)}[/bold red]"
+                    )
+
         console.print(
-            f"[bold blue]{name or self.__class__.__name__}[/blue bold]: [blue]{message}[/blue]"
+            f"[bold blue]{name or self.__class__.__name__.removeprefix("n")}[/blue bold]: [blue]{message}[/blue]"
         )
 
 
-class SyntaxError(Error):
+class nSyntaxError(Error):
     pass
 
 
-class ValueError(Error):
+class nValueError(Error):
     pass
 
 
-class TypeError(Error):
+class nTypeError(Error):
     pass
 
 
-class NameError(Error):
+class nNameError(Error):
     pass
 
 
-class LarkError(SyntaxError):
+class LarkError(nSyntaxError):
     tokens = {
         "RPAR": ")",
         "LPAR": "(",
@@ -85,30 +165,10 @@ class LarkError(SyntaxError):
             super().__init__(message, file=file)
             return
 
-        preview = ""
-
-        if code and 0 < line <= len(code.splitlines()):
-            src = escape(code.splitlines()[line - 1])
-            start = max(0, col - 30)
-            end = min(len(src), col + 30)
-
-            highlighted = (
-                f"{src[start:col-1]}"
-                f"[red]{src[col-1:col-1+len(token)]}[/red]"
-                f"{src[col-1+len(token):end]}"
-            )
-            prefix = "..." if start > 0 else ""
-            suffix = "..." if end < len(src) else ""
-
-            preview = (
-                f"    {prefix}[reset]{highlighted}{suffix}\n"
-                f"    {' ' * (col - 1 - start + len(prefix))}[red bold]{'^' * len(token)}[/bold red]"
-            )
-
         super().__init__(
             message,
             file=file,
-            preview=preview,
+            code=code,
             name="SyntaxError",
-            loc=(line, col),
+            pos=CPos(line, col, line, col + len(token)),
         )

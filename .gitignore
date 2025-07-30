@@ -1,0 +1,11 @@
+__pycache__
+*.egg-info
+NOTES.md
+TODO.md
+.ruff_cache
+wheels
+.numfu_build_venv
+*.nfut
+build
+tests
+test.py
