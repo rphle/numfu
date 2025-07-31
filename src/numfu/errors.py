@@ -92,12 +92,7 @@ class Error:
                     )
                     prefix = "..." if start > 0 else ""
                     suffix = "..." if end < len(src) else ""
-                    print(
-                        _cpos,
-                        _cpos.col - start + len(prefix) + len(str(_cpos.line)),
-                        len(src[start : _cpos.col - 1]),
-                        src[start : _cpos.col - 1],
-                    )
+
                     console.print(
                         f"[reset][dim][{_cpos.line}][/dim]   {prefix}[reset]{highlighted}{suffix}\n"
                         f"    {' ' * (_cpos.col + start + len(prefix)+len(str(_cpos.line)))}[red bold]{'^' * (_cpos.end_col - _cpos.col)}[/bold red]"
