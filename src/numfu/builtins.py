@@ -1,7 +1,9 @@
 import operator
 from dataclasses import dataclass
+from types import UnionType
+from typing import Callable
 
-import mpmath
+import mpmath as mpm
 
 Operators = {
     "_add": "+",
@@ -22,48 +24,78 @@ Operators = {
 }
 
 
+class BuiltinFunc:
+    def __init__(
+        self,
+        func: Callable,
+        args: type | UnionType,
+        returns: type,
+        name: str | None = None,
+    ):
+        self.func = func
+        self.args = args
+        self.returns = returns
+        self.name = name if name is not None else func.__name__
+
+    def __call__(self, *args, **kwargs):
+        return self.func(*args, **kwargs)
+
+
+def _mpf2mpf(x, n: str | None = None):
+    return BuiltinFunc(x, mpm.mpf, mpm.mpf, name=n)
+
+
+def _mpf2bool(x, n: str | None = None):
+    return BuiltinFunc(x, mpm.mpf, bool, name=n)
+
+
+def _any2bool(x, n: str | None = None):
+    return BuiltinFunc(x, mpm.mpf | bool, bool, name=n)
+
+
 @dataclass
 class Builtins:
     # Constants
-    pi = mpmath.pi
-    e = mpmath.e
+    pi = mpm.pi
+    e = mpm.e
 
     # Arithmetic
-    _add = staticmethod(mpmath.fadd)
-    _sub = staticmethod(
-        lambda a, b=None: mpmath.fsub(0, a) if b is None else mpmath.fsub(a, b)
+    _add = _mpf2mpf(mpm.fadd, n="+")
+    _sub = _mpf2mpf(
+        lambda a, b=None: mpm.fsub(0, a) if b is None else mpm.fsub(a, b), n="-"
     )
-    _mul = staticmethod(mpmath.fmul)
-    _div = staticmethod(mpmath.fdiv)
-    _mod = staticmethod(mpmath.fmod)
-    _pow = staticmethod(mpmath.power)
+    _mul = _mpf2mpf(mpm.fmul, n="*")
+    _div = _mpf2mpf(mpm.fdiv, n="/")
+    _mod = _mpf2mpf(mpm.fmod, n="%")
+    _pow = _mpf2mpf(mpm.power, n="^")
 
     # Logic
-    _and = staticmethod(lambda a, b: bool(a) and bool(b))
-    _or = staticmethod(lambda a, b: bool(a) or bool(b))
-    _not = staticmethod(lambda a: not bool(a))
+    _and = _any2bool(lambda a, b: bool(a) and bool(b), n="&&")
+    _or = _any2bool(lambda a, b: bool(a) or bool(b), n="||")
+    _not = _any2bool(lambda a: not bool(a), n="!")
 
     # Comparison
     _gt, _lt, _ge, _le, _eq, _ne = map(
-        staticmethod,
+        lambda x: _mpf2bool(
+            x,
+            n={"gt": ">", "lt": "<", "ge": ">=", "le": "<=", "eq": "==", "ne": "!="}[
+                x.__name__
+            ],
+        ),
         [operator.gt, operator.lt, operator.ge, operator.le, operator.eq, operator.ne],
     )
 
     # Trigonometry
-    sin, cos, tan = map(staticmethod, (mpmath.sin, mpmath.cos, mpmath.tan))
-    asin, acos, atan, atan2 = map(
-        staticmethod, (mpmath.asin, mpmath.acos, mpmath.atan, mpmath.atan2)
-    )
+    sin, cos, tan = map(_mpf2mpf, (mpm.sin, mpm.cos, mpm.tan))
+    asin, acos, atan, atan2 = map(_mpf2mpf, (mpm.asin, mpm.acos, mpm.atan, mpm.atan2))
 
     # Hyperbolic
-    sinh, cosh, tanh = map(staticmethod, (mpmath.sinh, mpmath.cosh, mpmath.tanh))
-    asinh, acosh, atanh = map(staticmethod, (mpmath.asinh, mpmath.acosh, mpmath.atanh))
+    sinh, cosh, tanh = map(_mpf2mpf, (mpm.sinh, mpm.cosh, mpm.tanh))
+    asinh, acosh, atanh = map(_mpf2mpf, (mpm.asinh, mpm.acosh, mpm.atanh))
 
     # Exponential & Log
-    exp, log, log10 = map(staticmethod, (mpmath.exp, mpmath.log, mpmath.log10))
-    sqrt = staticmethod(mpmath.sqrt)
+    exp, log, log10, sqrt = map(_mpf2mpf, (mpm.exp, mpm.log, mpm.log10, mpm.sqrt))
 
     # Rounding / Sign
-    ceil, floor, fabs, sign = map(
-        staticmethod, (mpmath.ceil, mpmath.floor, mpmath.fabs, mpmath.sign)
-    )
+    ceil, floor, sign = map(_mpf2mpf, (mpm.ceil, mpm.floor, mpm.sign))
+    abs = _mpf2mpf(mpm.fabs, n="abs")

@@ -2,11 +2,12 @@ import importlib.resources
 import pickle
 import sys
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 import mpmath
+from typeguard import TypeCheckError, check_type
 
-from .builtins import Builtins, Operators
+from .builtins import BuiltinFunc, Builtins, Operators
 from .errors import nNameError, nSyntaxError, nTypeError, nValueError
 from .parser import (
     Bool,
@@ -84,8 +85,18 @@ class Interpreter:
         func = self._eval(this.func, env=env)
         args = [self._eval(arg, env=env) for arg in this.args]
 
-        if isinstance(func, Callable):
-            return func(*[self._eval(arg, env=env) for arg in args])
+        if isinstance(func, BuiltinFunc):
+            _args = [self._eval(arg, env=env) for arg in args]
+            for arg in _args:
+                try:
+                    check_type(arg, func.args)
+                except TypeCheckError:
+                    self.exception(
+                        nTypeError,
+                        f"Invalid argument type '{type(arg).__name__}' for '{func.name}'",
+                        pos=this.pos,
+                    )
+            return func(*_args)
         elif not isinstance(func, Lambda):
             self.exception(
                 nTypeError, f"{type(func).__name__} is not callable", pos=this.pos
