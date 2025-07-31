@@ -1,9 +1,12 @@
 import importlib.resources
 import pickle
 import sys
+import zlib
 from pathlib import Path
 from typing import Any
 
+import lark
+import lark.reconstruct
 import mpmath
 from typeguard import TypeCheckError, check_type
 
@@ -147,6 +150,7 @@ class Interpreter:
                 body=node.body,
                 name=node.name,
                 curry=env.copy(),
+                tree=node.tree,
                 pos=node.pos,
             )
             return lambda_copy
@@ -178,6 +182,32 @@ class Interpreter:
                 break
         self.tree = imports + self.tree
 
+    def reconstruct(self, node: Lambda):
+        grammar = importlib.resources.read_text("numfu", "grammar/numfu.lark")
+        reconstructor = lark.reconstruct.Reconstructor(
+            lark.Lark(grammar, parser="lalr")
+        )
+        tree = pickle.loads(zlib.decompress(node.tree))
+        env = {k: v for k, v in node.curry.items() if k not in self.glob}
+
+        class Resolver(lark.Transformer):
+            def variable(self, name):
+                value = env.get(name[0].value, name[0])
+                if isinstance(value, mpmath.mpf):
+                    value = lark.Tree(
+                        "number",
+                        [lark.Token("NUMBER", mpmath.nstr(value).removesuffix(".0"))],  # type: ignore
+                    )
+                elif isinstance(value, Lambda):
+                    value = pickle.loads(zlib.decompress(value.tree))
+                else:
+                    value = lark.Tree("variable", [value])  # type: ignore
+
+                return value
+
+        tree = Resolver().transform(tree)
+        return reconstructor.reconstruct(tree)
+
     def get_repr(self, output: list[Number | Bool]):
         o = []
         for node in output:
@@ -185,6 +215,8 @@ class Interpreter:
                 o.append(node.value.removesuffix(".0"))
             elif isinstance(node, Bool):
                 o.append("true" if node.value else "false")
+            elif isinstance(node, Lambda):
+                o.append(self.reconstruct(node))
             else:
                 o.append(str(node))
         return o

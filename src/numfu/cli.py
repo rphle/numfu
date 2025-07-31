@@ -120,9 +120,7 @@ def ast(source, output, imports, max_depth, indent, curry):
     repl = REPL(
         imports=imports, max_depth=max_depth, indent=indent, curry=curry, fatal=False
     )
-    tree, _ = repl.print_ast(
-        code, file_name=source_path, actually_print=not output, clean=not output
-    )
+    tree, _ = repl.print_ast(code, file_name=source_path, actually_print=not output)
 
     if output:
         with open(output, "wb") as f:
@@ -163,7 +161,7 @@ def repl(ctx, precision, rec_depth):
 
             for o in (o for o in output if o is not None):
                 if isinstance(o, Lambda):
-                    print(parser.clean_ast([o])[0])
+                    print(o)
                 else:
                     print(o)
 
@@ -215,6 +213,6 @@ def run_file(source, precision, rec_depth, curry):
 
     for o in (o for o in output if o is not None):
         if isinstance(o, Lambda):
-            print(parser.clean_ast([o])[0])
+            print(o.tree)
         else:
             print(o)

@@ -3,12 +3,14 @@ Lark-based parser and AST generator for NumFu
 """
 
 import importlib.resources
+import pickle
 import re
 import sys
+import zlib
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from lark import Lark, Token, Transformer, v_args
+from lark import Lark, Token, Transformer, Tree, v_args
 
 from .errors import LarkError, Pos
 
@@ -34,10 +36,6 @@ DEFAULT_POS = field(default_factory=Pos, repr=False)
 
 def _tokpos(token: Token):
     return Pos(token.start_pos, token.end_pos)
-
-
-def _2tokpos(token1: Token, token2: Token):
-    return Pos(token1.start_pos, token2.end_pos)
 
 
 @dataclass
@@ -75,6 +73,7 @@ class Lambda(Expr):
     pos: Pos = DEFAULT_POS
     name: str | None = field(default_factory=lambda: None, repr=False)
     curry: dict[str, Expr] = field(default_factory=lambda: {}, repr=False)
+    tree: bytes = field(default_factory=lambda: b"", repr=False)
 
 
 @dataclass
@@ -100,6 +99,15 @@ class Call(Expr):
 
 
 grammar = importlib.resources.read_text("numfu", "grammar/numfu.lark")
+
+
+@v_args(inline=True)
+class LambdaPreprocessor(Transformer):
+    def lambda_def(self, *args):
+        return Tree(
+            "lambda_def",
+            [zlib.compress(pickle.dumps(Tree("lambda_def", list(args)))).hex(), *args],
+        )
 
 
 @v_args(inline=True)
@@ -160,7 +168,7 @@ class AstGenerator(Transformer):
     def boolean(self, n):
         return Bool(str(n) == "true", pos=_tokpos(n))
 
-    def lambda_def(self, *args):
+    def lambda_def(self, tree, *args):
         name, params, body = (None, *args) if len(args) == 2 else args
         pos = (
             _tokpos(name)
@@ -168,7 +176,13 @@ class AstGenerator(Transformer):
             else (_tokpos(params.children[0]) if params.children else body.pos)
         )
         arg_names = [str(t) for t in params.children]
-        return Lambda(arg_names, body, name=str(name) if name else None, pos=pos)
+        return Lambda(
+            arg_names,
+            body,
+            name=str(name) if name else None,
+            pos=pos,
+            tree=bytes.fromhex(tree),
+        )
 
     def let_binding(self, lambda_params, body):
         names, values = lambda_params.children[::2], lambda_params.children[1::2]
@@ -211,7 +225,9 @@ class AstGenerator(Transformer):
             pos=Pos(
                 args[0].pos.start - 1,
                 args[-1].pos.end + 1,
-            ),
+            )
+            if args
+            else Pos(func.pos.end + 1, func.pos.end + 3),
         )
 
     def call_args(self, *args):
@@ -221,6 +237,7 @@ class AstGenerator(Transformer):
 class Parser:
     def __init__(self, fatal=True, imports: list[str] = ["builtins"]):
         self.parser = Lark(grammar, parser="lalr")
+        self.lambda_preprocessor = LambdaPreprocessor()
         self.generator = AstGenerator()
         self.fatal = fatal
         self.imports = imports
@@ -243,6 +260,7 @@ class Parser:
         code, imports = self._imports(code)
         try:
             parse_tree = self.parser.parse(code)
+            parse_tree = self.lambda_preprocessor.transform(parse_tree)
             ast_tree = self.generator.transform(parse_tree)
             if not isinstance(ast_tree, list):
                 ast_tree = [ast_tree]
@@ -257,28 +275,6 @@ class Parser:
 
         ast_tree = imports + ast_tree
         return ast_tree
-
-    def clean_ast(self, tree: list[Expr]) -> list[Expr]:
-        def clean(e):
-            for attr in ("pos", "curry"):
-                try:
-                    delattr(e, attr)
-                except AttributeError:
-                    pass
-            if isinstance(e, Lambda):
-                if e.name is None:
-                    del e.name
-                e.body = clean(e.body)
-            elif isinstance(e, Call):
-                e.func = clean(e.func)
-                e.args = [clean(a) for a in e.args]
-            elif isinstance(e, Conditional):
-                e.test = clean(e.test)
-                e.then_body = clean(e.then_body)
-                e.else_body = clean(e.else_body)
-            return e
-
-        return [clean(e) for e in tree]
 
     def curry(self, tree: list[Expr]) -> list[Expr]:
         def c(e):

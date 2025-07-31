@@ -1,7 +1,7 @@
 import operator
 from dataclasses import dataclass
 from types import UnionType
-from typing import Callable
+from typing import Any, Callable
 
 import mpmath as mpm
 
@@ -28,7 +28,7 @@ class BuiltinFunc:
     def __init__(
         self,
         func: Callable,
-        args: type | UnionType,
+        args: type | UnionType | Any,
         returns: type,
         name: str | None = None,
     ):
@@ -50,7 +50,7 @@ def _mpf2bool(x, n: str | None = None):
 
 
 def _any2bool(x, n: str | None = None):
-    return BuiltinFunc(x, mpm.mpf | bool, bool, name=n)
+    return BuiltinFunc(x, Any, bool, name=n)
 
 
 @dataclass
@@ -73,16 +73,16 @@ class Builtins:
     _and = _any2bool(lambda a, b: bool(a) and bool(b), n="&&")
     _or = _any2bool(lambda a, b: bool(a) or bool(b), n="||")
     _not = _any2bool(lambda a: not bool(a), n="!")
+    _eq = _any2bool(operator.eq, n="==")
+    _ne = _any2bool(operator.ne, n="!=")
 
     # Comparison
-    _gt, _lt, _ge, _le, _eq, _ne = map(
+    _gt, _lt, _ge, _le = map(
         lambda x: _mpf2bool(
             x,
-            n={"gt": ">", "lt": "<", "ge": ">=", "le": "<=", "eq": "==", "ne": "!="}[
-                x.__name__
-            ],
+            n={"gt": ">", "lt": "<", "ge": ">=", "le": "<="}[x.__name__],
         ),
-        [operator.gt, operator.lt, operator.ge, operator.le, operator.eq, operator.ne],
+        [operator.gt, operator.lt, operator.ge, operator.le],
     )
 
     # Trigonometry
