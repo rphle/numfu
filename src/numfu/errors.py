@@ -67,7 +67,7 @@ class Error:
             raise TypeError(f"Invalid position type: {type(pos)}")
 
         console.print(
-            f"[reset][at [blue]<{file or 'unknown'}>[/blue]:{cpos.line if cpos else '?'}:{cpos.col if cpos else '?'}]"
+            f"[reset][at [blue]{file or 'unknown'}[/blue]:{cpos.line if cpos else '?'}:{cpos.col if cpos else '?'}]"
         )
         if cpos is not None:
             if code and 0 < cpos.end_line <= len(code.splitlines()):
@@ -81,20 +81,26 @@ class Error:
                         else len(code.splitlines()[_cpos.line - 1]) + 1
                     )
 
-                    src = escape(code.splitlines()[_cpos.line - 1])
+                    src = code.splitlines()[_cpos.line - 1]
                     start = max(0, _cpos.col - 30)
                     end = min(len(src), _cpos.col + 30)
 
                     highlighted = (
-                        f"{src[start:_cpos.col-1]}"
-                        f"[red]{src[_cpos.col-1:_cpos.end_col]}[/red]"
-                        f"{src[_cpos.end_col:end]}"
+                        f"{escape(src[start:_cpos.col-1])}"
+                        f"[red]{escape(src[_cpos.col-1:_cpos.end_col-1])}[/red]"
+                        f"{escape(src[_cpos.end_col-1:end])}"
                     )
                     prefix = "..." if start > 0 else ""
                     suffix = "..." if end < len(src) else ""
+                    print(
+                        _cpos,
+                        _cpos.col - start + len(prefix) + len(str(_cpos.line)),
+                        len(src[start : _cpos.col - 1]),
+                        src[start : _cpos.col - 1],
+                    )
                     console.print(
                         f"[reset][dim][{_cpos.line}][/dim]   {prefix}[reset]{highlighted}{suffix}\n"
-                        f"    {' ' * (_cpos.col - start + len(prefix)+len(str(_cpos.line)))}[red bold]{'^' * (_cpos.end_col - _cpos.col)}[/bold red]"
+                        f"    {' ' * (_cpos.col + start + len(prefix)+len(str(_cpos.line)))}[red bold]{'^' * (_cpos.end_col - _cpos.col)}[/bold red]"
                     )
 
         console.print(
