@@ -285,7 +285,7 @@ class Interpreter:
         for i, node in enumerate(self.tree):
             if isinstance(node, Import):
                 imports.extend(
-                    *pickle.loads(
+                    pickle.loads(
                         importlib.resources.read_binary(
                             "numfu", f"stdlib/{node.name}.nfut"
                         )
