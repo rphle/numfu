@@ -95,7 +95,7 @@ class Error:
 
                     console.print(
                         f"[reset][dim][{_cpos.line}][/dim]   {prefix}[reset]{highlighted}{suffix}\n"
-                        f"    {' ' * (_cpos.col + start + len(prefix)+len(str(_cpos.line)))}[red bold]{'^' * (_cpos.end_col - _cpos.col)}[/bold red]"
+                        f"{' ' * len( f"[{_cpos.line}]   {prefix}{src[start:_cpos.col-1]}")}[red bold]{'^' * (_cpos.end_col - _cpos.col)}[/bold red]"
                     )
 
         console.print(
