@@ -160,7 +160,7 @@ class Interpreter:
                     )
                 else:
                     elements.extend(
-                        [self._eval(item, env=env) for item in lst.elements]
+                        [self._eval(item, env=lst.curry) for item in lst.elements]
                     )
             else:
                 elements.append(element)
@@ -343,6 +343,8 @@ class Interpreter:
                         elements[i] = Number(mpmath.nstr(res, self.precision))
                     elif isinstance(res, bool):
                         elements[i] = Bool(res)
+                    elif isinstance(res, List):
+                        elements[i] = self.get_repr([res])[0]
                 o.append(elements)
             else:
                 o.append(str(node))
