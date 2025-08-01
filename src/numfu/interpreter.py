@@ -217,7 +217,7 @@ class Interpreter:
             partial_env.update(zip(this.arg_names[: len(args)], args))
 
             # create new tree for later reconstruction (delete consumed args)
-            new_tree = b""
+            tree = b""
             if this.tree:
                 try:
                     tree = pickle.loads(zlib.decompress(this.tree))
@@ -239,7 +239,7 @@ class Interpreter:
                 pos=this.pos,
                 name=None,
                 curry=partial_env,
-                tree=new_tree,
+                tree=tree,
             )
 
         # exact match: apply all arguments
@@ -284,16 +284,13 @@ class Interpreter:
         imports = []
         for i, node in enumerate(self.tree):
             if isinstance(node, Import):
-                imports = [
-                    *imports,
-                    *(
-                        pickle.loads(
-                            importlib.resources.read_binary(
-                                "numfu", f"stdlib/{node.name}.nfut"
-                            )
+                imports.extend(
+                    *pickle.loads(
+                        importlib.resources.read_binary(
+                            "numfu", f"stdlib/{node.name}.nfut"
                         )
-                    ),
-                ]
+                    )
+                )
             else:
                 self.tree = self.tree[i:]
                 break

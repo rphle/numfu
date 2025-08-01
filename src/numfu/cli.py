@@ -4,7 +4,7 @@ from pathlib import Path
 import click
 
 from .interpreter import Interpreter
-from .parser import Lambda, Parser
+from .parser import Parser
 from .repl import REPL
 
 
@@ -160,10 +160,7 @@ def repl(ctx, precision, rec_depth):
             ).run()
 
             for o in (o for o in output if o is not None):
-                if isinstance(o, Lambda):
-                    print(o)
-                else:
-                    print(o)
+                print(o)
 
         repl_instance = REPL()
         repl_instance.start(_interpret)
@@ -212,7 +209,4 @@ def run_file(source, precision, rec_depth, curry):
     ).run()
 
     for o in (o for o in output if o is not None):
-        if isinstance(o, Lambda):
-            print(o.tree)
-        else:
-            print(o)
+        print(o)
