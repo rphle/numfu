@@ -10,9 +10,7 @@ import lark.reconstruct
 import mpmath
 from typeguard import TypeCheckError, check_type
 
-from .builtins import BuiltinFunc, Builtins, Operators
-from .errors import nIndexError, nNameError, nSyntaxError, nTypeError, nValueError
-from .parser import (
+from .ast_types import (
     Bool,
     Call,
     Conditional,
@@ -26,6 +24,8 @@ from .parser import (
     Spread,
     Variable,
 )
+from .builtins import BuiltinFunc, Builtins, Operators
+from .errors import nIndexError, nNameError, nSyntaxError, nTypeError, nValueError
 
 
 class Interpreter:

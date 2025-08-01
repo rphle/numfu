@@ -7,11 +7,23 @@ import pickle
 import re
 import sys
 import zlib
-from dataclasses import dataclass, field
 from pathlib import Path
 
 from lark import Lark, Token, Transformer, Tree, v_args
 
+from .ast_types import (
+    Bool,
+    Call,
+    Conditional,
+    Constant,
+    Expr,
+    Import,
+    Lambda,
+    List,
+    Number,
+    Spread,
+    Variable,
+)
 from .errors import LarkError, Pos
 
 OPERATORS = [
@@ -31,90 +43,9 @@ OPERATORS = [
     "||",
 ]
 
-DEFAULT_POS = field(default_factory=Pos, repr=False)
-
 
 def _tokpos(token: Token):
     return Pos(token.start_pos, token.end_pos)
-
-
-@dataclass
-class Expr:
-    pass
-
-
-@dataclass
-class Variable(Expr):
-    name: str
-    pos: Pos = DEFAULT_POS
-
-
-@dataclass
-class Number(Expr):
-    value: str
-    pos: Pos = DEFAULT_POS
-
-    def __repr__(self):
-        return self.value.removesuffix(".0")
-
-
-@dataclass
-class Bool(Expr):
-    value: bool
-    pos: Pos = DEFAULT_POS
-
-    def __repr__(self):
-        return "true" if self.value else "false"
-
-
-@dataclass
-class List(Expr):
-    elements: list[Expr]
-    pos: Pos = DEFAULT_POS
-    curry: dict[str, Expr] = field(default_factory=lambda: {}, repr=False)
-
-
-@dataclass
-class Spread(Expr):
-    expr: Expr
-    pos: Pos = DEFAULT_POS
-
-
-@dataclass
-class Import(Expr):
-    name: str
-
-
-@dataclass
-class Lambda(Expr):
-    arg_names: list[str]
-    body: Expr
-    pos: Pos = DEFAULT_POS
-    name: str | None = field(default_factory=lambda: None, repr=False)
-    curry: dict[str, Expr] = field(default_factory=lambda: {}, repr=False)
-    tree: bytes = field(default_factory=lambda: b"", repr=False)
-
-
-@dataclass
-class Constant(Expr):
-    name: str
-    value: str
-    pos: Pos = DEFAULT_POS
-
-
-@dataclass
-class Conditional(Expr):
-    test: Expr
-    then_body: Expr
-    else_body: Expr
-    pos: Pos = DEFAULT_POS
-
-
-@dataclass
-class Call(Expr):
-    func: Expr
-    args: list[Expr]
-    pos: Pos = DEFAULT_POS
 
 
 grammar = importlib.resources.read_text("numfu", "grammar/numfu.lark")
