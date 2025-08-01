@@ -1,4 +1,4 @@
-?start: expr*
+start: (expr ";"?)*
 ?expr: pipe_expr
 ?pipe_expr: compose_expr | pipe_expr (PIPE compose_expr) -> pipe_chain
 ?compose_expr: logic_or | compose_expr (COMPOSE logic_or) -> compose_chain
