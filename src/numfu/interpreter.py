@@ -88,18 +88,17 @@ class Interpreter:
                 )
 
         func = self._eval(this.func, env=env)
-        args = [self._eval(arg, env=env) for arg in this.args]
+        resolved_args = self._resolve_spread(this.args, env=env)
+        args = [self._eval(arg, env=env) for arg in resolved_args]
 
         if isinstance(func, BuiltinFunc):
-            _args = [self._eval(arg, env=env) for arg in args]
-            _args = self._resolve_spread(_args, env=env)
-            if len(_args) != func.num_args:
+            if len(args) != func.num_args:
                 self.exception(
                     nValueError,
-                    f"Wrong number of arguments for '{func.name}': {len(_args)} != {func.num_args}",
+                    f"Wrong number of arguments for '{func.name}': {len(args)} != {func.num_args}",
                     pos=this.pos,
                 )
-            for arg in _args:
+            for arg in args:
                 try:
                     check_type(arg, func.args)
                 except TypeCheckError:
@@ -108,13 +107,12 @@ class Interpreter:
                         f"Invalid argument type '{type(arg).__name__}' for '{func.name}'",
                         pos=this.pos,
                     )
-            return func(*_args)
+            return func(*args)
         elif isinstance(func, Lambda):
             return self._lambda(func, args, env=env)
         elif isinstance(func, List):
             # List indexing
-            _args = [self._eval(arg, env=env) for arg in args]
-            for i, arg in enumerate(_args):
+            for i, arg in enumerate(args):
                 if not isinstance(arg, mpmath.mpf):
                     self.exception(
                         nTypeError,
@@ -129,21 +127,21 @@ class Interpreter:
                             pos=this.pos,
                         )
                     else:
-                        _args[i] = int(arg)  # type: ignore
-            if not _args:
+                        args[i] = int(arg)  # type: ignore
+            if not args:
                 self.exception(
                     nValueError,
                     "Invalid list index",
                     pos=this.pos,
                 )
-            if _args[0] >= len(func.elements):  # type: ignore
+            if args[0] >= len(func.elements):  # type: ignore
                 self.exception(
                     nIndexError,
                     "List index out of range",
                     pos=this.pos,
                 )
 
-            return self._eval(func.elements[_args[0]], env=func.curry)  # type: ignore
+            return self._eval(func.elements[args[0]], env=func.curry)  # type: ignore
         else:
             self.exception(
                 nTypeError, f"{type(func).__name__} is not callable", pos=this.pos
@@ -189,6 +187,7 @@ class Interpreter:
         # merge curried environment
         new_env.update(this.curry)
 
+        # more arguments than parameters
         if len(args) > len(this.arg_names):
             # apply all parameters and call the result with remaining args
             filled_env = new_env.copy()
