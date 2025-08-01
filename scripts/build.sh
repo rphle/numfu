@@ -9,6 +9,7 @@ fi
 
 numfu ast src/numfu/stdlib/builtins.nfu -o src/numfu/stdlib/builtins.nfut --imports []
 
+pip install -e .
 pip wheel . -w wheels
 
 # rm src/numfu/stdlib/*.nfut
