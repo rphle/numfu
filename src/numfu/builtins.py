@@ -30,11 +30,13 @@ class BuiltinFunc:
         func: Callable,
         args: type | UnionType | Any,
         returns: type,
+        num_args: int = 1,
         name: str | None = None,
     ):
         self.func = func
         self.args = args
         self.returns = returns
+        self.num_args = num_args
         self.name = name if name is not None else func.__name__
 
     def __call__(self, *args, **kwargs):
@@ -45,12 +47,24 @@ def _mpf2mpf(x, n: str | None = None):
     return BuiltinFunc(x, mpm.mpf, mpm.mpf, name=n)
 
 
+def _2mpf2mpf(x, n: str | None = None):
+    return BuiltinFunc(x, mpm.mpf, mpm.mpf, num_args=2, name=n)
+
+
 def _mpf2bool(x, n: str | None = None):
     return BuiltinFunc(x, mpm.mpf, bool, name=n)
 
 
+def _2mpf2bool(x, n: str | None = None):
+    return BuiltinFunc(x, mpm.mpf, bool, num_args=2, name=n)
+
+
 def _any2bool(x, n: str | None = None):
     return BuiltinFunc(x, Any, bool, name=n)
+
+
+def _2any2bool(x, n: str | None = None):
+    return BuiltinFunc(x, Any, bool, num_args=2, name=n)
 
 
 @dataclass
@@ -60,25 +74,25 @@ class Builtins:
     e = mpm.e
 
     # Arithmetic
-    _add = _mpf2mpf(mpm.fadd, n="+")
-    _sub = _mpf2mpf(
+    _add = _2mpf2mpf(mpm.fadd, n="+")
+    _sub = _2mpf2mpf(
         lambda a, b=None: mpm.fsub(0, a) if b is None else mpm.fsub(a, b), n="-"
     )
-    _mul = _mpf2mpf(mpm.fmul, n="*")
-    _div = _mpf2mpf(mpm.fdiv, n="/")
-    _mod = _mpf2mpf(mpm.fmod, n="%")
-    _pow = _mpf2mpf(mpm.power, n="^")
+    _mul = _2mpf2mpf(mpm.fmul, n="*")
+    _div = _2mpf2mpf(mpm.fdiv, n="/")
+    _mod = _2mpf2mpf(mpm.fmod, n="%")
+    _pow = _2mpf2mpf(mpm.power, n="^")
 
     # Logic
-    _and = _any2bool(lambda a, b: bool(a) and bool(b), n="&&")
-    _or = _any2bool(lambda a, b: bool(a) or bool(b), n="||")
+    _and = _2any2bool(lambda a, b: bool(a) and bool(b), n="&&")
+    _or = _2any2bool(lambda a, b: bool(a) or bool(b), n="||")
     _not = _any2bool(lambda a: not bool(a), n="!")
-    _eq = _any2bool(operator.eq, n="==")
-    _ne = _any2bool(operator.ne, n="!=")
+    _eq = _2any2bool(operator.eq, n="==")
+    _ne = _2any2bool(operator.ne, n="!=")
 
     # Comparison
     _gt, _lt, _ge, _le = map(
-        lambda x: _mpf2bool(
+        lambda x: _2mpf2bool(
             x,
             n={"gt": ">", "lt": "<", "ge": ">=", "le": "<="}[x.__name__],
         ),
@@ -94,7 +108,8 @@ class Builtins:
     asinh, acosh, atanh = map(_mpf2mpf, (mpm.asinh, mpm.acosh, mpm.atanh))
 
     # Exponential & Log
-    exp, log, log10, sqrt = map(_mpf2mpf, (mpm.exp, mpm.log, mpm.log10, mpm.sqrt))
+    exp, log10, sqrt = map(_mpf2mpf, (mpm.exp, mpm.log10, mpm.sqrt))
+    log = _2mpf2mpf(mpm.log, n="log")
 
     # Rounding / Sign
     ceil, floor, sign = map(_mpf2mpf, (mpm.ceil, mpm.floor, mpm.sign))

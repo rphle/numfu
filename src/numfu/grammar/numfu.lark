@@ -14,7 +14,7 @@ start: (expr ";"?)*
 
 ?index: call | index "[" expr "]" -> index_op
 ?call: atom | call call_args
-call_args: "[" [expr ("," expr)*] "]"
+call_args: "[" [list_element ("," list_element)*] "]"
 
 ?atom: BOOLEAN       -> boolean
      | NUMBER        -> number
@@ -26,7 +26,8 @@ call_args: "[" [expr ("," expr)*] "]"
      | constant_def
      | list_literal
 
-list_literal: "[" [expr ("," expr)*] "]"
+list_literal: "[" [list_element ("," list_element)*] "]"
+list_element: SPREAD expr -> spread_op | expr
 lambda_def: "(" (NAME ":")? lambda_params "->" expr ")"
 lambda_params: (NAME ("," NAME)*)?
 conditional: "if" expr "then" expr "else" expr
@@ -51,6 +52,7 @@ AND: "&&"
 OR: "||"
 PIPE: "|>"
 COMPOSE: ">>"
+SPREAD: "..."
 
 BOOLEAN.2: "true" | "false"
 NUMBER: /((0|[1-9][\d_]*)(\.[\d_]+)?|\.[\d_]+)([eE][+-]?[\d_]+)?/

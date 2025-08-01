@@ -23,6 +23,7 @@ from .parser import (
     List,
     Number,
     Pos,
+    Spread,
     Variable,
 )
 
@@ -91,6 +92,13 @@ class Interpreter:
 
         if isinstance(func, BuiltinFunc):
             _args = [self._eval(arg, env=env) for arg in args]
+            _args = self._resolve_spread(_args, env=env)
+            if len(_args) != func.num_args:
+                self.exception(
+                    nValueError,
+                    f"Wrong number of arguments for '{func.name}': {len(_args)} != {func.num_args}",
+                    pos=this.pos,
+                )
             for arg in _args:
                 try:
                     check_type(arg, func.args)
@@ -101,6 +109,8 @@ class Interpreter:
                         pos=this.pos,
                     )
             return func(*_args)
+        elif isinstance(func, Lambda):
+            return self._lambda(func, args, env=env)
         elif isinstance(func, List):
             # List indexing
             _args = [self._eval(arg, env=env) for arg in args]
@@ -134,22 +144,36 @@ class Interpreter:
                 )
 
             return self._eval(func.elements[_args[0]], env=func.curry)  # type: ignore
-        elif not isinstance(func, Lambda):
+        else:
             self.exception(
                 nTypeError, f"{type(func).__name__} is not callable", pos=this.pos
             )
-        else:
-            if len(args) != len(func.arg_names):
-                self.exception(
-                    nValueError,
-                    f"Wrong number of arguments for '{func.name if func.name else ', '.join(func.arg_names) + '-> ...'}': {len(args)} != {len(func.arg_names)}",
-                    pos=this.pos,
-                )
 
-            return self._lambda(func, args, env=env)
+    def _resolve_spread(self, _elements, env={}):
+        elements = []
+        for i, element in enumerate(_elements):
+            if isinstance(element, Spread):
+                lst = self._eval(element.expr, env=env)
+                if not isinstance(lst, List):
+                    self.exception(
+                        nTypeError,
+                        f"Type '{type(lst).__name__}' is not iterable",
+                        pos=element.pos,
+                    )
+                else:
+                    elements.extend(
+                        [self._eval(item, env=env) for item in lst.elements]
+                    )
+            else:
+                elements.append(element)
+        return elements
 
     def _list(self, this: List, env: dict = {}):
         this.curry = env.copy()
+        this.elements = self._resolve_spread(this.elements, env=env)
+        return this
+
+    def _spread(self, this: Spread, env: dict = {}):
         return this
 
     def _conditional(self, this: Conditional, env: dict = {}):
@@ -162,11 +186,67 @@ class Interpreter:
         if this.name:
             new_env[this.name] = this
 
+        # merge curried environment
         new_env.update(this.curry)
 
-        new_env.update(zip(this.arg_names, args))
+        if len(args) > len(this.arg_names):
+            # apply all parameters and call the result with remaining args
+            filled_env = new_env.copy()
+            filled_env.update(zip(this.arg_names, args[: len(this.arg_names)]))
+            result = self._eval(this.body, env=filled_env)
 
-        return self._eval(this.body, env=new_env)
+            # if result is callable, call it with remaining args
+            if isinstance(result, (Lambda, BuiltinFunc)) or hasattr(result, "__call__"):
+                remaining_args = args[len(this.arg_names) :]
+                if isinstance(result, Lambda):
+                    return self._lambda(result, remaining_args, env=env)
+                else:
+                    # builtin function
+                    return result(*remaining_args)
+            else:
+                self.exception(
+                    nTypeError,
+                    f"Cannot apply {len(args) - len(this.arg_names)} more arguments to non-callable result",
+                    pos=this.pos,
+                )
+
+        # handle partial application
+        elif len(args) < len(this.arg_names):
+            # create a new lambda with the remaining parameters
+            remaining_params = this.arg_names[len(args) :]
+            partial_env = new_env.copy()
+            partial_env.update(zip(this.arg_names[: len(args)], args))
+
+            # create new tree for later reconstruction (delete consumed args)
+            new_tree = b""
+            if this.tree:
+                try:
+                    tree = pickle.loads(zlib.decompress(this.tree))
+                    params_i = next(
+                        i
+                        for i, c in enumerate(
+                            pickle.loads(zlib.decompress(this.tree)).children
+                        )
+                        if isinstance(c, lark.Tree) and c.data == "lambda_params"
+                    )
+                    del tree.children[params_i].children[0]
+                    tree = zlib.compress(pickle.dumps(tree))
+                except zlib.error:
+                    tree = b""
+
+            return Lambda(
+                arg_names=remaining_params,
+                body=this.body,
+                pos=this.pos,
+                name=None,
+                curry=partial_env,
+                tree=new_tree,
+            )
+
+        # exact match: apply all arguments
+        else:
+            new_env.update(zip(this.arg_names, args))
+            return self._eval(this.body, env=new_env)
 
     def _number(self, this: Number, env: dict = {}):
         return mpmath.mpf(this.value)
@@ -221,6 +301,8 @@ class Interpreter:
         self.tree = imports + self.tree
 
     def reconstruct(self, node: Lambda):
+        if not node.tree:
+            return None
         grammar = importlib.resources.read_text("numfu", "grammar/numfu.lark")
         reconstructor = lark.reconstruct.Reconstructor(
             lark.Lark(grammar, parser="lalr")

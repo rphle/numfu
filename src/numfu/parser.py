@@ -75,6 +75,12 @@ class List(Expr):
 
 
 @dataclass
+class Spread(Expr):
+    expr: Expr
+    pos: Pos = DEFAULT_POS
+
+
+@dataclass
 class Import(Expr):
     name: str
 
@@ -214,6 +220,12 @@ class AstGenerator(Transformer):
             pos=_tokpos(names[0]),
         )
 
+    def list_element(self, value):
+        return value
+
+    def spread_op(self, token, value):
+        return Spread(value, pos=Pos(token.start_pos, value.pos.end))
+
     def pipe_chain(self, *args):
         pipes = args[-2::-2]
         chain = [
@@ -301,7 +313,7 @@ class Parser:
             if isinstance(e, Lambda):
                 body = c(e.body)
                 for a in reversed(e.arg_names):
-                    body = Lambda([a], body, pos=body.pos)
+                    body = Lambda([a], body, tree=e.tree, pos=body.pos)
                 body.name = e.name
                 return body
             if isinstance(e, Call):
