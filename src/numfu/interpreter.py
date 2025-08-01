@@ -187,8 +187,11 @@ class Interpreter:
         # merge curried environment
         new_env.update(this.curry)
 
+        catch_rest = any(arg.startswith("...") for arg in this.arg_names)
+        this.arg_names = [arg.lstrip("...") for arg in this.arg_names]
+
         # more arguments than parameters
-        if len(args) > len(this.arg_names):
+        if len(args) > len(this.arg_names) and not catch_rest:
             # apply all parameters and call the result with remaining args
             filled_env = new_env.copy()
             filled_env.update(zip(this.arg_names, args[: len(this.arg_names)]))
@@ -210,7 +213,7 @@ class Interpreter:
                 )
 
         # handle partial application
-        elif len(args) < len(this.arg_names):
+        elif len(args) < len(this.arg_names) and not catch_rest:
             # create a new lambda with the remaining parameters
             remaining_params = this.arg_names[len(args) :]
             partial_env = new_env.copy()
@@ -244,7 +247,13 @@ class Interpreter:
 
         # exact match: apply all arguments
         else:
-            new_env.update(zip(this.arg_names, args))
+            if catch_rest:
+                new_env.update(
+                    zip(this.arg_names[:-1], args[: len(this.arg_names[:-1])])
+                )
+                new_env[this.arg_names[-1]] = List(args[len(this.arg_names[:-1]) :])
+            else:
+                new_env.update(zip(this.arg_names, args))
             return self._eval(this.body, env=new_env)
 
     def _number(self, this: Number, env: dict = {}):

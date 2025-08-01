@@ -125,6 +125,10 @@ class AstGenerator(Transformer):
             list(elements), pos=Pos(elements[0].pos.start - 1, elements[-1].pos.end + 1)
         )
 
+    def rest_param(self, this):
+        this.value = "..." + this.value
+        return this
+
     def lambda_def(self, tree, *args):
         name, params, body = (None, *args) if len(args) == 2 else args
         pos = (
@@ -132,7 +136,7 @@ class AstGenerator(Transformer):
             if name
             else (_tokpos(params.children[0]) if params.children else body.pos)
         )
-        arg_names = [str(t) for t in params.children]
+        arg_names = [str(t.value) for t in params.children]
         return Lambda(
             arg_names,
             body,
