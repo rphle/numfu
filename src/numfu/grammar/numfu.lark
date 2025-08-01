@@ -1,6 +1,7 @@
 ?start: expr*
-?expr: logic_or | pipe_expr
-pipe_expr: expr (PIPE call)+ -> pipe_chain
+?expr: pipe_expr
+?pipe_expr: compose_expr | pipe_expr (PIPE compose_expr) -> pipe_chain
+?compose_expr: logic_or | compose_expr (COMPOSE logic_or) -> compose_chain
 
 ?logic_or: logic_and | logic_or OR logic_and -> bin_op
 ?logic_and: comp | logic_and AND comp -> bin_op
@@ -46,6 +47,8 @@ GE: ">="
 AND: "&&"
 OR: "||"
 PIPE: "|>"
+COMPOSE: ">>"
+
 BOOLEAN.2: "true" | "false"
 NUMBER: /((0|[1-9][\d_]*)(\.[\d_]+)?|\.[\d_]+)([eE][+-]?[\d_]+)?/
 NAME.1: /[a-zA-Z_][a-zA-Z0-9_]*/
