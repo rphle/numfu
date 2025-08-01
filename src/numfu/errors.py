@@ -85,9 +85,15 @@ class Error:
                     start = max(0, _cpos.col - 30)
                     end = min(len(src), _cpos.col + 30)
 
+                    bg = (
+                        " on red"
+                        if src[_cpos.col - 1 : _cpos.end_col - 1].strip() == ""
+                        else ""
+                    )
+
                     highlighted = (
                         f"{escape(src[start:_cpos.col-1])}"
-                        f"[red]{escape(src[_cpos.col-1:_cpos.end_col-1])}[/red]"
+                        f"[red{bg}]{escape(src[_cpos.col-1:_cpos.end_col-1])}{" " if bg else ""}[/red{bg}]"
                         f"{escape(src[_cpos.end_col-1:end])}"
                     )
                     prefix = "..." if start > 0 else ""
@@ -139,7 +145,8 @@ class LarkError(nSyntaxError):
         self.code = code
 
         token = " "
-        unexpected = True
+        line, col = None, None
+        uncaught = True
         if (
             m1 := re.search(
                 r"Unexpected token Token\('[^']*', '[^']*'\) at line (\d+), column (\d+)\.\nExpected one of:",
@@ -150,30 +157,31 @@ class LarkError(nSyntaxError):
             try:
                 expected = [f"'[bold]{self.tokens[token]}[/bold]'" for token in m2]
                 message = f"Expected {'one of ' if len(expected) > 1 else ''}{', '.join(expected)}"
-                unexpected = False
+                uncaught = False
             except KeyError:
                 pass
 
-        if (
-            m := re.search(
-                r"No terminal matches '(.+)' in the current parser context, at line (\d+) col (\d+)",
-                message,
-            )
-            or re.search(
-                r"Unexpected token Token\('.+', '(.+)'\) at line (\d+), column (\d+)",
-                message,
-            )
-        ) and unexpected:
-            token, line, col = m.group(1), int(m.group(2)), int(m.group(3))
-            message = f"Unexpected token '{token}'"
-        else:
-            super().__init__(message, file=file)
-            return
+        if uncaught:
+            if (
+                m := re.search(
+                    r"No terminal matches '(.+)' in the current parser context, at line (\d+) col (\d+)",
+                    message,
+                )
+                or re.search(
+                    r"Unexpected token Token\('.+', '(.+)'\) at line (\d+), column (\d+)",
+                    message,
+                )
+            ) and uncaught:
+                token, line, col = m.group(1), int(m.group(2)), int(m.group(3))
+                message = f"Unexpected token '{token}'"
+            else:
+                super().__init__(message, file=file)
+                return
 
         super().__init__(
             message,
             file=file,
             code=code,
             name="SyntaxError",
-            pos=CPos(line, col, line, col + len(token)),
+            pos=CPos(line, col, line, col + len(token)) if line and col else None,
         )
