@@ -8,7 +8,7 @@ version = "0.1"
 description = "Parser and interpreter for the NumFu programming language"
 authors = [{ name = "Raphael Engel", email = "hello@alpharee.de" }]
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.13"
 dependencies = [
     "click==8.2.1",
     "lark==1.2.2",
