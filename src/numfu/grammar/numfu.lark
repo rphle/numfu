@@ -10,8 +10,9 @@ start: (expr ";"?)*
 ?arith: term | arith (ADD | SUB) term -> bin_op
 ?term: factor | term (MUL | DIV | MOD) factor -> bin_op
 ?factor: power | ADD factor -> pos | SUB factor -> neg | NOT factor -> not_op
-?power: call | call POW power -> bin_op
+?power: index | index POW power -> bin_op
 
+?index: call | index "[" expr "]" -> index_op
 ?call: atom | call call_args
 call_args: "[" [expr ("," expr)*] "]"
 
@@ -23,7 +24,9 @@ call_args: "[" [expr ("," expr)*] "]"
      | conditional
      | let_binding
      | constant_def
+     | list_literal
 
+list_literal: "[" [expr ("," expr)*] "]"
 lambda_def: "(" (NAME ":")? lambda_params "->" expr ")"
 lambda_params: (NAME ("," NAME)*)?
 conditional: "if" expr "then" expr "else" expr

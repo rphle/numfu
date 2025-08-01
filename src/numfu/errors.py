@@ -119,6 +119,10 @@ class nNameError(Error):
     pass
 
 
+class nIndexError(Error):
+    pass
+
+
 class LarkError(nSyntaxError):
     tokens = {
         "RPAR": ")",

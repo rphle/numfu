@@ -54,11 +54,24 @@ class Number(Expr):
     value: str
     pos: Pos = DEFAULT_POS
 
+    def __repr__(self):
+        return self.value.removesuffix(".0")
+
 
 @dataclass
 class Bool(Expr):
     value: bool
     pos: Pos = DEFAULT_POS
+
+    def __repr__(self):
+        return "true" if self.value else "false"
+
+
+@dataclass
+class List(Expr):
+    elements: list[Expr]
+    pos: Pos = DEFAULT_POS
+    curry: dict[str, Expr] = field(default_factory=lambda: {}, repr=False)
 
 
 @dataclass
@@ -168,6 +181,13 @@ class AstGenerator(Transformer):
     def boolean(self, n):
         return Bool(str(n) == "true", pos=_tokpos(n))
 
+    def list_literal(self, *elements):
+        if not elements:
+            return List([], pos=Pos(0, 0))
+        return List(
+            list(elements), pos=Pos(elements[0].pos.start - 1, elements[-1].pos.end + 1)
+        )
+
     def lambda_def(self, tree, *args):
         name, params, body = (None, *args) if len(args) == 2 else args
         pos = (
@@ -227,7 +247,7 @@ class AstGenerator(Transformer):
                 args[-1].pos.end + 1,
             )
             if args
-            else Pos(func.pos.end + 1, func.pos.end + 3),
+            else Pos(func.pos.end, func.pos.end + 2),
         )
 
     def call_args(self, *args):

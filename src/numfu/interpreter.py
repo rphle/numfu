@@ -11,7 +11,7 @@ import mpmath
 from typeguard import TypeCheckError, check_type
 
 from .builtins import BuiltinFunc, Builtins, Operators
-from .errors import nNameError, nSyntaxError, nTypeError, nValueError
+from .errors import nIndexError, nNameError, nSyntaxError, nTypeError, nValueError
 from .parser import (
     Bool,
     Call,
@@ -20,6 +20,7 @@ from .parser import (
     Expr,
     Import,
     Lambda,
+    List,
     Number,
     Pos,
     Variable,
@@ -100,6 +101,39 @@ class Interpreter:
                         pos=this.pos,
                     )
             return func(*_args)
+        elif isinstance(func, List):
+            # List indexing
+            _args = [self._eval(arg, env=env) for arg in args]
+            for i, arg in enumerate(_args):
+                if not isinstance(arg, mpmath.mpf):
+                    self.exception(
+                        nTypeError,
+                        f"List index must be an integer, not '{type(arg).__name__}'",
+                        pos=this.pos,
+                    )
+                elif isinstance(arg, mpmath.mpf):
+                    if arg % 1 != 0:  # type: ignore
+                        self.exception(
+                            nTypeError,
+                            "List index must be an integer, not a floating-point number",
+                            pos=this.pos,
+                        )
+                    else:
+                        _args[i] = int(arg)  # type: ignore
+            if not _args:
+                self.exception(
+                    nValueError,
+                    "Invalid list index",
+                    pos=this.pos,
+                )
+            if _args[0] >= len(func.elements):  # type: ignore
+                self.exception(
+                    nIndexError,
+                    "List index out of range",
+                    pos=this.pos,
+                )
+
+            return self._eval(func.elements[_args[0]], env=func.curry)  # type: ignore
         elif not isinstance(func, Lambda):
             self.exception(
                 nTypeError, f"{type(func).__name__} is not callable", pos=this.pos
@@ -113,6 +147,10 @@ class Interpreter:
                 )
 
             return self._lambda(func, args, env=env)
+
+    def _list(self, this: List, env: dict = {}):
+        this.curry = env.copy()
+        return this
 
     def _conditional(self, this: Conditional, env: dict = {}):
         condition = self._eval(this.test, env=env)
@@ -208,7 +246,7 @@ class Interpreter:
         tree = Resolver().transform(tree)
         return reconstructor.reconstruct(tree)
 
-    def get_repr(self, output: list[Number | Bool]):
+    def get_repr(self, output: list[Number | Bool | List]):
         o = []
         for node in output:
             if isinstance(node, Number):
@@ -217,6 +255,17 @@ class Interpreter:
                 o.append("true" if node.value else "false")
             elif isinstance(node, Lambda):
                 o.append(self.reconstruct(node))
+            elif isinstance(node, List):
+                elements = [
+                    self._eval(arg, env=node.curry)  # type: ignore
+                    for arg in node.elements
+                ]
+                for i, res in enumerate(elements):
+                    if isinstance(res, mpmath.mpf):
+                        elements[i] = Number(mpmath.nstr(res, self.precision))
+                    elif isinstance(res, bool):
+                        elements[i] = Bool(res)
+                o.append(elements)
             else:
                 o.append(str(node))
         return o
