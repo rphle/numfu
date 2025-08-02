@@ -4,7 +4,7 @@ from typing import Any, get_args
 
 import mpmath as mpm
 
-from .errors import Pos, nTypeError
+from .errors import ErrorMeta, Pos, nTypeError
 
 
 def type_matches(val, typ):
@@ -52,6 +52,7 @@ class Validators:
 class BuiltinFunc:
     def __init__(self, name):
         self.name = name
+        self.is_operator = len(self.name) == 1
         self._overloads = []
         self._errors = []
 
@@ -62,8 +63,29 @@ class BuiltinFunc:
     def error(self, arg_types, error: str):
         self._errors.append((arg_types, error))
 
-    def __call__(self, *args, args_pos: Pos | None = None, func_pos: Pos | None = None):
+    def exception(
+        self,
+        message: str,
+        errormeta: ErrorMeta,
+        args_pos: Pos | None = None,
+        func_pos: Pos | None = None,
+    ):
+        nTypeError(
+            message,
+            func_pos if self.is_operator else args_pos,
+            errormeta=errormeta,
+        )
+
+    def __call__(
+        self,
+        *args,
+        errormeta: ErrorMeta = ErrorMeta(),
+        args_pos: Pos | None = None,
+        func_pos: Pos | None = None,
+    ):
+        errormeta.fatal = True
         errors = []
+
         for arg_types, _, func, validators in self._overloads:
             if len(args) != len(arg_types):
                 continue
@@ -72,11 +94,16 @@ class BuiltinFunc:
                 if validators and validators[i] and not validators[i](arg):
                     v = validators[i]
                     doc = (getattr(v, "__doc__", "") or "").strip()
-                    nTypeError(doc.format(i + 1), __file__, func_pos)
+                    self.exception(
+                        doc.format(i + 1),
+                        errormeta=errormeta,
+                        func_pos=func_pos,
+                        args_pos=args_pos,
+                    )
 
                 if not type_matches(arg, typ):
                     errors.append(
-                        f"Invalid argument type for {'operator ' if len(self.name) == 1 else ''}'{self.name}': "
+                        f"Invalid argument type for {'operator ' if self.is_operator else ''}'{self.name}': "
                         f"argument {i+1} must be {type_name(typ)}, got {type_name(arg)}"
                     )
                     break
@@ -86,12 +113,19 @@ class BuiltinFunc:
 
         for arg_types, message in self._errors:
             if all(type_matches(arg, typ) for arg, typ in zip(args, arg_types)):
-                raise TypeError(message)
+                self.exception(
+                    message, errormeta=errormeta, func_pos=func_pos, args_pos=args_pos
+                )
 
         if errors:
-            raise TypeError(errors[-1])
+            self.exception(
+                errors[-1], errormeta=errormeta, func_pos=func_pos, args_pos=args_pos
+            )
 
         expected_count = len(self._overloads[0][0]) if self._overloads else 0
-        raise TypeError(
-            f"'{self.name}' expected {expected_count} argument{'s' if expected_count != 1 else ''}, got {len(args)}"
+        self.exception(
+            f"'{self.name}' expected {expected_count} argument{'s' if expected_count != 1 else ''}, got {len(args)}",
+            errormeta=errormeta,
+            func_pos=func_pos,
+            args_pos=args_pos,
         )

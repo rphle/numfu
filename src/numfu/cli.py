@@ -3,6 +3,7 @@ from pathlib import Path
 
 import click
 
+from .errors import ErrorMeta
 from .interpreter import Interpreter
 from .parser import Parser
 from .repl import REPL
@@ -118,7 +119,11 @@ def ast(source, output, imports, max_depth, indent, curry):
         )
     code = source_path.read_text()
     repl = REPL(
-        imports=imports, max_depth=max_depth, indent=indent, curry=curry, fatal=False
+        imports=imports,
+        max_depth=max_depth,
+        indent=indent,
+        curry=curry,
+        errormeta=ErrorMeta(file=source_path, code=code, fatal=True),
     )
     tree, _ = repl.print_ast(code, file_name=source_path, actually_print=not output)
 
@@ -150,14 +155,13 @@ def repl(ctx, precision, rec_depth):
     if ctx.invoked_subcommand is None:
         # Default to evaluation REPL
         def _interpret(code):
-            parser = Parser(fatal=False)
-            tree = parser.parse(code, file="REPL")
+            errormeta = ErrorMeta(file="REPL", code=code, fatal=False)
+            parser = Parser(errormeta)
+            tree = parser.parse(code)
             if tree is None:
                 return
 
-            output = Interpreter(
-                tree, precision, rec_depth, file_name="REPL", fatal=False, code=code
-            ).run()
+            output = Interpreter(tree, precision, rec_depth, errormeta=errormeta).run()
 
             for o in (o for o in output if o is not None):
                 print(o)
@@ -189,7 +193,7 @@ def repl(ctx, precision, rec_depth):
 )
 def repl_ast(max_depth, indent, curry):
     """Start the interactive AST REPL."""
-    repl = REPL(max_depth=max_depth, indent=indent, curry=curry, fatal=False)
+    repl = REPL(max_depth=max_depth, indent=indent, curry=curry)
     repl.start(
         repl.print_ast, intro="NumFu AST REPL. Type 'exit' or press Ctrl+D to exit."
     )
@@ -198,15 +202,15 @@ def repl_ast(max_depth, indent, curry):
 def run_file(source, precision, rec_depth, curry):
     source_path = Path(source)
     code = source_path.read_text()
-    parser = Parser()
-    tree = parser.parse(code, file=source_path, curry=curry)
+    errormeta = ErrorMeta(file=source_path, code=code, fatal=True)
+
+    parser = Parser(errormeta)
+    tree = parser.parse(code, curry=curry)
 
     if tree is None:
         return
 
-    output = Interpreter(
-        tree, precision, rec_depth, file_name=source_path, code=code
-    ).run()
+    output = Interpreter(tree, precision, rec_depth, errormeta=errormeta).run()
 
     for o in (o for o in output if o is not None):
         print(o)

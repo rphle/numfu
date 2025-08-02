@@ -2,7 +2,7 @@ import importlib.resources
 import pickle
 import sys
 import zlib
-from pathlib import Path
+from copy import deepcopy
 from typing import Any
 
 import lark
@@ -26,7 +26,7 @@ from .ast_types import (
     Variable,
 )
 from .builtins import Builtins
-from .errors import nIndexError, nNameError, nSyntaxError, nTypeError
+from .errors import ErrorMeta, nIndexError, nNameError, nSyntaxError, nTypeError
 from .typechecks import BuiltinFunc, type_name
 
 
@@ -36,20 +36,16 @@ class Interpreter:
         tree: list[Expr],
         precision: int = 20,
         rec_depth: int = 10000,
-        file_name: str | Path = "",
         repr=True,
-        fatal: bool = True,
-        code: str = "",
+        errormeta: ErrorMeta = ErrorMeta(),
     ):
         sys.setrecursionlimit(rec_depth)
         mpmath.mp.dps = precision
 
         self.tree: list[Expr] = tree
         self.precision = precision
-        self.file_name = file_name
         self.repr = repr
-        self.fatal = fatal
-        self.code = code
+        self.errormeta = errormeta
 
         self.resolve_imports()
         self.glob: dict[Any, Any] = {
@@ -59,8 +55,7 @@ class Interpreter:
         }
 
     def exception(self, error, message, pos: Pos = Pos(-1, -1)) -> None:
-        error(message, self.file_name, pos=pos, code=self.code)
-        sys.exit(1)
+        error(message, pos=pos, errormeta=self.errormeta)
 
     def _variable(self, this: Variable, env: dict = {}) -> Expr | None:
         try:
@@ -94,7 +89,12 @@ class Interpreter:
         args = [self._eval(arg, env=env) for arg in resolved_args]
 
         if isinstance(func, BuiltinFunc):
-            return func(*args)
+            return func(
+                *args,
+                errormeta=deepcopy(self.errormeta),
+                args_pos=this.pos,
+                func_pos=this.func.pos,  # type: ignore
+            )
         elif isinstance(func, Lambda):
             return self._lambda(func, args, call_pos=this.pos, env=env)
         else:
@@ -386,6 +386,6 @@ class Interpreter:
 
             return r
         except SystemExit:
-            if self.fatal:
+            if self.errormeta.fatal:
                 sys.exit(1)
             return []

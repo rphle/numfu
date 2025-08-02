@@ -8,6 +8,7 @@ from prompt_toolkit.history import FileHistory
 from prompt_toolkit.output.color_depth import ColorDepth
 from prompt_toolkit.styles import Style
 
+from .errors import ErrorMeta
 from .parser import Expr, Parser
 
 
@@ -19,14 +20,13 @@ class REPL:
         max_depth=10,
         indent=2,
         curry=False,
-        fatal=False,
+        errormeta: ErrorMeta = ErrorMeta(file="REPL", fatal=False),
     ):
         self.history_path = Path(history_path)
         self.max_depth = max_depth
         self.indent = indent
         self.curry = curry
-        self.fatal = fatal
-        self.parser = Parser(fatal=fatal, imports=imports)
+        self.parser = Parser(errormeta=errormeta, imports=imports)
 
     def print_ast(
         self,
@@ -36,7 +36,7 @@ class REPL:
         actually_print=True,
     ) -> tuple[Expr | list[Expr] | None, rich.pretty.Pretty | None]:
         if tree is None:
-            tree = self.parser.parse(code, file=file_name, curry=self.curry)
+            tree = self.parser.parse(code, curry=self.curry)
         if tree is None:
             return (None, None)
 

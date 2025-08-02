@@ -6,9 +6,7 @@ import codecs
 import importlib.resources
 import pickle
 import re
-import sys
 import zlib
-from pathlib import Path
 
 from lark import Lark, Token, Transformer, Tree, v_args
 
@@ -27,7 +25,7 @@ from .ast_types import (
     String,
     Variable,
 )
-from .errors import LarkError, Pos
+from .errors import ErrorMeta, LarkError, Pos
 
 OPERATORS = [
     "+",
@@ -231,11 +229,15 @@ class AstGenerator(Transformer):
 
 
 class Parser:
-    def __init__(self, fatal=True, imports: list[str] = ["builtins"]):
+    def __init__(
+        self,
+        errormeta: ErrorMeta = ErrorMeta(),
+        imports: list[str] = ["builtins"],
+    ):
         self.parser = Lark(grammar, parser="lalr")
         self.lambda_preprocessor = LambdaPreprocessor()
         self.generator = AstGenerator()
-        self.fatal = fatal
+        self.errormeta = errormeta
         self.imports = imports
 
     def _imports(self, code: str) -> tuple[str, list[Expr]]:
@@ -250,10 +252,9 @@ class Parser:
                 break
         return code, imports
 
-    def parse(
-        self, code: str, file: str | Path = "", curry: bool = False
-    ) -> list[Expr] | None:
+    def parse(self, code: str, curry: bool = False) -> list[Expr] | None:
         code, imports = self._imports(code)
+        self.errormeta.code = code
         try:
             parse_tree = self.parser.parse(code)
             parse_tree = self.lambda_preprocessor.transform(parse_tree)
@@ -264,9 +265,7 @@ class Parser:
                 ast_tree = self.curry(ast_tree)
 
         except Exception as e:
-            LarkError(str(e), code=code, file=file)
-            if self.fatal:
-                sys.exit(1)
+            LarkError(str(e), self.errormeta)
             return None
 
         ast_tree = imports + ast_tree

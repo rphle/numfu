@@ -1,4 +1,5 @@
 import re
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -13,6 +14,13 @@ console = Console(theme=Theme({"blue": "#39bae5", "red": "#ef7177"}))
 class Pos:
     start: int | None = 0
     end: int | None = 1
+
+
+@dataclass
+class ErrorMeta:
+    file: str | Path = "unknown"
+    code: str = ""
+    fatal: bool = True
 
 
 class CPos:
@@ -54,36 +62,37 @@ class Error:
     def __init__(
         self,
         message,
-        file: str | Path = "",
         pos: Pos | CPos | None = None,
-        code="",
+        errormeta: ErrorMeta = ErrorMeta(),
         name=None,
     ):
         if pos is None:
             cpos = None
         elif isinstance(pos, Pos):
-            cpos = CPos.frompos(pos, code)
+            cpos = CPos.frompos(pos, errormeta.code)
         elif isinstance(pos, CPos):
             cpos = pos
         else:
             raise TypeError(f"Invalid position type: {type(pos)}")
 
         console.print(
-            f"[reset][at [blue]{file or 'unknown'}[/blue]:{cpos.line if cpos else '?'}:{cpos.col if cpos else '?'}]"
+            f"[reset][at [blue]{errormeta.file or 'unknown'}[/blue]:{cpos.line if cpos else '?'}:{cpos.col if cpos else '?'}]"
         )
         if cpos is not None:
-            if code and 0 < cpos.end_line <= len(code.splitlines()):
+            if errormeta.code and 0 < cpos.end_line <= len(errormeta.code.splitlines()):
                 for _cpos in cpos.split():
                     _cpos.end_line = (
-                        _cpos.end_line if _cpos.end_line > 0 else len(code.splitlines())
+                        _cpos.end_line
+                        if _cpos.end_line > 0
+                        else len(errormeta.code.splitlines())
                     )
                     _cpos.end_col = (
                         _cpos.end_col
                         if _cpos.end_col > 0
-                        else len(code.splitlines()[_cpos.line - 1]) + 1
+                        else len(errormeta.code.splitlines()[_cpos.line - 1]) + 1
                     )
 
-                    src = code.splitlines()[_cpos.line - 1]
+                    src = errormeta.code.splitlines()[_cpos.line - 1]
                     start = max(0, _cpos.col - 30)
                     end = min(len(src), _cpos.col + 30)
 
@@ -109,6 +118,9 @@ class Error:
         console.print(
             f"[bold blue]{name or self.__class__.__name__.removeprefix("n")}[/blue bold]: [blue]{message}[/blue]"
         )
+
+        if errormeta.fatal:
+            sys.exit(1)
 
 
 class nSyntaxError(Error):
@@ -142,9 +154,8 @@ class LarkError(nSyntaxError):
         "ELSE": "else",
     }
 
-    def __init__(self, message: str, code: str = "", file: str | Path = ""):
+    def __init__(self, message: str, errormeta: ErrorMeta = ErrorMeta()):
         self.message = message
-        self.code = code
 
         token = " "
         line, col = None, None
@@ -177,13 +188,12 @@ class LarkError(nSyntaxError):
                 token, line, col = m.group(1), int(m.group(2)), int(m.group(3))
                 message = f"Unexpected token '{token}'"
             else:
-                super().__init__(message, file=file)
+                super().__init__(message, errormeta=errormeta)
                 return
 
         super().__init__(
             message,
-            file=file,
-            code=code,
+            errormeta=errormeta,
             name="SyntaxError",
             pos=CPos(line, col, line, col + len(token)) if line and col else None,
         )
