@@ -92,10 +92,10 @@ class Interpreter:
         args = [self._eval(arg, env=env) for arg in resolved_args]
 
         if isinstance(func, BuiltinFunc):
-            if len(args) != func.num_args:
+            if not any(len(args) == n for n in func.num_args):
                 self.exception(
                     nValueError,
-                    f"Wrong number of arguments for '{func.name}': {len(args)} != {func.num_args}",
+                    f"Wrong number of arguments for '{func.name}': {len(args)} != {func.num_args[0]}",
                     pos=this.pos,
                 )
             for arg in args:
@@ -188,18 +188,18 @@ class Interpreter:
         new_env.update(this.curry)
 
         catch_rest = any(arg.startswith("...") for arg in this.arg_names)
-        this.arg_names = [arg.lstrip("...") for arg in this.arg_names]
+        arg_names = [arg.lstrip("...") for arg in this.arg_names.copy()]
 
         # more arguments than parameters
-        if len(args) > len(this.arg_names) and not catch_rest:
+        if len(args) > len(arg_names) and not catch_rest:
             # apply all parameters and call the result with remaining args
             filled_env = new_env.copy()
-            filled_env.update(zip(this.arg_names, args[: len(this.arg_names)]))
+            filled_env.update(zip(arg_names, args[: len(arg_names)]))
             result = self._eval(this.body, env=filled_env)
 
             # if result is callable, call it with remaining args
             if isinstance(result, (Lambda, BuiltinFunc)) or hasattr(result, "__call__"):
-                remaining_args = args[len(this.arg_names) :]
+                remaining_args = args[len(arg_names) :]
                 if isinstance(result, Lambda):
                     return self._lambda(result, remaining_args, env=env)
                 else:
@@ -208,16 +208,16 @@ class Interpreter:
             else:
                 self.exception(
                     nTypeError,
-                    f"Cannot apply {len(args) - len(this.arg_names)} more arguments to non-callable result",
+                    f"Cannot apply {len(args) - len(arg_names)} more arguments to non-callable result",
                     pos=this.pos,
                 )
 
         # handle partial application
-        elif len(args) < len(this.arg_names) and not catch_rest:
+        elif len(args) < len(arg_names) and not catch_rest:
             # create a new lambda with the remaining parameters
-            remaining_params = this.arg_names[len(args) :]
+            remaining_params = arg_names[len(args) :]
             partial_env = new_env.copy()
-            partial_env.update(zip(this.arg_names[: len(args)], args))
+            partial_env.update(zip(arg_names[: len(args)], args))
 
             # create new tree for later reconstruction (delete consumed args)
             tree = b""
@@ -248,12 +248,12 @@ class Interpreter:
         # exact match: apply all arguments
         else:
             if catch_rest:
-                new_env.update(
-                    zip(this.arg_names[:-1], args[: len(this.arg_names[:-1])])
-                )
-                new_env[this.arg_names[-1]] = List(args[len(this.arg_names[:-1]) :])
+                new_env.update(zip(arg_names[:-1], args[: len(arg_names[:-1])]))
+                new_env[arg_names[-1]] = List(args[len(arg_names[:-1]) :])
+                # print(new_env)
+                # sys.exit(0)
             else:
-                new_env.update(zip(this.arg_names, args))
+                new_env.update(zip(arg_names, args))
             return self._eval(this.body, env=new_env)
 
     def _number(self, this: Number, env: dict = {}):

@@ -30,13 +30,13 @@ class BuiltinFunc:
         func: Callable,
         args: type | UnionType | Any,
         returns: type,
-        num_args: int = 1,
+        num_args: int | tuple[int] = 1,
         name: str | None = None,
     ):
         self.func = func
         self.args = args
         self.returns = returns
-        self.num_args = num_args
+        self.num_args = num_args if isinstance(num_args, tuple) else (num_args,)
         self.name = name if name is not None else func.__name__
 
     def __call__(self, *args, **kwargs):
@@ -47,8 +47,8 @@ def _mpf2mpf(x, n: str | None = None):
     return BuiltinFunc(x, mpm.mpf, mpm.mpf, name=n)
 
 
-def _2mpf2mpf(x, n: str | None = None):
-    return BuiltinFunc(x, mpm.mpf, mpm.mpf, num_args=2, name=n)
+def _2mpf2mpf(x, num_args: int | tuple = 2, n: str | None = None):
+    return BuiltinFunc(x, mpm.mpf, mpm.mpf, num_args=num_args, name=n)
 
 
 def _mpf2bool(x, n: str | None = None):
@@ -76,7 +76,9 @@ class Builtins:
     # Arithmetic
     _add = _2mpf2mpf(mpm.fadd, n="+")
     _sub = _2mpf2mpf(
-        lambda a, b=None: mpm.fsub(0, a) if b is None else mpm.fsub(a, b), n="-"
+        lambda a, b=None: mpm.fsub(0, a) if b is None else mpm.fsub(a, b),
+        num_args=(1, 2),
+        n="-",
     )
     _mul = _2mpf2mpf(mpm.fmul, n="*")
     _div = _2mpf2mpf(mpm.fdiv, n="/")

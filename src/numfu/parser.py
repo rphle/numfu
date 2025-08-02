@@ -177,6 +177,22 @@ class AstGenerator(Transformer):
 
         return construct()
 
+    def compose_chain(self, *args):
+        pipes = (args[1],) + args[-2::-2]
+        chain = [
+            Variable(f.value, pos=_tokpos(f)) if isinstance(f, Token) else f
+            for f in args[::-2]
+        ] + [Spread(Variable("args"), pos=_tokpos(pipes[0]))]
+
+        def construct(i=0):
+            return (
+                Call(func=chain[i], args=[construct(i + 1)], pos=_tokpos(pipes[i]))
+                if i < len(chain) - 1
+                else chain[i]
+            )
+
+        return Lambda(arg_names=["...args"], body=construct())
+
     def constant_def(self, name, value):
         return Constant(name, value, pos=Pos(name.start_pos - 6, name.end_pos))
 
