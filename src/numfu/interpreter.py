@@ -8,7 +8,6 @@ from typing import Any
 import lark
 import lark.reconstruct
 import mpmath
-from typeguard import TypeCheckError, check_type
 
 from .ast_types import (
     Bool,
@@ -24,10 +23,10 @@ from .ast_types import (
     Pos,
     Spread,
     Variable,
-    type_repr,
 )
-from .builtins import BuiltinFunc, Builtins, Operators
-from .errors import nIndexError, nNameError, nSyntaxError, nTypeError, nValueError
+from .builtins import Builtins
+from .errors import nIndexError, nNameError, nSyntaxError, nTypeError
+from .typechecks import BuiltinFunc, type_name
 
 
 class Interpreter:
@@ -53,7 +52,7 @@ class Interpreter:
 
         self.resolve_imports()
         self.glob: dict[Any, Any] = {
-            Operators.get(name, name): v
+            v.name: v
             for name, v in Builtins.__dict__.items()
             if not name.startswith("__")
         }
@@ -94,28 +93,13 @@ class Interpreter:
         args = [self._eval(arg, env=env) for arg in resolved_args]
 
         if isinstance(func, BuiltinFunc):
-            if not any(len(args) == n for n in func.num_args):
-                self.exception(
-                    nValueError,
-                    f"Wrong number of arguments for '{func.name}': {len(args)} != {func.num_args[0]}",
-                    pos=this.pos,
-                )
-            for arg in args:
-                try:
-                    check_type(arg, func.args)
-                except TypeCheckError:
-                    self.exception(
-                        nTypeError,
-                        f"Invalid argument type '{type_repr(type(arg).__name__)}' for '{func.name}'",
-                        pos=this.pos,
-                    )
             return func(*args)
         elif isinstance(func, Lambda):
             return self._lambda(func, args, call_pos=this.pos, env=env)
         else:
             self.exception(
                 nTypeError,
-                f"{type_repr(type(func).__name__)} is not callable",
+                f"{type_name(type(func).__name__)} is not callable",
                 pos=this.pos,
             )
 
@@ -127,7 +111,7 @@ class Interpreter:
             if not isinstance(index, mpmath.mpf):
                 self.exception(
                     nTypeError,
-                    f"List index must be an integer, not '{type_repr(type(index).__name__)}'",
+                    f"List index must be an integer, not '{type_name(type(index).__name__)}'",
                     pos=this.pos,
                 )
 
@@ -153,7 +137,7 @@ class Interpreter:
         else:
             self.exception(
                 nTypeError,
-                f"'{type_repr(type(target).__name__)}' object is not subscriptable",
+                f"'{type_name(type(target).__name__)}' object is not subscriptable",
                 pos=this.pos,
             )
 
@@ -165,7 +149,7 @@ class Interpreter:
                 if not isinstance(lst, List):
                     self.exception(
                         nTypeError,
-                        f"Type '{type_repr(type(lst).__name__)}' is not iterable",
+                        f"Type '{type_name(type(lst).__name__)}' is not iterable",
                         pos=element.pos,
                     )
                 else:

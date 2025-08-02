@@ -98,8 +98,3 @@ class Index(Expr):
     target: Expr
     index: Expr
     pos: Pos = DEFAULT_POS
-
-
-def type_repr(name: str):
-    reprs = {"mpf": "number"}
-    return reprs.get(name, name)
