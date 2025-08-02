@@ -22,6 +22,7 @@ from .ast_types import (
     Number,
     Pos,
     Spread,
+    String,
     Variable,
 )
 from .builtins import Builtins
@@ -252,6 +253,9 @@ class Interpreter:
 
     def _number(self, this: Number, env: dict = {}):
         return mpmath.mpf(this.value)
+
+    def _string(self, this: String, env: dict = {}):
+        return this.value
 
     def _constant(self, this: Constant, env: dict = {}):
         self.exception(

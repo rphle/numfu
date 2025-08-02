@@ -26,6 +26,15 @@ class Number(Expr):
 
 
 @dataclass
+class String(Expr):
+    value: str
+    pos: Pos = DEFAULT_POS
+
+    def __repr__(self):
+        return f'"{self.value}"'
+
+
+@dataclass
 class Bool(Expr):
     value: bool
     pos: Pos = DEFAULT_POS

@@ -2,6 +2,7 @@
 Lark-based parser and AST generator for NumFu
 """
 
+import codecs
 import importlib.resources
 import pickle
 import re
@@ -23,6 +24,7 @@ from .ast_types import (
     List,
     Number,
     Spread,
+    String,
     Variable,
 )
 from .errors import LarkError, Pos
@@ -119,6 +121,9 @@ class AstGenerator(Transformer):
 
     def number(self, n):
         return Number(str(n), pos=_tokpos(n))
+
+    def string(self, s):
+        return String(codecs.decode(s[1:-1], "unicode_escape"), pos=_tokpos(s))
 
     def boolean(self, n):
         return Bool(str(n) == "true", pos=_tokpos(n))
