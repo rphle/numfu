@@ -64,6 +64,12 @@ class Lambda(Expr):
     curry: dict[str, Expr] = field(default_factory=lambda: {}, repr=False)
     tree: bytes = field(default_factory=lambda: b"", repr=False)
 
+    def __repr__(self):
+        fields = [f"arg_names={self.arg_names!r}", f"body={self.body!r}"]
+        if self.name is not None:
+            fields.insert(0, f"name={self.name!r}")
+        return f"Lambda({', '.join(fields)})"
+
 
 @dataclass
 class Constant(Expr):
