@@ -109,7 +109,7 @@ class Interpreter:
                     )
             return func(*args)
         elif isinstance(func, Lambda):
-            return self._lambda(func, args, env=env)
+            return self._lambda(func, args, call_pos=this.pos, env=env)
         elif isinstance(func, List):
             # List indexing
             for i, arg in enumerate(args):
@@ -176,7 +176,9 @@ class Interpreter:
         condition = self._eval(this.test, env=env)
         return self._eval(this.then_body if condition else this.else_body, env=env)
 
-    def _lambda(self, this: Lambda, args: list = [], env: dict = {}):
+    def _lambda(
+        self, this: Lambda, args: list = [], call_pos: Pos | None = None, env: dict = {}
+    ):
         new_env = env.copy()
 
         if this.name:
@@ -199,7 +201,9 @@ class Interpreter:
             if isinstance(result, (Lambda, BuiltinFunc)) or hasattr(result, "__call__"):
                 remaining_args = args[len(arg_names) :]
                 if isinstance(result, Lambda):
-                    return self._lambda(result, remaining_args, env=env)
+                    return self._lambda(
+                        result, remaining_args, call_pos=call_pos, env=env
+                    )
                 else:
                     # builtin function
                     return result(*remaining_args)
@@ -207,7 +211,7 @@ class Interpreter:
                 self.exception(
                     nTypeError,
                     f"Cannot apply {len(args) - len(arg_names)} more arguments to non-callable result",
-                    pos=this.pos,
+                    pos=call_pos if call_pos else this.pos,
                 )
 
         # handle partial application
