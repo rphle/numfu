@@ -23,6 +23,7 @@ from .ast_types import (
     Pos,
     Spread,
     Variable,
+    type_repr,
 )
 from .builtins import BuiltinFunc, Builtins, Operators
 from .errors import nIndexError, nNameError, nSyntaxError, nTypeError, nValueError
@@ -104,7 +105,7 @@ class Interpreter:
                 except TypeCheckError:
                     self.exception(
                         nTypeError,
-                        f"Invalid argument type '{type(arg).__name__}' for '{func.name}'",
+                        f"Invalid argument type '{type_repr(type(arg).__name__)}' for '{func.name}'",
                         pos=this.pos,
                     )
             return func(*args)
@@ -116,7 +117,7 @@ class Interpreter:
                 if not isinstance(arg, mpmath.mpf):
                     self.exception(
                         nTypeError,
-                        f"List index must be an integer, not '{type(arg).__name__}'",
+                        f"List index must be an integer, not '{type_repr(type(arg).__name__)}'",
                         pos=this.pos,
                     )
                 elif isinstance(arg, mpmath.mpf):
@@ -144,7 +145,9 @@ class Interpreter:
             return self._eval(func.elements[args[0]], env=func.curry)  # type: ignore
         else:
             self.exception(
-                nTypeError, f"{type(func).__name__} is not callable", pos=this.pos
+                nTypeError,
+                f"{type_repr(type(func).__name__)} is not callable",
+                pos=this.pos,
             )
 
     def _resolve_spread(self, _elements, env={}):
@@ -155,7 +158,7 @@ class Interpreter:
                 if not isinstance(lst, List):
                     self.exception(
                         nTypeError,
-                        f"Type '{type(lst).__name__}' is not iterable",
+                        f"Type '{type_repr(type(lst).__name__)}' is not iterable",
                         pos=element.pos,
                     )
                 else:
