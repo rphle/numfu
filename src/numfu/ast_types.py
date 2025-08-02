@@ -40,6 +40,9 @@ class List(Expr):
     pos: Pos = DEFAULT_POS
     curry: dict[str, Expr] = field(default_factory=lambda: {}, repr=False)
 
+    def __repr__(self):
+        return f"[{', '.join(map(str, self.elements))}]"
+
 
 @dataclass
 class Spread(Expr):

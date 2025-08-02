@@ -11,8 +11,8 @@ console = Console(theme=Theme({"blue": "#39bae5", "red": "#ef7177"}))
 
 @dataclass
 class Pos:
-    start: int = 0
-    end: int = 1
+    start: int | None = 0
+    end: int | None = 1
 
 
 class CPos:
@@ -26,6 +26,8 @@ class CPos:
 
     @classmethod
     def frompos(cls, pos: Pos, code: str):
+        if pos.start is None or pos.end is None:
+            raise ValueError("Pos.start and Pos.end must not be NOne")
         self = cls()
         self.line = code.count("\n", 0, pos.start) + 1
         self.col = pos.start - code.rfind("\n", 0, pos.start)

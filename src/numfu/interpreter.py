@@ -337,7 +337,7 @@ class Interpreter:
         tree = Resolver().transform(tree)
         return reconstructor.reconstruct(tree)
 
-    def get_repr(self, output: list[Number | Bool | List]):
+    def get_repr(self, output: list[Number | Bool | List | Lambda]):
         o = []
         for node in output:
             if isinstance(node, Number):
@@ -356,9 +356,9 @@ class Interpreter:
                         elements[i] = Number(mpmath.nstr(res, self.precision))
                     elif isinstance(res, bool):
                         elements[i] = Bool(res)
-                    elif isinstance(res, List):
+                    elif isinstance(res, (List, Lambda)):
                         elements[i] = self.get_repr([res])[0]
-                o.append(elements)
+                o.append(List(elements))  # type:ignore
             else:
                 o.append(str(node))
         return o
