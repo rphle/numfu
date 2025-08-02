@@ -159,9 +159,7 @@ class Interpreter:
                         pos=element.pos,
                     )
                 else:
-                    elements.extend(
-                        [self._eval(item, env=lst.curry) for item in lst.elements]
-                    )
+                    elements.extend(lst.elements)
             else:
                 elements.append(element)
         return elements
@@ -271,11 +269,17 @@ class Interpreter:
 
     def _eval(self, node: Expr, env: dict = {}):
         if isinstance(node, Lambda):
+            # Don't re-evaluate lambdas that already have a curry environment
+            if hasattr(node, "curry") and node.curry:
+                curry = node.curry.copy() | env
+            else:
+                curry = env.copy()
+
             lambda_copy = Lambda(
                 arg_names=node.arg_names,
                 body=node.body,
                 name=node.name,
-                curry=env.copy(),
+                curry=curry,
                 tree=node.tree,
                 pos=node.pos,
             )
