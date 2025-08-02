@@ -17,6 +17,7 @@ from .ast_types import (
     Constant,
     Expr,
     Import,
+    Index,
     Lambda,
     List,
     Number,
@@ -111,42 +112,48 @@ class Interpreter:
             return func(*args)
         elif isinstance(func, Lambda):
             return self._lambda(func, args, call_pos=this.pos, env=env)
-        elif isinstance(func, List):
-            # List indexing
-            for i, arg in enumerate(args):
-                if not isinstance(arg, mpmath.mpf):
-                    self.exception(
-                        nTypeError,
-                        f"List index must be an integer, not '{type_repr(type(arg).__name__)}'",
-                        pos=this.pos,
-                    )
-                elif isinstance(arg, mpmath.mpf):
-                    if arg % 1 != 0:  # type: ignore
-                        self.exception(
-                            nTypeError,
-                            "List index must be an integer, not a floating-point number",
-                            pos=this.pos,
-                        )
-                    else:
-                        args[i] = int(arg)  # type: ignore
-            if not args:
+        else:
+            self.exception(
+                nTypeError,
+                f"{type_repr(type(func).__name__)} is not callable",
+                pos=this.pos,
+            )
+
+    def _index(self, this: Index, env: dict = {}):
+        target = self._eval(this.target, env=env)
+        index = self._eval(this.index, env=env)
+
+        if isinstance(target, List):
+            if not isinstance(index, mpmath.mpf):
                 self.exception(
-                    nValueError,
-                    "Invalid list index",
+                    nTypeError,
+                    f"List index must be an integer, not '{type_repr(type(index).__name__)}'",
                     pos=this.pos,
                 )
-            if args[0] >= len(func.elements):  # type: ignore
+
+            if index % 1 != 0:  # type: ignore
+                self.exception(
+                    nTypeError,
+                    "List index must be an integer, not a floating-point number",
+                    pos=this.pos,
+                )
+
+            idx = int(index)  # type: ignore
+            if idx >= len(target.elements) or idx < -len(target.elements):
                 self.exception(
                     nIndexError,
                     "List index out of range",
                     pos=this.pos,
                 )
 
-            return self._eval(func.elements[args[0]], env=func.curry)  # type: ignore
+            if idx < 0:
+                idx = len(target.elements) + idx
+
+            return self._eval(target.elements[idx], env=target.curry)  # type: ignore
         else:
             self.exception(
                 nTypeError,
-                f"{type_repr(type(func).__name__)} is not callable",
+                f"'{type_repr(type(target).__name__)}' object is not subscriptable",
                 pos=this.pos,
             )
 
@@ -255,8 +262,6 @@ class Interpreter:
             if catch_rest:
                 new_env.update(zip(arg_names[:-1], args[: len(arg_names[:-1])]))
                 new_env[arg_names[-1]] = List(args[len(arg_names[:-1]) :])
-                # print(new_env)
-                # sys.exit(0)
             else:
                 new_env.update(zip(arg_names, args))
             return self._eval(this.body, env=new_env)

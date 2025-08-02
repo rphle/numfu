@@ -18,6 +18,7 @@ from .ast_types import (
     Constant,
     Expr,
     Import,
+    Index,
     Lambda,
     List,
     Number,
@@ -104,7 +105,11 @@ class AstGenerator(Transformer):
         return value
 
     def neg(self, op, value):
-        return Call(Variable(str(op), pos=_tokpos(op)), [value], pos=_tokpos(op))
+        return Call(
+            Variable(str(op), pos=_tokpos(op)),
+            [value],
+            pos=Pos(op.start_pos, value.pos.end),
+        )
 
     def not_op(self, op, value):
         return Call(Variable(str(op), pos=_tokpos(op)), [value], pos=_tokpos(op))
@@ -199,6 +204,9 @@ class AstGenerator(Transformer):
     def conditional(self, test, then_body, else_body):
         return Conditional(test, then_body, else_body, pos=test.pos)
 
+    def index_op(self, target, index):
+        return Index(target, index, pos=Pos(index.pos.start - 1, index.pos.end + 1))
+
     def call(self, func, args=None):
         if args is None:
             return func
@@ -274,6 +282,8 @@ class Parser:
                 for a in map(c, e.args):
                     f = Call(f, [a], pos=f.pos)
                 return f
+            if isinstance(e, Index):
+                return Index(c(e.target), c(e.index), pos=e.pos)
             if isinstance(e, Conditional):
                 return Conditional(c(e.test), c(e.then_body), c(e.else_body), pos=e.pos)
             return e  # Variable or Number
