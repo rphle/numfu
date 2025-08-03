@@ -125,7 +125,7 @@ class BuiltinFunc:
         errormeta: ErrorMeta = ErrorMeta(),
         args_pos: Pos | None = None,
         func_pos: Pos | None = None,
-        precision: int = 10,
+        precision: int = 15,
     ):
         errors = []
         for arg_types, _, func, validators in self._overloads:

@@ -33,7 +33,7 @@ from .typechecks import BuiltinFunc, type_name
 class Interpreter:
     def __init__(
         self,
-        precision: int = 20,
+        precision: int = 15,
         rec_depth: int = 10000,
         repr=True,
         errormeta: ErrorMeta = ErrorMeta(),
@@ -47,7 +47,7 @@ class Interpreter:
 
         self._set_errormeta(errormeta)
         self.glob: dict[Any, Any] = {
-            v.name: v
+            getattr(v, "name", name): v
             for name, v in Builtins.__dict__.items()
             if not name.startswith("__")
         }
@@ -92,13 +92,16 @@ class Interpreter:
         args = [self._eval(arg, env=env) for arg in resolved_args]
 
         if isinstance(func, BuiltinFunc):
-            return func(
+            r = func(
                 *args,
                 errormeta=self._errormeta,
                 args_pos=this.pos,
                 func_pos=this.func.pos,  # type: ignore
                 precision=self.precision,
             )
+            if isinstance(r, mpmath.mpc):
+                return r if r.imag == 0 else mpmath.nan  # type: ignore
+            return r
         elif isinstance(func, Lambda):
             return self._lambda(func, args, call_pos=this.pos, env=env)
         else:

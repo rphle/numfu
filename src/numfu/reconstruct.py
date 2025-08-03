@@ -9,7 +9,7 @@ import mpmath
 from .ast_types import Lambda, List, Number, String, Variable
 
 
-def tree_repr(node, precision: int = 10, env: dict = {}):
+def tree_repr(node, precision: int = 15, env: dict = {}):
     if isinstance(node, (mpmath.mpf, Number)):
         value = lark.Tree(
             "number",
@@ -54,7 +54,7 @@ def tree_repr(node, precision: int = 10, env: dict = {}):
 
 
 class Resolver(lark.Transformer):
-    def __init__(self, precision: int = 10, env: dict = {}):
+    def __init__(self, precision: int = 15, env: dict = {}):
         super().__init__()
         self.precision = precision
         self.env = env
@@ -65,7 +65,7 @@ class Resolver(lark.Transformer):
         return value
 
 
-def reconstruct(node: Lambda, precision: int = 10, env: dict = {}):
+def reconstruct(node: Lambda, precision: int = 15, env: dict = {}):
     if not node.tree:
         return None
     grammar = importlib.resources.read_text("numfu", "grammar/numfu.lark")

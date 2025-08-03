@@ -47,7 +47,7 @@ def cli(ctx):
 @click.option(
     "-p",
     "--precision",
-    default=10,
+    default=15,
     show_default=True,
     type=int,
     help="Floating point precision",

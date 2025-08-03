@@ -24,10 +24,25 @@ def to_string(x, precision):
         return str(x)
 
 
+def division(a, b):
+    try:
+        return mpm.fdiv(a, b)
+    except ZeroDivisionError:
+        if a == 0:
+            return mpm.mpf("nan")
+        elif a > 0:
+            return mpm.mpf("inf")
+        else:
+            return mpm.mpf("-inf")
+
+
 @dataclass(frozen=True)
 class Builtins:
     pi = mpm.pi
     e = mpm.e
+
+    nan = mpm.nan
+    inf = mpm.inf
 
     _add = overload("+")
     _sub = overload("-")
@@ -94,7 +109,7 @@ Builtins._mul.add([Num, Num], Num, mpm.fmul).add(
 ).error([str, str], "Cannot multiply two strings").error(
     [List, List], "Cannot multiply two lists"
 )
-Builtins._div.add([Num, Num], Num, mpm.fdiv)
+Builtins._div.add([Num, Num], Num, division)
 Builtins._mod.add([Num, Num], Num, mpm.fmod)
 Builtins._pow.add([Num, Num], Num, mpm.power)
 Builtins._and.add([Any, Any], bool, lambda a, b: bool(a) and bool(b))
