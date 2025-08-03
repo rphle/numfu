@@ -33,6 +33,9 @@ class String(Expr):
     def __repr__(self):
         return f'"{self.value}"'
 
+    def __bool__(self):
+        return bool(self.value)
+
 
 @dataclass
 class Bool(Expr):
@@ -41,6 +44,9 @@ class Bool(Expr):
 
     def __repr__(self):
         return "true" if self.value else "false"
+
+    def __bool__(self):
+        return self.value
 
 
 @dataclass
@@ -57,6 +63,9 @@ class List(Expr):
 
     def __getitem__(self, index: int):
         return self.elements[index]
+
+    def __bool__(self):
+        return bool(self.elements)
 
 
 @dataclass
