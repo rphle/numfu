@@ -92,6 +92,18 @@ class Interpreter:
         args = [self._eval(arg, env=env) for arg in resolved_args]
 
         if isinstance(func, BuiltinFunc):
+            if func.eval_lists:
+                args = [
+                    List(
+                        [self._eval(e, env=env | arg.curry) for e in arg],
+                        pos=arg.pos,
+                        curry=arg.curry,
+                    )
+                    if isinstance(arg, List)
+                    else arg
+                    for arg in args
+                ]
+
             r = func(
                 *args,
                 errormeta=self._errormeta,

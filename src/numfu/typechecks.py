@@ -5,10 +5,23 @@ from types import UnionType
 from typing import Any, Callable, get_args
 
 import mpmath as mpm
-from typeguard import TypeCheckError, check_type
 
 from .ast_types import List
 from .errors import ErrorMeta, Pos, nTypeError
+
+
+def check_type(val, typ):
+    if typ is Any:
+        return True
+    if isinstance(typ, tuple):
+        return any(check_type(val, t) for t in typ)
+    if isinstance(typ, UnionType):
+        return any(check_type(val, t) for t in get_args(typ))
+    if isinstance(typ, ListOf):
+        return isinstance(val, (list, List)) and all(
+            check_type(item, typ.element_type) for item in val
+        )
+    return isinstance(val, typ)
 
 
 def type_name(t):
@@ -30,6 +43,20 @@ def type_name(t):
 
     names = {"str": "String", "mpf": "Number", "list": "List", "bool": "Boolean"}
     return names.get(getattr(t, "__name__", str(t)), getattr(t, "__name__", str(t)))
+
+
+@dataclass
+class HelpMsg:
+    invalid_arg: str = ""
+    arg_num: str = ""
+
+
+class ListOf:
+    def __init__(self, element_type):
+        self.element_type = element_type
+
+    def __repr__(self):
+        return f"List<{type_name(self.element_type)}>"
 
 
 @dataclass
@@ -61,8 +88,10 @@ class Validators:
 
 
 class BuiltinFunc:
-    def __init__(self, name):
+    def __init__(self, name, eval_lists: bool = False, help: HelpMsg = HelpMsg()):
         self.name = name
+        self.eval_lists = eval_lists
+        self.help = help
         self.is_operator = len(self.name) == 1
         self._overloads = []
         self._errors = []
@@ -73,7 +102,9 @@ class BuiltinFunc:
         return_type,
         func,
         validators: list[Callable[[Any], bool] | None] = [],
+        transformer: Callable[[Any], Any] | None = None,
         commutative=False,
+        help: HelpMsg = HelpMsg(),
     ):
         if validators and len(arg_types) != len(validators):
             raise ValueError("Number of argument types must match number of validators")
@@ -86,11 +117,15 @@ class BuiltinFunc:
                         (lambda f, p: lambda *a: f(*[a[i] for i in p]))(
                             func, perm
                         ),  # also permute the arguments
+                        help,
                         [validators[i] for i in perm] if validators else [],
+                        transformer,
                     )
                 )
         else:
-            self._overloads.append((arg_types, return_type, func, validators))
+            self._overloads.append(
+                (arg_types, return_type, func, help, validators, transformer)
+            )
         return self
 
     def error(self, arg_types, error: str):
@@ -119,17 +154,19 @@ class BuiltinFunc:
         precision: int = 15,
     ):
         errors = []
-        for arg_types, _, func, validators in self._overloads:
+        for arg_types, _, func, help, validators, transformer in self._overloads:
             if len(args) != len(arg_types):
                 continue
 
+            if transformer:
+                args = transformer(*args)
+
             for i, (arg, typ) in reversed(list(enumerate(zip(args, arg_types)))):
-                try:
-                    check_type(arg, typ)
-                except TypeCheckError:
+                if not check_type(arg, typ):
                     errors.append(
                         f"Invalid argument type for {'operator ' if self.is_operator else ''}'{self.name}': "
                         f"argument {i+1} must be {type_name(typ)}, got {type_name(arg)}"
+                        + (f"\nhelp: {help.invalid_arg}" if help.invalid_arg else "")
                     )
                     break
 
@@ -150,18 +187,13 @@ class BuiltinFunc:
                 return func(*args)
 
         for arg_types, message in self._errors:
-            try:
-                if all(
-                    True for arg, typ in zip(args, arg_types) if check_type(arg, typ)
-                ):
-                    self.exception(
-                        message,
-                        errormeta=errormeta,
-                        func_pos=func_pos,
-                        args_pos=args_pos,
-                    )
-            except TypeCheckError:
-                break
+            if all(check_type(arg, typ) for arg, typ in zip(args, arg_types)):
+                self.exception(
+                    message,
+                    errormeta=errormeta,
+                    func_pos=func_pos,
+                    args_pos=args_pos,
+                )
 
         if errors:
             self.exception(
@@ -170,7 +202,8 @@ class BuiltinFunc:
 
         expected_count = len(self._overloads[0][0]) if self._overloads else 0
         self.exception(
-            f"'{self.name}' expected {expected_count} argument{'s' if expected_count != 1 else ''}, got {len(args)}",
+            f"'{self.name}' expected {expected_count} argument{'s' if expected_count != 1 else ''}, got {len(args)}"
+            + (f"\nhelp: {self.help.arg_num}" if self.help.arg_num else ""),
             errormeta=errormeta,
             func_pos=func_pos,
             args_pos=args_pos,
