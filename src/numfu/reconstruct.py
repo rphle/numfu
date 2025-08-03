@@ -11,7 +11,6 @@ from .ast_types import Lambda, List, Number, String, Variable
 
 def tree_repr(node, env: dict = {}):
     if isinstance(node, (mpmath.mpf, Number)):
-        print(node)
         value = lark.Tree(
             "number",
             [

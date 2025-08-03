@@ -85,6 +85,7 @@ class BuiltinFunc:
 
     def error(self, arg_types, error: str):
         self._errors.append((arg_types, error))
+        return self
 
     def exception(
         self,

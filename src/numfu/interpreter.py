@@ -333,6 +333,8 @@ class Interpreter:
                         elements[i] = Number(mpmath.nstr(res, self.precision))
                     elif isinstance(res, bool):
                         elements[i] = Bool(res)
+                    elif isinstance(res, str):
+                        elements[i] = String(res)
                     elif isinstance(res, (List, Lambda)):
                         elements[i] = self.get_repr([res])[0]
                 o.append(List(elements))  # type:ignore

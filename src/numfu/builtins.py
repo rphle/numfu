@@ -70,7 +70,15 @@ Builtins._mul.add([Num, Num], Num, mpm.fmul).add(
     lambda a, b: a * int(b),
     [None, Validators.mul_integer],
     commutative=True,
-).error([str, str], "Cannot multiply two strings")
+).add(
+    [List, Num],
+    List,
+    lambda a, b: List(a.elements * int(b), pos=a.pos, curry=a.curry),
+    [None, Validators.mul_integer],
+    commutative=True,
+).error([str, str], "Cannot multiply two strings").error(
+    [List, List], "Cannot multiply two lists"
+)
 Builtins._div.add([Num, Num], Num, mpm.fdiv)
 Builtins._mod.add([Num, Num], Num, mpm.fmod)
 Builtins._pow.add([Num, Num], Num, mpm.power)
