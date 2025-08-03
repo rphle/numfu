@@ -1,6 +1,7 @@
+import itertools
 from dataclasses import dataclass
 from types import UnionType
-from typing import Any, get_args
+from typing import Any, Callable, get_args
 
 import mpmath as mpm
 
@@ -56,8 +57,30 @@ class BuiltinFunc:
         self._overloads = []
         self._errors = []
 
-    def add(self, arg_types, return_type, func, validators=None):
-        self._overloads.append((arg_types, return_type, func, validators))
+    def add(
+        self,
+        arg_types,
+        return_type,
+        func,
+        validators: list[Callable[[Any], bool] | None] = [],
+        commutative=False,
+    ):
+        if validators and len(arg_types) != len(validators):
+            raise ValueError("Number of argument types must match number of validators")
+        if commutative:
+            for perm in itertools.permutations(range(len(arg_types))):
+                self._overloads.append(
+                    (
+                        [arg_types[i] for i in perm],
+                        return_type,
+                        (lambda f, p: lambda *a: f(*[a[i] for i in p]))(
+                            func, perm
+                        ),  # also permute the arguments
+                        [validators[i] for i in perm] if validators else [],
+                    )
+                )
+        else:
+            self._overloads.append((arg_types, return_type, func, validators))
         return self
 
     def error(self, arg_types, error: str):
@@ -84,12 +107,18 @@ class BuiltinFunc:
         func_pos: Pos | None = None,
     ):
         errors = []
-
         for arg_types, _, func, validators in self._overloads:
             if len(args) != len(arg_types):
                 continue
 
             for i, (arg, typ) in reversed(list(enumerate(zip(args, arg_types)))):
+                if not type_matches(arg, typ):
+                    errors.append(
+                        f"Invalid argument type for {'operator ' if self.is_operator else ''}'{self.name}': "
+                        f"argument {i+1} must be {type_name(typ)}, got {type_name(arg)}"
+                    )
+                    break
+
                 if validators and validators[i] and not validators[i](arg):
                     v = validators[i]
                     doc = (getattr(v, "__doc__", "") or "").strip()
@@ -98,12 +127,6 @@ class BuiltinFunc:
                         errormeta=errormeta,
                         func_pos=func_pos,
                         args_pos=args_pos,
-                    )
-
-                if not type_matches(arg, typ):
-                    errors.append(
-                        f"Invalid argument type for {'operator ' if self.is_operator else ''}'{self.name}': "
-                        f"argument {i+1} must be {type_name(typ)}, got {type_name(arg)}"
                     )
                     break
 

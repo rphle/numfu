@@ -69,11 +69,7 @@ Builtins._mul.add([Num, Num], Num, mpm.fmul).add(
     str,
     lambda a, b: a * int(b),
     [None, Validators.mul_integer],
-).add(
-    [Num, str],
-    str,
-    lambda a, b: int(a) * b,
-    [Validators.mul_integer, None],
+    commutative=True,
 ).error([str, str], "Cannot multiply two strings")
 Builtins._div.add([Num, Num], Num, mpm.fdiv)
 Builtins._mod.add([Num, Num], Num, mpm.fmod)
