@@ -94,6 +94,16 @@ class Lambda(Expr):
             fields.insert(0, f"name={self.name!r}")
         return f"Lambda({', '.join(fields)})"
 
+    def __eq__(self, other):
+        if not isinstance(other, Lambda):
+            return False
+        return (
+            self.arg_names == other.arg_names
+            and self.body == other.body
+            and self.name == other.name
+            and self.curry == other.curry
+        )
+
 
 @dataclass
 class Constant(Expr):
