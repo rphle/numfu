@@ -5,19 +5,10 @@ from types import UnionType
 from typing import Any, Callable, get_args
 
 import mpmath as mpm
+from typeguard import TypeCheckError, check_type
 
 from .ast_types import List
 from .errors import ErrorMeta, Pos, nTypeError
-
-
-def type_matches(val, typ):
-    if typ is Any:
-        return True
-    if isinstance(typ, tuple):
-        return any(type_matches(val, t) for t in typ)
-    if isinstance(typ, UnionType):
-        return any(type_matches(val, t) for t in get_args(typ))
-    return isinstance(val, typ)
 
 
 def type_name(t):
@@ -133,7 +124,9 @@ class BuiltinFunc:
                 continue
 
             for i, (arg, typ) in reversed(list(enumerate(zip(args, arg_types)))):
-                if not type_matches(arg, typ):
+                try:
+                    check_type(arg, typ)
+                except TypeCheckError:
                     errors.append(
                         f"Invalid argument type for {'operator ' if self.is_operator else ''}'{self.name}': "
                         f"argument {i+1} must be {type_name(typ)}, got {type_name(arg)}"
@@ -157,10 +150,18 @@ class BuiltinFunc:
                 return func(*args)
 
         for arg_types, message in self._errors:
-            if all(type_matches(arg, typ) for arg, typ in zip(args, arg_types)):
-                self.exception(
-                    message, errormeta=errormeta, func_pos=func_pos, args_pos=args_pos
-                )
+            try:
+                if all(
+                    True for arg, typ in zip(args, arg_types) if check_type(arg, typ)
+                ):
+                    self.exception(
+                        message,
+                        errormeta=errormeta,
+                        func_pos=func_pos,
+                        args_pos=args_pos,
+                    )
+            except TypeCheckError:
+                break
 
         if errors:
             self.exception(
