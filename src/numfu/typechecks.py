@@ -59,6 +59,11 @@ class ListOf:
         return f"List<{type_name(self.element_type)}>"
 
 
+class InfiniteOf:
+    def __init__(self, element_type):
+        self.element_type = element_type
+
+
 @dataclass
 class Validators:
     @staticmethod
@@ -108,6 +113,8 @@ class BuiltinFunc:
     ):
         if validators and len(arg_types) != len(validators):
             raise ValueError("Number of argument types must match number of validators")
+        if any(isinstance(a, InfiniteOf) for a in arg_types) and len(arg_types) > 1:
+            raise ValueError("Cannot have more than one InfiniteOf type")
         if commutative:
             for perm in itertools.permutations(range(len(arg_types))):
                 self._overloads.append(
@@ -155,6 +162,9 @@ class BuiltinFunc:
     ):
         errors = []
         for arg_types, _, func, help, validators, transformer in self._overloads:
+            if isinstance(arg_types[0], InfiniteOf):
+                arg_types = [arg_types[0].element_type] * len(args)
+
             if len(args) != len(arg_types):
                 continue
 
