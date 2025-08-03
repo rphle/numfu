@@ -45,7 +45,9 @@ class Interpreter:
         self.tree: list[Expr] = tree
         self.precision = precision
         self.repr = repr
-        self.errormeta = errormeta
+        self.errormeta, self._errormeta = errormeta, deepcopy(errormeta)
+        # internal errors must be fatal so they are catched at the end and the program does not continue execution
+        self._errormeta.fatal = True
 
         self.resolve_imports()
         self.glob: dict[Any, Any] = {
@@ -55,7 +57,7 @@ class Interpreter:
         }
 
     def exception(self, error, message, pos: Pos = Pos(-1, -1)) -> None:
-        error(message, pos=pos, errormeta=self.errormeta)
+        error(message, pos=pos, errormeta=self._errormeta)
 
     def _variable(self, this: Variable, env: dict = {}) -> Expr | None:
         try:
@@ -91,7 +93,7 @@ class Interpreter:
         if isinstance(func, BuiltinFunc):
             return func(
                 *args,
-                errormeta=deepcopy(self.errormeta),
+                errormeta=self._errormeta,
                 args_pos=this.pos,
                 func_pos=this.func.pos,  # type: ignore
             )
@@ -127,7 +129,7 @@ class Interpreter:
             if idx >= len(target.elements) or idx < -len(target.elements):
                 self.exception(
                     nIndexError,
-                    "List index out of range",
+                    f"{type_name(type(target))} index out of range",
                     pos=this.pos,
                 )
 

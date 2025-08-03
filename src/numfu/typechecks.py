@@ -83,7 +83,6 @@ class BuiltinFunc:
         args_pos: Pos | None = None,
         func_pos: Pos | None = None,
     ):
-        errormeta.fatal = True
         errors = []
 
         for arg_types, _, func, validators in self._overloads:
