@@ -98,7 +98,7 @@ class Lambda(Expr):
 @dataclass
 class Constant(Expr):
     name: str
-    value: str
+    value: Expr
     pos: Pos = DEFAULT_POS
 
 

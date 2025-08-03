@@ -356,7 +356,7 @@ class Interpreter:
                     if node.name:
                         self.glob[node.name] = node
                 elif isinstance(node, Constant):
-                    self.glob[node.name] = node.value
+                    self.glob[node.name] = self._eval(node.value, self.glob)
                 else:
                     r.append(self._eval(node, self.glob))
 
