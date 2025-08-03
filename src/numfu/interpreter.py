@@ -97,6 +97,7 @@ class Interpreter:
                 errormeta=self._errormeta,
                 args_pos=this.pos,
                 func_pos=this.func.pos,  # type: ignore
+                precision=self.precision,
             )
         elif isinstance(func, Lambda):
             return self._lambda(func, args, call_pos=this.pos, env=env)
@@ -207,7 +208,7 @@ class Interpreter:
                     )
                 else:
                     # builtin function
-                    return result(*remaining_args)
+                    return result(*remaining_args)  # type: ignore
             else:
                 self.exception(
                     nTypeError,
@@ -292,6 +293,8 @@ class Interpreter:
             return lambda_copy
         elif isinstance(node, (float, int, mpmath.mpf)):
             return mpmath.mpf(node)
+        elif isinstance(node, str):
+            return node
         elif node is None:
             return mpmath.mpf(0)
         try:
@@ -323,7 +326,7 @@ class Interpreter:
             elif isinstance(node, Bool):
                 o.append("true" if node.value else "false")
             elif isinstance(node, Lambda):
-                o.append(reconstruct(node, env=self.glob))
+                o.append(reconstruct(node, precision=self.precision, env=self.glob))
             elif isinstance(node, List):
                 elements = [
                     self._eval(arg, env=node.curry)  # type: ignore

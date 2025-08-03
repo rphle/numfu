@@ -67,6 +67,9 @@ class List(Expr):
     def __bool__(self):
         return bool(self.elements)
 
+    def __iter__(self):
+        return iter(self.elements)
+
 
 @dataclass
 class Spread(Expr):

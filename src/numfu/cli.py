@@ -47,7 +47,7 @@ def cli(ctx):
 @click.option(
     "-p",
     "--precision",
-    default=20,
+    default=10,
     show_default=True,
     type=int,
     help="Floating point precision",
@@ -135,7 +135,7 @@ def ast(source, output, imports, max_depth, indent, curry):
 @click.option(
     "-p",
     "--precision",
-    default=20,
+    default=15,
     show_default=True,
     type=int,
     help="Floating point precision",

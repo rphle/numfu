@@ -9,7 +9,7 @@ import mpmath
 from .ast_types import Lambda, List, Number, String, Variable
 
 
-def tree_repr(node, env: dict = {}):
+def tree_repr(node, precision: int = 10, env: dict = {}):
     if isinstance(node, (mpmath.mpf, Number)):
         value = lark.Tree(
             "number",
@@ -18,7 +18,7 @@ def tree_repr(node, env: dict = {}):
                     "NUMBER",  # type: ignore
                     node.value
                     if isinstance(node, Number)
-                    else mpmath.nstr(node).removesuffix(".0"),
+                    else mpmath.nstr(node, precision).removesuffix(".0"),
                 )
             ],  # type: ignore
         )
@@ -26,14 +26,14 @@ def tree_repr(node, env: dict = {}):
         value = pickle.loads(zlib.decompress(node.tree))
     elif isinstance(node, Variable):
         value = env.get(node.name, node)
-        value = tree_repr(value, env)
+        value = tree_repr(value, precision=precision, env=env)
     elif isinstance(node, List):
         value = lark.Tree(
             "list_literal",
             [
                 lark.Tree(
                     "list_element",
-                    [tree_repr(item, env=env | node.curry)],
+                    [tree_repr(item, precision=precision, env=env | node.curry)],
                 )
                 for item in node.elements
             ],
@@ -54,17 +54,18 @@ def tree_repr(node, env: dict = {}):
 
 
 class Resolver(lark.Transformer):
-    def __init__(self, env):
+    def __init__(self, precision: int = 10, env: dict = {}):
         super().__init__()
+        self.precision = precision
         self.env = env
 
     def variable(self, name):
         value = self.env.get(name[0].value, name[0])
-        value = tree_repr(value, self.env)
+        value = tree_repr(value, precision=self.precision, env=self.env)
         return value
 
 
-def reconstruct(node: Lambda, env: dict = {}):
+def reconstruct(node: Lambda, precision: int = 10, env: dict = {}):
     if not node.tree:
         return None
     grammar = importlib.resources.read_text("numfu", "grammar/numfu.lark")
@@ -72,5 +73,5 @@ def reconstruct(node: Lambda, env: dict = {}):
     tree = pickle.loads(zlib.decompress(node.tree))
     env = {k: v for k, v in node.curry.items() if k not in env}
 
-    tree = Resolver(env).transform(tree)
+    tree = Resolver(precision=precision, env=env).transform(tree)
     return reconstructor.reconstruct(tree)

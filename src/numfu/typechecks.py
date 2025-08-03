@@ -1,10 +1,12 @@
 import itertools
+import re
 from dataclasses import dataclass
 from types import UnionType
 from typing import Any, Callable, get_args
 
 import mpmath as mpm
 
+from .ast_types import List
 from .errors import ErrorMeta, Pos, nTypeError
 
 
@@ -26,7 +28,7 @@ def type_name(t):
             return " or ".join(type_name(x) for x in t)
         case UnionType():
             return " or ".join(type_name(x) for x in get_args(t))
-        case list() | "list":
+        case list() | "list" | List():
             return "List"
         case mpm._ctx_mp._mpf():
             return "Number"
@@ -48,6 +50,23 @@ class Validators:
             return isinstance(x, mpm.mpf) and x == int(x)
         except Exception:
             return False
+
+    @staticmethod
+    def is_iterable(x):
+        """Type '{typename}' is not iterable"""
+        return hasattr(x, "__iter__")
+
+    @staticmethod
+    def is_number(x):
+        """Can't convert to number with base 10: '{arg}'"""
+        if isinstance(x, (bool, mpm._ctx_mp._mpf)):
+            return True
+
+        return bool(
+            re.match(
+                r"(-|\+)*((0|[1-9][\d_]*)(\.[\d_]+)?|\.[\d_]+)([eE][+-]?[\d_]+)?", x
+            )
+        )
 
 
 class BuiltinFunc:
@@ -106,6 +125,7 @@ class BuiltinFunc:
         errormeta: ErrorMeta = ErrorMeta(),
         args_pos: Pos | None = None,
         func_pos: Pos | None = None,
+        precision: int = 10,
     ):
         errors = []
         for arg_types, _, func, validators in self._overloads:
@@ -124,7 +144,7 @@ class BuiltinFunc:
                     v = validators[i]
                     doc = (getattr(v, "__doc__", "") or "").strip()
                     self.exception(
-                        doc.format(i + 1),
+                        doc.format(i=i + 1, typename=type_name(arg), arg=arg),
                         errormeta=errormeta,
                         func_pos=func_pos,
                         args_pos=args_pos,
@@ -132,6 +152,8 @@ class BuiltinFunc:
                     break
 
             else:
+                if self.name == "String":
+                    return func(*args, precision=precision)
                 return func(*args)
 
         for arg_types, message in self._errors:

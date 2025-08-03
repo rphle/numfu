@@ -1,4 +1,5 @@
 import operator
+import re
 from dataclasses import dataclass
 from typing import Any
 
@@ -12,6 +13,15 @@ Num = mpm.mpf
 
 def overload(name):
     return BuiltinFunc(name)
+
+
+def to_string(x, precision):
+    if isinstance(x, mpm._ctx_mp._mpf):
+        return mpm.nstr(x, precision=precision).removesuffix(".0")
+    elif isinstance(x, bool):
+        return "true" if x else "false"
+    else:
+        return str(x)
 
 
 @dataclass(frozen=True)
@@ -55,6 +65,11 @@ class Builtins:
     floor = overload("floor")
     sign = overload("sign")
     abs = overload("abs")
+
+    _bool = overload("Bool")
+    _number = overload("Number")
+    _list = overload("List")
+    _string = overload("String")
 
 
 # Register overloads
@@ -112,3 +127,22 @@ Builtins.ceil.add([Num], Num, mpm.ceil)
 Builtins.floor.add([Num], Num, mpm.floor)
 Builtins.sign.add([Num], Num, mpm.sign)
 Builtins.abs.add([Num], Num, mpm.fabs)
+
+Builtins._bool.add([Any], bool, lambda a: bool(a))
+
+Builtins._number.add(
+    [bool | Num | str],
+    Num,
+    lambda x: Num(
+        re.sub(
+            r"^(\+|-)*",
+            "" if x.split("e")[0].split("E")[0].count("-") % 2 == 0 else "-",
+            x,
+        )  # resolve sign chains
+        if isinstance(x, str)
+        else x
+    ),
+    [Validators.is_number],
+)
+Builtins._list.add([Any], List, lambda a: List(a), [Validators.is_iterable])
+Builtins._string.add([Any], str, to_string)
