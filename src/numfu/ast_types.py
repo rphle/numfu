@@ -11,6 +11,13 @@ class Expr:
 
 
 @dataclass
+class PrintOutput(Expr):
+    expr: Expr
+    end: str = ""
+    printed: bool = False
+
+
+@dataclass
 class Variable(Expr):
     name: str
     pos: Pos = DEFAULT_POS

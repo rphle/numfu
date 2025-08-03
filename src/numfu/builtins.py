@@ -5,8 +5,8 @@ from typing import Any
 
 import mpmath as mpm
 
-from .ast_types import List
-from .typechecks import BuiltinFunc, HelpMsg, ListOf, Validators
+from .ast_types import Call, Lambda, List, PrintOutput
+from .typechecks import BuiltinFunc, HelpMsg, InfiniteOf, ListOf, Validators
 
 Num = mpm.mpf
 
@@ -36,6 +36,11 @@ def division(a, b):
             return mpm.mpf("-inf")
 
 
+def set_list(i: int, value, lst: List):
+    lst.elements[int(i)] = value
+    return lst
+
+
 @dataclass(frozen=True)
 class Builtins:
     pi = mpm.pi
@@ -50,9 +55,12 @@ class Builtins:
     _div = overload("/")
     _mod = overload("%")
     _pow = overload("^")
+
     _and = overload("&&")
     _or = overload("||")
     _not = overload("!")
+    _xor = overload("xor")
+
     _eq = overload("==")
     _ne = overload("!=")
     _gt = overload(">")
@@ -84,11 +92,43 @@ class Builtins:
     floor = overload("floor")
     sign = overload("sign")
     abs = overload("abs")
+    _max = overload("max", eval_lists=True)
+    _min = overload("min", eval_lists=True)
 
     _bool = overload("Bool")
     _number = overload("Number")
     _list = overload("List")
     _string = overload("String")
+
+    # Lists & Strings
+    _append = overload("append")
+    _length = overload("length")
+    _member = overload("member")
+    _set = overload("set")
+    _reverse = overload("reverse")
+    _sort = overload("sort", eval_lists=True)
+    _slice = overload("slice")
+    _join = overload("join", eval_lists=True)
+    _split = overload("split")
+
+    _format = overload("format")
+
+    # Functions
+    _map = overload("map")
+
+    # Output
+    _print = overload("print")
+    _println = overload("println")
+
+    # Random
+    _random = overload("random")
+    _seed = overload("seed")
+
+    # System
+    _error = overload("error")
+    _assert = overload("assert")
+    _exit = overload("exit")
+    _time = overload("time")
 
 
 # Register overloads
@@ -120,6 +160,7 @@ Builtins._pow.add([Num, Num], Num, mpm.power)
 Builtins._and.add([Any, Any], bool, lambda a, b: bool(a) and bool(b))
 Builtins._or.add([Any, Any], bool, lambda a, b: bool(a) or bool(b))
 Builtins._not.add([Any], bool, lambda a: not bool(a))
+Builtins._xor.add([Any, Any], bool, lambda a, b: bool(a) ^ bool(b))
 
 Builtins._eq.add([Any, Any], bool, operator.eq)
 Builtins._ne.add([Any, Any], bool, operator.ne)
@@ -147,13 +188,27 @@ Builtins.exp.add([Num], Num, mpm.exp)
 Builtins.log.add([Num, Num], Num, mpm.log)
 Builtins.log10.add([Num], Num, mpm.log10)
 Builtins.sqrt.add([Num], Num, mpm.sqrt)
+Builtins._max.add([InfiniteOf(Num)], Num, max).add(
+    [ListOf(Num)],
+    Num,
+    max,
+    transformer=lambda x: [x.elements],
+    help=HelpMsg(invalid_arg="Only numbers are supported"),
+)
+Builtins._min.add([InfiniteOf(Num)], Num, min).add(
+    [ListOf(Num)],
+    Num,
+    min,
+    transformer=lambda x: [x.elements],
+    help=HelpMsg(invalid_arg="Only numbers are supported"),
+)
+
 Builtins.ceil.add([Num], Num, mpm.ceil)
 Builtins.floor.add([Num], Num, mpm.floor)
 Builtins.sign.add([Num], Num, mpm.sign)
 Builtins.abs.add([Num], Num, mpm.fabs)
 
 Builtins._bool.add([Any], bool, lambda a: bool(a))
-
 Builtins._number.add(
     [bool | Num | str],
     Num,
@@ -170,3 +225,77 @@ Builtins._number.add(
 )
 Builtins._list.add([Any], List, lambda a: List(a), validators=[Validators.is_iterable])
 Builtins._string.add([Any], str, to_string)
+
+# Lists & Strings
+Builtins._append.add(
+    [List, Any], List, lambda a, b: List(a.elements + [b], pos=a.pos, curry=a.curry)
+)
+Builtins._length.add([List | str], Num, lambda a: len(a))
+Builtins._member.add([Any, List], bool, lambda a, b: a in b).add(
+    [str, str], bool, lambda a, b: a in b
+)
+Builtins._set.add(
+    [List, Num, Any],
+    List,
+    set_list,
+    validators=[None, Validators.list_index, None],
+).add(
+    [str, Num, str],
+    str,
+    lambda s, i, v: s[: int(i)] + v + s[int(i) + 1 :],
+    validators=[None, Validators.string_index, None],
+)
+Builtins._reverse.add(
+    [List | str],
+    List | str,
+    lambda a: a[::-1]
+    if isinstance(a, str)
+    else List(a.elements[::-1], pos=a.pos, curry=a.curry),
+)
+Builtins._sort.add(
+    [List],
+    List,
+    lambda a: List(sorted(a.elements), pos=a.pos, curry=a.curry),
+).add(
+    [str],
+    str,
+    lambda a: "".join(sorted(a)),
+)
+Builtins._slice.add(
+    [List | str, Num, Num],
+    List | str,
+    lambda a, b, c: a[int(b) : int(c) + 1 if c != -1 else None]
+    if isinstance(a, str)
+    else List(
+        a.elements[int(b) : int(c) + 1 if c != -1 else None], pos=a.pos, curry=a.curry
+    ),
+    validators=[None, Validators.string_index, Validators.string_index],
+)
+Builtins._join.add([List, str], str, lambda a, b: b.join(a.elements))
+Builtins._split.add([str, str], List, lambda a, b: List(a.split(b)))
+Builtins._format.add(
+    [str, InfiniteOf(str)],
+    str,
+    lambda a, *args: a.format(*args),
+)
+
+Builtins._map.add(
+    [Lambda, List],
+    List,
+    lambda f, lst: List(
+        [Call(f, [element], pos=f.pos) for element in lst.elements],
+        pos=lst.pos,
+        curry=lst.curry,
+    ),
+)
+
+Builtins._println.add(
+    [Any],
+    Any,
+    lambda expr: PrintOutput(expr, end="\n"),
+)
+Builtins._print.add(
+    [Any],
+    Any,
+    lambda expr: PrintOutput(expr),
+)

@@ -91,6 +91,22 @@ class Validators:
             )
         )
 
+    @staticmethod
+    def list_index(x):
+        """List index must be an integer"""
+        try:
+            return isinstance(x, mpm.mpf) and x == int(x)
+        except Exception:
+            return False
+
+    @staticmethod
+    def string_index(x):
+        """String index must be an integer"""
+        try:
+            return isinstance(x, mpm.mpf) and x == int(x)
+        except Exception:
+            return False
+
 
 class BuiltinFunc:
     def __init__(self, name, eval_lists: bool = False, help: HelpMsg = HelpMsg()):
@@ -113,8 +129,11 @@ class BuiltinFunc:
     ):
         if validators and len(arg_types) != len(validators):
             raise ValueError("Number of argument types must match number of validators")
-        if any(isinstance(a, InfiniteOf) for a in arg_types) and len(arg_types) > 1:
-            raise ValueError("Cannot have more than one InfiniteOf type")
+        if any(isinstance(a, InfiniteOf) for a in arg_types):
+            if sum(isinstance(a, InfiniteOf) for a in arg_types) > 1:
+                raise ValueError("Cannot have more than one InfiniteOf type")
+            if not isinstance(arg_types[-1], InfiniteOf):
+                raise ValueError("InfiniteOf type must be last")
         if commutative:
             for perm in itertools.permutations(range(len(arg_types))):
                 self._overloads.append(
@@ -162,8 +181,10 @@ class BuiltinFunc:
     ):
         errors = []
         for arg_types, _, func, help, validators, transformer in self._overloads:
-            if isinstance(arg_types[0], InfiniteOf):
-                arg_types = [arg_types[0].element_type] * len(args)
+            if isinstance(arg_types[-1], InfiniteOf):
+                arg_types = arg_types[:-1] + (
+                    [arg_types[-1].element_type] * (len(args) - len(arg_types) + 1)
+                )
 
             if len(args) != len(arg_types):
                 continue
@@ -194,7 +215,18 @@ class BuiltinFunc:
             else:
                 if self.name == "String":
                     return func(*args, precision=precision)
-                return func(*args)
+                try:
+                    return func(*args)
+                except IndexError as e:
+                    if self.name == "format":
+                        nTypeError(
+                            "Incorrect number of placeholders",
+                            args_pos,
+                            errormeta=errormeta,
+                            name="IndexError",
+                        )
+                    else:
+                        raise e
 
         for arg_types, message in self._errors:
             if all(check_type(arg, typ) for arg, typ in zip(args, arg_types)):

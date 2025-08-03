@@ -161,12 +161,7 @@ def repl(ctx, precision, rec_depth):
             if tree is None:
                 return
 
-            output = interpreter.run(
-                tree, ErrorMeta(file="REPL", code=code, fatal=False)
-            )
-
-            for o in (o for o in output if o is not None):
-                print(o)
+            interpreter.run(tree, ErrorMeta(file="REPL", code=code, fatal=False))
 
         repl_instance = REPL()
         repl_instance.start(_interpret)
@@ -214,7 +209,4 @@ def run_file(source, precision, rec_depth, curry):
     if tree is None:
         return
 
-    output = Interpreter(precision, rec_depth, errormeta=errormeta).run(tree)
-
-    for o in (o for o in output if o is not None):
-        print(o)
+    Interpreter(precision, rec_depth, errormeta=errormeta).run(tree)

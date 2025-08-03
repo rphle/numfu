@@ -20,6 +20,7 @@ from .ast_types import (
     List,
     Number,
     Pos,
+    PrintOutput,
     Spread,
     String,
     Variable,
@@ -35,15 +36,15 @@ class Interpreter:
         self,
         precision: int = 15,
         rec_depth: int = 10000,
-        repr=True,
         errormeta: ErrorMeta = ErrorMeta(),
+        _print: bool = True,
     ):
         sys.setrecursionlimit(rec_depth)
         mpmath.mp.dps = precision
 
         self.tree: list[Expr] = []
         self.precision = precision
-        self.repr = repr
+        self._print = _print
 
         self._set_errormeta(errormeta)
         self.glob: dict[Any, Any] = {
@@ -52,10 +53,17 @@ class Interpreter:
             if not name.startswith("__")
         }
 
+        self.output: list[str] = []  # this list collects all prints and program outputs
+
     def _set_errormeta(self, errormeta: ErrorMeta):
         self.errormeta, self._errormeta = errormeta, deepcopy(errormeta)
         # internal errors must be fatal so they are catched at the end and the program does not continue execution
         self._errormeta.fatal = True
+
+    def put(self, o: str):
+        self.output.append(o)
+        if self._print:
+            print(o, end="")
 
     def exception(self, error, message, pos: Pos = Pos(-1, -1)) -> None:
         error(message, pos=pos, errormeta=self._errormeta)
@@ -113,6 +121,8 @@ class Interpreter:
             )
             if isinstance(r, mpmath.mpc):
                 return r if r.imag == 0 else mpmath.nan  # type: ignore
+            elif isinstance(r, PrintOutput):
+                return self._eval(r, env=env)
             return r
         elif isinstance(func, Lambda):
             return self._lambda(func, args, call_pos=this.pos, env=env)
@@ -289,6 +299,15 @@ class Interpreter:
     def _bool(self, this: Bool, env: dict = {}):
         return this.value
 
+    def _printoutput(self, this: PrintOutput, env: dict = {}):
+        if this.printed:
+            return this.expr
+        else:
+            self.put(self.get_repr([self._restore_atoms(this.expr)])[0] + this.end)
+            return PrintOutput(
+                self._eval(this.expr, env=env), end=this.end, printed=True
+            )
+
     def _eval(self, node: Expr, env: dict = {}):
         if isinstance(node, Lambda):
             # Don't re-evaluate lambdas that already have a curry environment
@@ -333,7 +352,7 @@ class Interpreter:
                 break
         self.tree = imports + self.tree
 
-    def get_repr(self, output: list[Number | Bool | List | Lambda]):
+    def get_repr(self, output: list[Expr]):
         o = []
         for node in output:
             if isinstance(node, Number):
@@ -356,10 +375,18 @@ class Interpreter:
                         elements[i] = String(res)
                     elif isinstance(res, (List, Lambda)):
                         elements[i] = self.get_repr([res])[0]
-                o.append(List(elements))  # type:ignore
+                o.append(repr(List(elements)))  # type:ignore
             elif node is not None:
                 o.append(str(node))
         return o
+
+    def _restore_atoms(self, x):
+        if isinstance(x, mpmath.mpf):
+            return Number(mpmath.nstr(x, self.precision))
+        elif isinstance(x, bool):
+            return Bool(x)
+        else:
+            return x
 
     def run(self, tree: list[Expr], errormeta: ErrorMeta | None = None):
         self.tree = tree
@@ -368,7 +395,6 @@ class Interpreter:
         self.resolve_imports()
 
         try:
-            r = []
             for node in self.tree:
                 if isinstance(node, Lambda):
                     if node.name:
@@ -376,19 +402,15 @@ class Interpreter:
                 elif isinstance(node, Constant):
                     self.glob[node.name] = self._eval(node.value, self.glob)
                 else:
-                    r.append(self._eval(node, self.glob))
+                    o = self._eval(node, self.glob)
+                    if not isinstance(o, PrintOutput):
+                        self.put(self.get_repr([self._restore_atoms(o)])[0] + "\n")  # type:ignore
 
-            for i, res in enumerate(r):
-                if isinstance(res, mpmath.mpf):
-                    r[i] = Number(mpmath.nstr(res, self.precision))
-                elif isinstance(res, bool):
-                    r[i] = Bool(res)
+            if self.output and not self.output[-1].endswith("\n"):
+                self.put("\n")
 
-            if self.repr:
-                return self.get_repr(r)
-
-            return r
+            return self.output
         except SystemExit:
             if self.errormeta.fatal:
                 sys.exit(1)
-            return []
+            return self.output
