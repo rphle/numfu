@@ -100,7 +100,7 @@ class Interpreter:
         else:
             self.exception(
                 nTypeError,
-                f"{type_name(type(func).__name__)} is not callable",
+                f"{type_name(func)} is not callable",
                 pos=this.pos,
             )
 
@@ -112,7 +112,7 @@ class Interpreter:
             if not isinstance(index, mpmath.mpf):
                 self.exception(
                     nTypeError,
-                    f"List index must be an integer, not '{type_name(type(index).__name__)}'",
+                    f"List index must be an integer, not '{type_name(index)}'",
                     pos=this.pos,
                 )
 
@@ -138,7 +138,7 @@ class Interpreter:
         else:
             self.exception(
                 nTypeError,
-                f"'{type_name(type(target).__name__)}' object is not subscriptable",
+                f"'{type_name(target)}' object is not subscriptable",
                 pos=this.pos,
             )
 
@@ -150,7 +150,7 @@ class Interpreter:
                 if not isinstance(lst, List):
                     self.exception(
                         nTypeError,
-                        f"Type '{type_name(type(lst).__name__)}' is not iterable",
+                        f"Type '{type_name(lst)}' is not iterable",
                         pos=element.pos,
                     )
                 else:
@@ -359,7 +359,7 @@ class Interpreter:
                     elif isinstance(res, (List, Lambda)):
                         elements[i] = self.get_repr([res])[0]
                 o.append(List(elements))  # type:ignore
-            else:
+            elif node is not None:
                 o.append(str(node))
         return o
 
