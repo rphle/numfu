@@ -110,23 +110,23 @@ class Interpreter:
         target = self._eval(this.target, env=env)
         index = self._eval(this.index, env=env)
 
-        if isinstance(target, List):
+        if isinstance(target, (List, str)):
             if not isinstance(index, mpmath.mpf):
                 self.exception(
                     nTypeError,
-                    f"List index must be an integer, not '{type_name(index)}'",
+                    f"{type_name(type(target))} index must be an integer, not '{type_name(index)}'",
                     pos=this.pos,
                 )
 
             if index % 1 != 0:  # type: ignore
                 self.exception(
                     nTypeError,
-                    "List index must be an integer, not a floating-point number",
+                    f"{type_name(type(target))} index must be an integer, not a floating-point number",
                     pos=this.pos,
                 )
 
             idx = int(index)  # type: ignore
-            if idx >= len(target.elements) or idx < -len(target.elements):
+            if idx >= len(target) or idx < -len(target):
                 self.exception(
                     nIndexError,
                     f"{type_name(type(target))} index out of range",
@@ -134,9 +134,12 @@ class Interpreter:
                 )
 
             if idx < 0:
-                idx = len(target.elements) + idx
+                idx = len(target) + idx
 
-            return self._eval(target.elements[idx], env=target.curry)  # type: ignore
+            if isinstance(target, str):
+                return target[idx]
+            else:
+                return self._eval(target[idx], env=target.curry)
         else:
             self.exception(
                 nTypeError,

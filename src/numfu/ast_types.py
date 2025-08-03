@@ -52,6 +52,12 @@ class List(Expr):
     def __repr__(self):
         return f"[{', '.join(map(str, self.elements))}]"
 
+    def __len__(self):
+        return len(self.elements)
+
+    def __getitem__(self, index: int):
+        return self.elements[index]
+
 
 @dataclass
 class Spread(Expr):
