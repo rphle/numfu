@@ -6,7 +6,6 @@ from copy import deepcopy
 from typing import Any
 
 import lark
-import lark.reconstruct
 import mpmath
 
 from .ast_types import (
@@ -27,6 +26,7 @@ from .ast_types import (
 )
 from .builtins import Builtins
 from .errors import ErrorMeta, nIndexError, nNameError, nSyntaxError, nTypeError
+from .reconstruct import reconstruct
 from .typechecks import BuiltinFunc, type_name
 
 
@@ -314,34 +314,6 @@ class Interpreter:
                 break
         self.tree = imports + self.tree
 
-    def reconstruct(self, node: Lambda):
-        if not node.tree:
-            return None
-        grammar = importlib.resources.read_text("numfu", "grammar/numfu.lark")
-        reconstructor = lark.reconstruct.Reconstructor(
-            lark.Lark(grammar, parser="lalr")
-        )
-        tree = pickle.loads(zlib.decompress(node.tree))
-        env = {k: v for k, v in node.curry.items() if k not in self.glob}
-
-        class Resolver(lark.Transformer):
-            def variable(self, name):
-                value = env.get(name[0].value, name[0])
-                if isinstance(value, mpmath.mpf):
-                    value = lark.Tree(
-                        "number",
-                        [lark.Token("NUMBER", mpmath.nstr(value).removesuffix(".0"))],  # type: ignore
-                    )
-                elif isinstance(value, Lambda):
-                    value = pickle.loads(zlib.decompress(value.tree))
-                else:
-                    value = lark.Tree("variable", [value])  # type: ignore
-
-                return value
-
-        tree = Resolver().transform(tree)
-        return reconstructor.reconstruct(tree)
-
     def get_repr(self, output: list[Number | Bool | List | Lambda]):
         o = []
         for node in output:
@@ -350,7 +322,7 @@ class Interpreter:
             elif isinstance(node, Bool):
                 o.append("true" if node.value else "false")
             elif isinstance(node, Lambda):
-                o.append(self.reconstruct(node))
+                o.append(reconstruct(node, env=self.glob))
             elif isinstance(node, List):
                 elements = [
                     self._eval(arg, env=node.curry)  # type: ignore

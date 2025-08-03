@@ -4,6 +4,7 @@ from typing import Any
 
 import mpmath as mpm
 
+from .ast_types import List
 from .typechecks import BuiltinFunc, Validators
 
 Num = mpm.mpf
@@ -57,7 +58,11 @@ class Builtins:
 
 
 # Register overloads
-Builtins._add.add([Num, Num], Num, mpm.fadd).add([str, str], str, operator.add)
+Builtins._add.add([Num, Num], Num, mpm.fadd).add([str, str], str, operator.add).add(
+    [List, List],
+    List,
+    lambda a, b: List(a.elements + b.elements, pos=a.pos, curry=a.curry | b.curry),
+)
 Builtins._sub.add([Num], Num, lambda a: mpm.fsub(0, a)).add([Num, Num], Num, mpm.fsub)
 Builtins._mul.add([Num, Num], Num, mpm.fmul).add(
     [str, Num],
