@@ -118,14 +118,13 @@ def ast(source, output, imports, max_depth, indent, curry):
             "For an interactive AST REPL, use: numfu repl ast"
         )
     code = source_path.read_text()
+    parser = Parser(errormeta=ErrorMeta(file=source_path, fatal=True), imports=imports)
     repl = REPL(
         imports=imports,
         max_depth=max_depth,
         indent=indent,
-        curry=curry,
-        errormeta=ErrorMeta(file=source_path, code=code, fatal=True),
     )
-    tree, _ = repl.print_ast(code, file_name=source_path, actually_print=not output)
+    tree, _ = repl.print_ast(parser.parse(code, curry=curry), actually_print=not output)
 
     if output:
         with open(output, "wb") as f:
@@ -154,14 +153,17 @@ def repl(ctx, precision, rec_depth):
     """Start an interactive REPL."""
     if ctx.invoked_subcommand is None:
         # Default to evaluation REPL
+        parser = Parser(errormeta=ErrorMeta(fatal=False))
+        interpreter = Interpreter(precision, rec_depth)
+
         def _interpret(code):
-            errormeta = ErrorMeta(file="REPL", code=code, fatal=False)
-            parser = Parser(errormeta)
             tree = parser.parse(code)
             if tree is None:
                 return
 
-            output = Interpreter(tree, precision, rec_depth, errormeta=errormeta).run()
+            output = interpreter.run(
+                tree, ErrorMeta(file="REPL", code=code, fatal=False)
+            )
 
             for o in (o for o in output if o is not None):
                 print(o)
@@ -193,9 +195,11 @@ def repl(ctx, precision, rec_depth):
 )
 def repl_ast(max_depth, indent, curry):
     """Start the interactive AST REPL."""
-    repl = REPL(max_depth=max_depth, indent=indent, curry=curry)
+    repl = REPL(max_depth=max_depth, indent=indent)
+    parser = Parser(errormeta=ErrorMeta(file="REPL", fatal=False))
     repl.start(
-        repl.print_ast, intro="NumFu AST REPL. Type 'exit' or press Ctrl+D to exit."
+        lambda code: repl.print_ast(parser.parse(code, curry=curry)),
+        intro="NumFu AST REPL. Type 'exit' or press Ctrl+D to exit.",
     )
 
 
@@ -210,7 +214,7 @@ def run_file(source, precision, rec_depth, curry):
     if tree is None:
         return
 
-    output = Interpreter(tree, precision, rec_depth, errormeta=errormeta).run()
+    output = Interpreter(precision, rec_depth, errormeta=errormeta).run(tree)
 
     for o in (o for o in output if o is not None):
         print(o)

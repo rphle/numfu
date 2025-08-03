@@ -33,7 +33,6 @@ from .typechecks import BuiltinFunc, type_name
 class Interpreter:
     def __init__(
         self,
-        tree: list[Expr],
         precision: int = 20,
         rec_depth: int = 10000,
         repr=True,
@@ -42,19 +41,21 @@ class Interpreter:
         sys.setrecursionlimit(rec_depth)
         mpmath.mp.dps = precision
 
-        self.tree: list[Expr] = tree
+        self.tree: list[Expr] = []
         self.precision = precision
         self.repr = repr
-        self.errormeta, self._errormeta = errormeta, deepcopy(errormeta)
-        # internal errors must be fatal so they are catched at the end and the program does not continue execution
-        self._errormeta.fatal = True
 
-        self.resolve_imports()
+        self._set_errormeta(errormeta)
         self.glob: dict[Any, Any] = {
             v.name: v
             for name, v in Builtins.__dict__.items()
             if not name.startswith("__")
         }
+
+    def _set_errormeta(self, errormeta: ErrorMeta):
+        self.errormeta, self._errormeta = errormeta, deepcopy(errormeta)
+        # internal errors must be fatal so they are catched at the end and the program does not continue execution
+        self._errormeta.fatal = True
 
     def exception(self, error, message, pos: Pos = Pos(-1, -1)) -> None:
         error(message, pos=pos, errormeta=self._errormeta)
@@ -342,7 +343,12 @@ class Interpreter:
                 o.append(str(node))
         return o
 
-    def run(self):
+    def run(self, tree: list[Expr], errormeta: ErrorMeta | None = None):
+        self.tree = tree
+        if errormeta is not None:
+            self._set_errormeta(errormeta)
+        self.resolve_imports()
+
         try:
             r = []
             for node in self.tree:

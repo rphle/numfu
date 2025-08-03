@@ -252,8 +252,11 @@ class Parser:
                 break
         return code, imports
 
-    def parse(self, code: str, curry: bool = False) -> list[Expr] | None:
+    def parse(
+        self, code: str, curry: bool = False, errormeta: ErrorMeta | None = None
+    ) -> list[Expr] | None:
         code, imports = self._imports(code)
+        self.errormeta = errormeta or self.errormeta
         self.errormeta.code = code
         try:
             parse_tree = self.parser.parse(code)
