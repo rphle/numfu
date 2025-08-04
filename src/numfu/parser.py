@@ -221,7 +221,11 @@ class AstGenerator(Transformer):
             return (
                 Call(func=chain[i], args=[construct_ast(i + 1)], pos=_tokpos(pipes[i]))
                 if i < len(chain) - 1
-                else chain[i]
+                else Call(
+                    func=chain[i],
+                    args=[Spread(Variable("args", pos=chain[i].pos), pos=chain[i].pos)],
+                    pos=chain[i].pos,
+                )
             )
 
         def ast_to_lark_tree(ast_node):
@@ -258,6 +262,8 @@ class AstGenerator(Transformer):
                     "spread_op",
                     [Token("SPREAD", "..."), ast_to_lark_tree(ast_node.value)],  # type: ignore
                 )
+            elif isinstance(ast_node, Lambda):
+                return pickle.loads(zlib.decompress(ast_node.tree))
             else:
                 raise ValueError(
                     f"Cannot convert AST node {type(ast_node)} to Lark tree"
@@ -267,15 +273,15 @@ class AstGenerator(Transformer):
             """Recursively build the Lark parse tree for the composition chain"""
             if i < len(chain) - 1:
                 func_tree = ast_to_lark_tree(chain[i])
-
-                return Tree(
-                    "call", [func_tree, Tree("call_args", [construct_lark_tree(i + 1)])]
-                )
+                nested_call = Tree("list_element", [construct_lark_tree(i + 1)])
+                return Tree("call", [func_tree, Tree("call_args", [nested_call])])
             else:
-                return Tree(
+                func_tree = ast_to_lark_tree(chain[i])
+                spread_arg = Tree(
                     "spread_op",
                     [Token("SPREAD", "..."), Tree("variable", [Token("NAME", "args")])],  # type: ignore
                 )
+                return Tree("call", [func_tree, Tree("call_args", [spread_arg])])
 
         lambda_params_tree = Tree(
             "lambda_params",
