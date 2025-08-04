@@ -31,6 +31,12 @@ class Number(Expr):
     def __repr__(self):
         return self.value.removesuffix(".0")
 
+    def __eq__(self, other):
+        if isinstance(other, Number):
+            return self.value == other.value
+        else:
+            return False
+
 
 @dataclass
 class String(Expr):
@@ -76,6 +82,12 @@ class List(Expr):
 
     def __iter__(self):
         return iter(self.elements)
+
+    def __eq__(self, other):
+        if isinstance(other, List):
+            return self.elements == other.elements
+        else:
+            return False
 
 
 @dataclass

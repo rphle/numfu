@@ -64,8 +64,8 @@ class Builtins:
     _not = overload("!")
     _xor = overload("xor")
 
-    _eq = overload("==")
-    _ne = overload("!=")
+    _eq = overload("==", eval_lists=True)
+    _ne = overload("!=", eval_lists=True)
     _gt = overload(">")
     _lt = overload("<")
     _ge = overload(">=")
