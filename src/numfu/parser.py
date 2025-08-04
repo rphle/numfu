@@ -11,6 +11,7 @@ import zlib
 from lark import Lark, Token, Transformer, Tree, v_args
 
 from .ast_types import (
+    Assertion,
     Bool,
     Call,
     Conditional,
@@ -227,6 +228,9 @@ class AstGenerator(Transformer):
     def call_args(self, *args):
         return list(args)
 
+    def assertion(self, cond):
+        return Assertion(cond, pos=cond.pos)
+
 
 class Parser:
     def __init__(
@@ -264,6 +268,26 @@ class Parser:
             ast_tree = self.generator.transform(parse_tree)
             if not isinstance(ast_tree, list):
                 ast_tree = [ast_tree]
+
+            tree = []
+            for i, stmt in enumerate(ast_tree):
+                if isinstance(stmt, Assertion):
+                    tree[-1] = Call(
+                        func=Lambda(
+                            arg_names=["_"],
+                            body=Call(
+                                func=Variable("assert", pos=stmt.pos),
+                                args=[stmt.test, tree[-1]],
+                                pos=stmt.pos,
+                            ),
+                            pos=stmt.test.pos,  # type:ignore
+                        ),
+                        args=[tree[-1]],
+                        pos=stmt.test.pos,  # type:ignore
+                    )
+                else:
+                    tree.append(stmt)
+
             if curry:
                 ast_tree = self.curry(ast_tree)
 
@@ -271,8 +295,8 @@ class Parser:
             LarkError(str(e), self.errormeta)
             return None
 
-        ast_tree = imports + ast_tree
-        return ast_tree
+        tree = imports + tree
+        return tree
 
     def curry(self, tree: list[Expr]) -> list[Expr]:
         def c(e):

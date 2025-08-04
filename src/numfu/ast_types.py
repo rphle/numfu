@@ -154,3 +154,9 @@ class Index(Expr):
     target: Expr
     index: Expr
     pos: Pos = DEFAULT_POS
+
+
+@dataclass
+class Assertion(Expr):
+    test: Expr
+    pos: Pos = DEFAULT_POS
