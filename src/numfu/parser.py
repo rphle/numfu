@@ -217,7 +217,7 @@ class AstGenerator(Transformer):
             func,
             args,
             pos=Pos(
-                args[0].pos.start - 1,
+                func.pos.end,
                 args[-1].pos.end + 1,
             )
             if args

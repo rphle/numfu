@@ -1,4 +1,5 @@
 import operator
+import random
 import re
 from dataclasses import dataclass
 from typing import Any
@@ -88,10 +89,11 @@ class Builtins:
     log10 = overload("log10")
     sqrt = overload("sqrt")
 
-    ceil = overload("ceil")
-    floor = overload("floor")
-    sign = overload("sign")
-    abs = overload("abs")
+    _ceil = overload("ceil")
+    _floor = overload("floor")
+    _round = overload("round")
+    _sign = overload("sign")
+    _abs = overload("abs")
     _max = overload("max", eval_lists=True)
     _min = overload("min", eval_lists=True)
 
@@ -203,10 +205,11 @@ Builtins._min.add([InfiniteOf(Num)], Num, min).add(
     help=HelpMsg(invalid_arg="Only numbers are supported"),
 )
 
-Builtins.ceil.add([Num], Num, mpm.ceil)
-Builtins.floor.add([Num], Num, mpm.floor)
-Builtins.sign.add([Num], Num, mpm.sign)
-Builtins.abs.add([Num], Num, mpm.fabs)
+Builtins._ceil.add([Num], Num, mpm.ceil)
+Builtins._floor.add([Num], Num, mpm.floor)
+Builtins._round.add([Num], Num, lambda x: Num(round(x)))
+Builtins._sign.add([Num], Num, mpm.sign)
+Builtins._abs.add([Num], Num, mpm.fabs)
 
 Builtins._bool.add([Any], bool, lambda a: bool(a))
 Builtins._number.add(
@@ -299,3 +302,6 @@ Builtins._print.add(
     Any,
     lambda expr: PrintOutput(expr),
 )
+
+Builtins._random.add([], Num, lambda: Num(random.random()))
+Builtins._seed.add([Num | str], None, random.seed)

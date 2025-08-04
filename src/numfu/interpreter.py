@@ -403,7 +403,7 @@ class Interpreter:
                     self.glob[node.name] = self._eval(node.value, self.glob)
                 else:
                     o = self._eval(node, self.glob)
-                    if not isinstance(o, PrintOutput):
+                    if o and not isinstance(o, PrintOutput):
                         self.put(self.get_repr([self._restore_atoms(o)])[0] + "\n")  # type:ignore
 
             if self.output and not self.output[-1].endswith("\n"):

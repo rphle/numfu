@@ -153,7 +153,7 @@ def repl(ctx, precision, rec_depth):
     """Start an interactive REPL."""
     if ctx.invoked_subcommand is None:
         # Default to evaluation REPL
-        parser = Parser(errormeta=ErrorMeta(fatal=False))
+        parser = Parser(errormeta=ErrorMeta(file="REPL", fatal=False))
         interpreter = Interpreter(precision, rec_depth)
 
         def _interpret(code):

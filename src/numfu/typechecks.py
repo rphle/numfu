@@ -181,7 +181,7 @@ class BuiltinFunc:
     ):
         errors = []
         for arg_types, _, func, help, validators, transformer in self._overloads:
-            if isinstance(arg_types[-1], InfiniteOf):
+            if arg_types and isinstance(arg_types[-1], InfiniteOf):
                 arg_types = arg_types[:-1] + (
                     [arg_types[-1].element_type] * (len(args) - len(arg_types) + 1)
                 )
