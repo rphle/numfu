@@ -1,3 +1,7 @@
+"""
+Type Checking and Built-in Function Infrastructure
+"""
+
 import itertools
 import re
 from dataclasses import dataclass
@@ -59,6 +63,10 @@ class HelpMsg:
 
 
 class ListOf:
+    """
+    Generic type for homogeneous lists: List<Number>, List<String>, etc.
+    """
+
     def __init__(self, element_type):
         self.element_type = element_type
 
@@ -67,6 +75,10 @@ class ListOf:
 
 
 class InfiniteOf:
+    """
+    Type for functions accepting unlimited arguments of one type.
+    """
+
     def __init__(self, element_type):
         self.element_type = element_type
 
@@ -124,6 +136,19 @@ class Validators:
 
 
 class BuiltinFunc:
+    """
+    Represents a built-in function with multiple type overloads.
+
+    Built-in functions can accept different combinations of argument types
+    and return appropriate results. Handles type checking,
+    validation, and dispatch to the correct implementation.
+
+    Args:
+        name: Function name as it appears in NumFu
+        eval_lists: Whether to evaluate list elements before processing
+        help: Additional help messages for error reporting
+    """
+
     def __init__(
         self,
         name,
@@ -147,6 +172,19 @@ class BuiltinFunc:
         commutative=False,
         help: HelpMsg = HelpMsg(),
     ):
+        """
+        Register a type overload for a built-in function.
+
+        Args:
+            arg_types: List of expected argument types
+            return_type: Expected return type
+            func: Function to call
+            validators: Optional validation functions for arguments
+            transformer: Optional argument transformation function
+            commutative: Whether to generate permutations for commutative operations
+            help: Specific help for this overload
+        """
+
         if validators and len(arg_types) != len(validators):
             raise ValueError("Number of argument types must match number of validators")
         if any(isinstance(a, InfiniteOf) for a in arg_types):

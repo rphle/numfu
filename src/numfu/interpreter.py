@@ -1,3 +1,9 @@
+"""
+NumFu Language Interpreter
+
+Implements the core interpreter that evaluates NumFu ASTs.
+"""
+
 import importlib.resources
 import pickle
 import sys
@@ -32,6 +38,20 @@ from .typechecks import BuiltinFunc, type_name
 
 
 class Interpreter:
+    """
+    The main NumFu interpreter that evaluates AST nodes.
+
+    The interpreter maintains a global environment and processes expressions
+    recursively. It handles function calls, variable lookups, and built-in
+    operations while tracking execution context.
+
+    Args:
+        precision: Floating point precision for calculations
+        rec_depth: Maximum recursion depth
+        errormeta: Error context for reporting
+        _print: Whether to print output or just return it at the end
+    """
+
     def __init__(
         self,
         precision: int = 15,
@@ -79,6 +99,16 @@ class Interpreter:
             )
 
     def _call(self, this: Call, env: dict = {}):
+        """
+        Execute function calls, handling both built-in functions and user lambdas.
+
+        1. Check for short-circuiting operators (&& and ||) first
+        2. Evaluate the function expression to get callable
+        3. Resolve any spread operators in arguments (...list)
+        4. Evaluate all argument expressions
+        5. Dispatch to appropriate handler based on function type
+        """
+
         # Handle short-circuiting
         if isinstance(this.func, Variable) and this.func.name in ("&&", "||"):
             op = this.func.name
@@ -208,6 +238,23 @@ class Interpreter:
     def _lambda(
         self, this: Lambda, args: list = [], call_pos: Pos | None = None, env: dict = {}
     ):
+        """
+        Handle lambda function calls with currying and partial application.
+
+        - Too few args: return partially applied function
+        - Exact match: execute function body
+        - Too many args: apply available args, then call result with remaining
+
+        Args:
+            this: Lambda function to call
+            args: Arguments provided to the function
+            call_pos: Source position of function call for errors
+            env: Current evaluation environment
+
+        Returns:
+            Result of function execution or partially applied lambda
+        """
+
         new_env = env.copy()
 
         if this.name:

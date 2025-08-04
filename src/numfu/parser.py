@@ -1,5 +1,9 @@
 """
-Lark-based parser and AST generator for NumFu
+Lark-based Parser and AST Generator for NumFu
+
+This module converts NumFu source code into ASTs using the Lark parsing library.
+It handles the complete NumFu grammar, most desugaring (like let bindings) is already
+done here.
 """
 
 import codecs
@@ -64,6 +68,15 @@ class LambdaPreprocessor(Transformer):
 
 @v_args(inline=True)
 class AstGenerator(Transformer):
+    """
+    Lark transformer that converts parse trees into NumFu AST nodes.
+
+    Each method corresponds to a grammar rule and returns the appropriate
+    AST node type. Handles operator precedence, function calls, and
+    complex expressions like chained comparisons. Most syntactic sugar is
+    already desugared here.
+    """
+
     def start(self, *exprs):
         return list(exprs)
 
@@ -75,6 +88,13 @@ class AstGenerator(Transformer):
         )
 
     def comp(self, *args):
+        """
+        Handle chained comparison operators like: a < b <= c > d.
+
+        Converts chains into logical AND expressions:
+        a < b <= c becomes (a < b) && (b <= c)
+        """
+
         left, op, right = args[0], args[1], args[2]
         expr = Call(
             Variable(str(op), pos=_tokpos(op)),
@@ -155,9 +175,13 @@ class AstGenerator(Transformer):
         )
 
     def let_binding(self, lambda_params, body):
+        """
+        Handle let bindings like: let x = 49 in sqrt(x)
+
+        Converts environment definitions into closure calls:
+        'let x = 3 in x * x' becomes '{x -> x * x}(3)'
+        """
         names, values = lambda_params.children[::2], lambda_params.children[1::2]
-        # (let x = 3 in x * x)
-        # becomes: ((x -> x * x)[3])
         return Call(
             Lambda([str(name) for name in names], body, pos=body.pos),
             values,
@@ -233,6 +257,17 @@ class AstGenerator(Transformer):
 
 
 class Parser:
+    """
+    Main parser class that coordinates the parsing pipeline.
+
+    Converts NumFu source code strings into lists of AST expressions
+    that can be executed by the interpreter.
+
+    Args:
+        errormeta: Error reporting context
+        imports: List of modules to automatically import
+    """
+
     def __init__(
         self,
         errormeta: ErrorMeta = ErrorMeta(),

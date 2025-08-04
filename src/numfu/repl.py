@@ -1,3 +1,10 @@
+"""
+Read-Eval-Print Loop (REPL) for NumFu
+
+Supports both normal evaluation mode and AST inspection mode
+for debugging and learning about NumFu's internal representation.
+"""
+
 from pathlib import Path
 from typing import Callable
 
@@ -12,9 +19,20 @@ from .parser import Expr
 
 
 class REPL:
+    """
+    Interactive REPL environment for NumFu programming.
+
+    Provides a command-line interface for interactive NumFu programming
+    with history, multi-line editing, and rich output formatting.
+
+    Args:
+        history_path: File path for persistent command history
+        max_depth: Maximum depth for AST pretty-printing
+        indent: Indentation size for formatted output
+    """
+
     def __init__(
         self,
-        imports: list[str] = ["builtins"],
         history_path: Path | str = Path.home() / ".numfu_history",
         max_depth=10,
         indent=2,

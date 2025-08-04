@@ -1,3 +1,14 @@
+"""
+Code Reconstruction from AST
+
+This module reconstructs NumFu source code from ASTs,
+primarily used for displaying partially applied functions and closures
+in the REPL. It reverses the parsing process to show readable code.
+
+Lambda AST objects save their Lark parse tree which can be reconstructed
+by Lark's reconstructor.
+"""
+
 import importlib.resources
 import pickle
 import zlib
@@ -66,6 +77,21 @@ class Resolver(lark.Transformer):
 
 
 def reconstruct(node: Lambda, precision: int = 15, env: dict = {}):
+    """
+    Reconstruct NumFu source code from a lambda function AST.
+
+    Takes a lambda with its serialized parse tree and closure environment,
+    then generates readable NumFu code that represents the function.
+
+    Args:
+        node: Lambda function to reconstruct
+        precision: Numeric precision for number formatting
+        env: Additional environment for variable resolution
+
+    Returns:
+        String containing reconstructed NumFu code
+    """
+
     if not node.tree:
         return None
     grammar = importlib.resources.read_text("numfu", "grammar/numfu.lark")

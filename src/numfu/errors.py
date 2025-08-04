@@ -1,3 +1,10 @@
+"""
+Error Handling and Display
+
+Rich error reporting with source highlighting, position tracking,
+and colored terminal output.
+"""
+
 import re
 import sys
 from dataclasses import dataclass
@@ -24,6 +31,14 @@ class ErrorMeta:
 
 
 class CPos:
+    """
+    Character position tracker for source code locations in error reporting.
+
+    Converts between character-based positions (used internally by the parser)
+    and line/column positions (displayed to users). Handles both single-point
+    positions and ranges spanning multiple lines.
+    """
+
     def __init__(
         self, line: int = 1, col: int = 1, end_line: int = 1, end_col: int = 2
     ):
@@ -34,6 +49,9 @@ class CPos:
 
     @classmethod
     def frompos(cls, pos: Pos, code: str):
+        """
+        Convert parser character offsets to line/column positions.
+        """
         if pos.start is None or pos.end is None:
             raise ValueError("Pos.start and Pos.end must not be NOne")
         self = cls()
@@ -44,6 +62,9 @@ class CPos:
         return self
 
     def split(self) -> list["CPos"]:
+        """
+        Split a multi-line position span into individual line positions.
+        """
         return [
             CPos(
                 line=line,
@@ -59,6 +80,20 @@ class CPos:
 
 
 class Error:
+    """
+    Base error class that displays rich error messages with source context.
+
+    Shows the error location in source code with syntax highlighting,
+    line numbers, and contextual information. Supports both single-line
+    and multi-line error spans.
+
+    Args:
+        message: Human-readable error description
+        pos: Source position (character range or line/column)
+        errormeta: Context including filename and source code
+        name: Override for error type name display
+    """
+
     def __init__(
         self,
         message,
@@ -152,6 +187,13 @@ class nAssertionError(Error):
 
 
 class LarkError(nSyntaxError):
+    """
+    Handles syntax errors from the Lark parser.
+
+    Parses Lark's error messages and converts them into user-friendly
+    syntax errors with proper source highlighting.
+    """
+
     tokens = {
         "RPAR": ")",
         "LPAR": "(",

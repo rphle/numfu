@@ -1,3 +1,8 @@
+"""
+This is a complete implementation of the NumFu programming language,
+including parser, AST types, interpreter, and command-line interface.
+"""
+
 from . import ast_types, builtins
 from ._version import __author__, __version__
 from .cli import cli

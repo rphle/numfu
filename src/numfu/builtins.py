@@ -1,3 +1,11 @@
+"""
+Built-in Functions and Operations
+
+This module implements all built-in functions, operators, and constants
+available in NumFu programs. Functions are implemented as type-safe overloaded
+operations that can handle multiple argument types.
+"""
+
 import operator
 import random
 import re
@@ -15,6 +23,17 @@ Num = mpm.mpf
 
 
 def overload(name, eval_lists: bool = False, help: HelpMsg = HelpMsg()):
+    """
+    Create a built-in function that can handle multiple argument types.
+
+    Args:
+        name: Function name as it appears in NumFu
+        eval_lists: Whether to evaluate list elements before calling
+        help: Help messages for error reporting
+
+    Returns:
+        BuiltinFunc instance that can be registered with type overloads
+    """
     return BuiltinFunc(name, eval_lists, help)
 
 
@@ -28,6 +47,9 @@ def to_string(x, precision):
 
 
 def division(a, b):
+    """
+    Safe division that handles division by zero according to IEEE 754.
+    """
     try:
         return mpm.fdiv(a, b)
     except ZeroDivisionError:

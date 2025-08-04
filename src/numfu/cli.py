@@ -97,7 +97,7 @@ def ast(
     code = source_path.read_text()
     errormeta = ErrorMeta(file=source_path, fatal=True)
     parser = Parser(errormeta=errormeta, imports=list(imports))
-    repl = REPL(imports=list(imports), max_depth=max_depth, indent=indent)
+    repl = REPL(max_depth=max_depth, indent=indent)
 
     tree, _ = repl.print_ast(parser.parse(code), actually_print=not output)
 

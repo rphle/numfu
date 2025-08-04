@@ -1,3 +1,11 @@
+"""
+This module defines all the AST node types used to represent NumFu programs.
+
+The AST is built by the parser and consumed by the interpreter to execute
+NumFu programs. All nodes inherit from the base Expr class and include
+position information for error reporting.
+"""
+
 from dataclasses import dataclass, field
 
 from .errors import Pos
@@ -64,6 +72,12 @@ class Bool(Expr):
 
 @dataclass
 class List(Expr):
+    """
+    Args:
+        elements: List of expressions that make up the list
+        curry: Environment captured for lazy evaluation of elements
+    """
+
     elements: list[Expr]
     pos: Pos = DEFAULT_POS
     curry: dict[str, Expr] = field(default_factory=lambda: {}, repr=False)
@@ -103,6 +117,17 @@ class Import(Expr):
 
 @dataclass
 class Lambda(Expr):
+    """
+    Lambda function/closure.
+
+    Args:
+        arg_names: Parameter names, may include rest parameter prefixed with "..."
+        body: The function body expression
+        name: Optional function name
+        curry: Captured environment for lazy evaluation
+        tree: Serialized parse tree for code reconstruction
+    """
+
     arg_names: list[str]
     body: Expr
     pos: Pos = DEFAULT_POS
