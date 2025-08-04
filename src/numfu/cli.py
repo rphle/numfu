@@ -60,16 +60,10 @@ def cli(ctx):
     type=int,
     help="Maximum recursion depth in the evaluation process",
 )
-@click.option(
-    "--curry",
-    is_flag=True,
-    show_default=True,
-    help="Whether to curry",
-)
 @click.pass_context
-def default(ctx, source, precision, rec_depth, curry):
+def default(ctx, source, precision, rec_depth):
     """Parse and run a NumFu source file."""
-    run_file(source, precision, rec_depth, curry)
+    run_file(source, precision, rec_depth)
 
 
 @cli.command()
@@ -103,13 +97,7 @@ def default(ctx, source, precision, rec_depth, curry):
     type=int,
     help="Indentation size for the AST",
 )
-@click.option(
-    "--curry",
-    is_flag=True,
-    show_default=True,
-    help="Whether to curry the AST",
-)
-def ast(source, output, imports, max_depth, indent, curry):
+def ast(source, output, imports, max_depth, indent):
     """Parse the input file and pretty-print its AST."""
     source_path = Path(source)
     if not source_path.exists() or source_path.is_dir():
@@ -124,7 +112,7 @@ def ast(source, output, imports, max_depth, indent, curry):
         max_depth=max_depth,
         indent=indent,
     )
-    tree, _ = repl.print_ast(parser.parse(code, curry=curry), actually_print=not output)
+    tree, _ = repl.print_ast(parser.parse(code), actually_print=not output)
 
     if output:
         with open(output, "wb") as f:
@@ -182,29 +170,23 @@ def repl(ctx, precision, rec_depth):
     type=int,
     help="Indentation size for the AST",
 )
-@click.option(
-    "--curry",
-    is_flag=True,
-    show_default=True,
-    help="Whether to curry the AST",
-)
-def repl_ast(max_depth, indent, curry):
+def repl_ast(max_depth, indent):
     """Start the interactive AST REPL."""
     repl = REPL(max_depth=max_depth, indent=indent)
     parser = Parser(errormeta=ErrorMeta(file="REPL", fatal=False))
     repl.start(
-        lambda code: repl.print_ast(parser.parse(code, curry=curry)),
+        lambda code: repl.print_ast(parser.parse(code)),
         intro="NumFu AST REPL. Type 'exit' or press Ctrl+D to exit.",
     )
 
 
-def run_file(source, precision, rec_depth, curry):
+def run_file(source, precision, rec_depth):
     source_path = Path(source)
     code = source_path.read_text()
     errormeta = ErrorMeta(file=source_path, code=code, fatal=True)
 
     parser = Parser(errormeta)
-    tree = parser.parse(code, curry=curry)
+    tree = parser.parse(code)
 
     if tree is None:
         return

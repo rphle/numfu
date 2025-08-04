@@ -256,9 +256,7 @@ class Parser:
                 break
         return code, imports
 
-    def parse(
-        self, code: str, curry: bool = False, errormeta: ErrorMeta | None = None
-    ) -> list[Expr] | None:
+    def parse(self, code: str, errormeta: ErrorMeta | None = None) -> list[Expr] | None:
         code, imports = self._imports(code)
         self.errormeta = errormeta or self.errormeta
         self.errormeta.code = code
@@ -288,35 +286,9 @@ class Parser:
                 else:
                     tree.append(stmt)
 
-            if curry:
-                ast_tree = self.curry(ast_tree)
-
         except Exception as e:
             LarkError(str(e), self.errormeta)
             return None
 
         tree = imports + tree
         return tree
-
-    def curry(self, tree: list[Expr]) -> list[Expr]:
-        def c(e):
-            if isinstance(e, Lambda):
-                body = c(e.body)
-                for a in reversed(e.arg_names):
-                    body = Lambda([a], body, tree=e.tree, pos=body.pos)
-                body.name = e.name
-                return body
-            if isinstance(e, Call):
-                if isinstance(e.func, Variable) and e.func.name in OPERATORS:
-                    return e
-                f = c(e.func)
-                for a in map(c, e.args):
-                    f = Call(f, [a], pos=f.pos)
-                return f
-            if isinstance(e, Index):
-                return Index(c(e.target), c(e.index), pos=e.pos)
-            if isinstance(e, Conditional):
-                return Conditional(c(e.test), c(e.then_body), c(e.else_body), pos=e.pos)
-            return e  # Variable or Number
-
-        return [c(e) for e in tree]
