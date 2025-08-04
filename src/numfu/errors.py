@@ -53,7 +53,7 @@ class CPos:
         Convert parser character offsets to line/column positions.
         """
         if pos.start is None or pos.end is None:
-            raise ValueError("Pos.start and Pos.end must not be NOne")
+            raise ValueError("Pos.start and Pos.end must not be None")
         self = cls()
         self.line = code.count("\n", 0, pos.start) + 1
         self.col = pos.start - code.rfind("\n", 0, pos.start)

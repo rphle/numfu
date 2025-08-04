@@ -1,5 +1,5 @@
 """
-This module defines all the AST node types used to represent NumFu programs.
+Defines all the AST node types used to represent NumFu programs.
 
 The AST is built by the parser and consumed by the interpreter to execute
 NumFu programs. All nodes inherit from the base Expr class and include

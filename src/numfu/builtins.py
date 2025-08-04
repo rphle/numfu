@@ -1,7 +1,7 @@
 """
 Built-in Functions and Operations
 
-This module implements all built-in functions, operators, and constants
+Implements all built-in functions, operators, and constants
 available in NumFu programs. Functions are implemented as type-safe overloaded
 operations that can handle multiple argument types.
 """
