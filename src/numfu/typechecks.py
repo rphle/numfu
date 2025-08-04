@@ -114,6 +114,14 @@ class Validators:
         except Exception:
             return False
 
+    @staticmethod
+    def is_integer(x):
+        """Argument {i} must be an integer"""
+        try:
+            return isinstance(x, mpm.mpf) and x == int(x)
+        except Exception:
+            return False
+
 
 class BuiltinFunc:
     def __init__(self, name, eval_lists: bool = False, help: HelpMsg = HelpMsg()):

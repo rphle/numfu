@@ -209,7 +209,11 @@ Builtins._min.add([InfiniteOf(Num)], Num, min).add(
 
 Builtins._ceil.add([Num], Num, mpm.ceil)
 Builtins._floor.add([Num], Num, mpm.floor)
-Builtins._round.add([Num], Num, lambda x: Num(round(x)))
+Builtins._round.add([Num], Num, lambda x: Num(round(x))).add(
+    [Num, Num],
+    Num,
+    lambda x, p: Num(round(x, int(p)), validators=[None, Validators.is_integer]),
+)
 Builtins._sign.add([Num], Num, mpm.sign)
 Builtins._abs.add([Num], Num, mpm.fabs)
 
