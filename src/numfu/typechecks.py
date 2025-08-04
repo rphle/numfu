@@ -7,7 +7,14 @@ from typing import Any, Callable, get_args
 import mpmath as mpm
 
 from .ast_types import List
-from .errors import ErrorMeta, Pos, nTypeError
+from .errors import (
+    ErrorMeta,
+    Pos,
+    nAssertionError,
+    nIndexError,
+    nRuntimeError,
+    nTypeError,
+)
 
 
 def check_type(val, typ):
@@ -162,8 +169,8 @@ class BuiltinFunc:
         self,
         message: str,
         errormeta: ErrorMeta,
-        args_pos: Pos | None = None,
-        func_pos: Pos | None = None,
+        args_pos: Pos = Pos(),
+        func_pos: Pos = Pos(),
     ):
         nTypeError(
             message,
@@ -175,8 +182,8 @@ class BuiltinFunc:
         self,
         *args,
         errormeta: ErrorMeta = ErrorMeta(),
-        args_pos: Pos | None = None,
-        func_pos: Pos | None = None,
+        args_pos: Pos = Pos(),
+        func_pos: Pos = Pos(),
         precision: int = 15,
     ):
         errors = []
@@ -215,18 +222,34 @@ class BuiltinFunc:
             else:
                 if self.name == "String":
                     return func(*args, precision=precision)
-                try:
-                    return func(*args)
-                except IndexError as e:
-                    if self.name == "format":
-                        nTypeError(
-                            "Incorrect number of placeholders",
+                elif self.name == "error":
+                    nRuntimeError(
+                        args[0],
+                        Pos(func_pos.start, args_pos.end),
+                        errormeta=errormeta,
+                        name=args[1] if len(args) == 2 else None,
+                    )
+                elif self.name == "assert":
+                    if not args[0]:
+                        nAssertionError(
+                            "",
                             args_pos,
                             errormeta=errormeta,
-                            name="IndexError",
                         )
                     else:
-                        raise e
+                        return True if len(args) == 1 else args[1]
+                else:
+                    try:
+                        return func(*args)
+                    except IndexError as e:
+                        if self.name == "format":
+                            nIndexError(
+                                "Incorrect number of placeholders",
+                                args_pos,
+                                errormeta=errormeta,
+                            )
+                        else:
+                            raise e
 
         for arg_types, message in self._errors:
             if all(check_type(arg, typ) for arg, typ in zip(args, arg_types)):

@@ -116,7 +116,7 @@ class Error:
                     )
 
         console.print(
-            f"[bold blue]{name or self.__class__.__name__.removeprefix("n")}[/blue bold]: [blue]{message}[/blue]"
+            f"[bold blue]{name or self.__class__.__name__.removeprefix("n")}[/blue bold]{f': [blue]{message}[/blue]' if message else ''}"
         )
 
         if errormeta.fatal:
@@ -140,6 +140,14 @@ class nNameError(Error):
 
 
 class nIndexError(Error):
+    pass
+
+
+class nRuntimeError(Error):
+    pass
+
+
+class nAssertionError(Error):
     pass
 
 

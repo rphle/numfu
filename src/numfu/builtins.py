@@ -1,6 +1,8 @@
 import operator
 import random
 import re
+import sys
+import time
 from dataclasses import dataclass
 from typing import Any
 
@@ -128,7 +130,7 @@ class Builtins:
 
     # System
     _error = overload("error")
-    _assert = overload("assert")
+    _assert = overload("assert", eval_lists=True)
     _exit = overload("exit")
     _time = overload("time")
 
@@ -305,3 +307,8 @@ Builtins._print.add(
 
 Builtins._random.add([], Num, lambda: Num(random.random()))
 Builtins._seed.add([Num | str], None, random.seed)
+
+Builtins._error.add([str], None, lambda x: None).add([str, str], None, lambda x: None)
+Builtins._assert.add([bool], Any, lambda x: None).add([bool, Any], Any, lambda x: None)
+Builtins._exit.add([], None, sys.exit)
+Builtins._time.add([], Num, lambda: Num(time.time()))
