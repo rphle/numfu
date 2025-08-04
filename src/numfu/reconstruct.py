@@ -72,7 +72,10 @@ class Resolver(lark.Transformer):
 
     def variable(self, name):
         value = self.env.get(name[0].value, name[0])
-        value = tree_repr(value, precision=self.precision, env=self.env)
+        if not isinstance(value, Lambda):
+            value = tree_repr(value, precision=self.precision, env=self.env)
+        else:
+            value = lark.Tree("variable", [lark.Token("NAME", name)])  # type: ignore
         return value
 
 

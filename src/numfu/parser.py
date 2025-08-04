@@ -215,16 +215,81 @@ class AstGenerator(Transformer):
         chain = [
             Variable(f.value, pos=_tokpos(f)) if isinstance(f, Token) else f
             for f in args[::-2]
-        ] + [Spread(Variable("args"), pos=_tokpos(pipes[0]))]
+        ]
 
-        def construct(i=0):
+        def construct_ast(i=0):
             return (
-                Call(func=chain[i], args=[construct(i + 1)], pos=_tokpos(pipes[i]))
+                Call(func=chain[i], args=[construct_ast(i + 1)], pos=_tokpos(pipes[i]))
                 if i < len(chain) - 1
                 else chain[i]
             )
 
-        return Lambda(arg_names=["...args"], body=construct())
+        def ast_to_lark_tree(ast_node):
+            """Convert an AST node back to its Lark tree representation"""
+            if isinstance(ast_node, Variable):
+                return Tree("variable", [Token("NAME", ast_node.name)])  # type: ignore
+            elif isinstance(ast_node, Call):
+                func_tree = ast_to_lark_tree(ast_node.func)
+                # Wrap each argument in list_element, except for spread operations
+                call_args = []
+                for arg in ast_node.args:
+                    if isinstance(arg, Spread):
+                        call_args.append(ast_to_lark_tree(arg))
+                    else:
+                        call_args.append(Tree("list_element", [ast_to_lark_tree(arg)]))
+                args_tree = Tree("call_args", call_args)
+                return Tree("call", [func_tree, args_tree])
+            elif isinstance(ast_node, Number):
+                return Tree("number", [Token("NUMBER", ast_node.value)])  # type: ignore
+            elif isinstance(ast_node, String):
+                return Tree("string", [Token("STRING", f'"{ast_node.value}"')])  # type: ignore
+            elif isinstance(ast_node, Bool):
+                return Tree("boolean", [Token("BOOLEAN", str(ast_node.value).lower())])  # type: ignore
+            elif isinstance(ast_node, List):
+                return Tree(
+                    "list_literal",
+                    [
+                        Tree("list_element", [ast_to_lark_tree(elem)])
+                        for elem in ast_node.elements
+                    ],
+                )
+            elif isinstance(ast_node, Spread):
+                return Tree(
+                    "spread_op",
+                    [Token("SPREAD", "..."), ast_to_lark_tree(ast_node.value)],  # type: ignore
+                )
+            else:
+                raise ValueError(
+                    f"Cannot convert AST node {type(ast_node)} to Lark tree"
+                )
+
+        def construct_lark_tree(i=0):
+            """Recursively build the Lark parse tree for the composition chain"""
+            if i < len(chain) - 1:
+                func_tree = ast_to_lark_tree(chain[i])
+
+                return Tree(
+                    "call", [func_tree, Tree("call_args", [construct_lark_tree(i + 1)])]
+                )
+            else:
+                return Tree(
+                    "spread_op",
+                    [Token("SPREAD", "..."), Tree("variable", [Token("NAME", "args")])],  # type: ignore
+                )
+
+        lambda_params_tree = Tree(
+            "lambda_params",
+            [Tree("rest_param", [Token("NAME", "args")])],  # type: ignore
+        )
+
+        lambda_tree = Tree("lambda_def", [lambda_params_tree, construct_lark_tree()])
+
+        return Lambda(
+            arg_names=["...args"],
+            body=construct_ast(),
+            tree=zlib.compress(pickle.dumps(lambda_tree)),
+            pos=_tokpos(pipes[0]) if pipes else Pos(0, 0),
+        )
 
     def constant_def(self, name, value):
         return Constant(name, value, pos=Pos(name.start_pos - 6, name.end_pos))

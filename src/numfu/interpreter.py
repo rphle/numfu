@@ -142,6 +142,8 @@ class Interpreter:
                     for arg in args
                 ]
 
+            args = [arg.expr if isinstance(arg, PrintOutput) else arg for arg in args]
+
             r = func(
                 *args,
                 errormeta=self._errormeta,
