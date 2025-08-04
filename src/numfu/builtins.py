@@ -262,7 +262,7 @@ Builtins._string.add([Any], str, to_string)
 Builtins._append.add(
     [List, Any], List, lambda a, b: List(a.elements + [b], pos=a.pos, curry=a.curry)
 )
-Builtins._length.add([List | str], Num, lambda a: len(a))
+Builtins._length.add([List | str], Num, lambda a: Num(len(a)))
 Builtins._member.add([Any, List], bool, lambda a, b: a in b).add(
     [str, str], bool, lambda a, b: a in b
 )
@@ -304,7 +304,9 @@ Builtins._slice.add(
     validators=[None, Validators.string_index, Validators.string_index],
 )
 Builtins._join.add([List, str], str, lambda a, b: b.join(a.elements))
-Builtins._split.add([str, str], List, lambda a, b: List(a.split(b)))
+Builtins._split.add(
+    [str, str], List, lambda a, b: List(a.split(b) if b != "" else a.split())
+)
 Builtins._format.add(
     [str, InfiniteOf(str)],
     str,
