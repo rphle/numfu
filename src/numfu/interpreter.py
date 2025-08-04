@@ -260,7 +260,9 @@ class Interpreter:
                         )
                         if isinstance(c, lark.Tree) and c.data == "lambda_params"
                     )
-                    del tree.children[params_i].children[0]
+                    del tree.children[params_i].children[
+                        : -(len(arg_names) - len(args))
+                    ]
                     tree = zlib.compress(pickle.dumps(tree))
                 except zlib.error:
                     tree = b""
