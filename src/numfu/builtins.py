@@ -119,6 +119,7 @@ class Builtins:
 
     # Functions
     _map = overload("map")
+    _filter = overload("filter")
 
     # Output
     _print = overload("print")
@@ -289,13 +290,18 @@ Builtins._format.add(
 )
 
 Builtins._map.add(
-    [Lambda, List],
+    [List, Lambda],
     List,
-    lambda f, lst: List(
+    lambda lst, f: List(
         [Call(f, [element], pos=f.pos) for element in lst.elements],
         pos=lst.pos,
         curry=lst.curry,
     ),
+)
+Builtins._filter.add(
+    [List, Lambda],
+    List,
+    lambda: None,
 )
 
 Builtins._println.add(

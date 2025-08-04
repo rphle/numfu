@@ -118,6 +118,8 @@ class Interpreter:
                 args_pos=this.pos,
                 func_pos=this.func.pos,  # type: ignore
                 precision=self.precision,
+                interpreter=self if func.name == "filter" else None,
+                env=env,
             )
             if isinstance(r, mpmath.mpc):
                 return r if r.imag == 0 else mpmath.nan  # type: ignore

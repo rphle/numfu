@@ -6,7 +6,7 @@ from typing import Any, Callable, get_args
 
 import mpmath as mpm
 
-from .ast_types import List
+from .ast_types import Call, List
 from .errors import (
     ErrorMeta,
     Pos,
@@ -124,7 +124,12 @@ class Validators:
 
 
 class BuiltinFunc:
-    def __init__(self, name, eval_lists: bool = False, help: HelpMsg = HelpMsg()):
+    def __init__(
+        self,
+        name,
+        eval_lists: bool = False,
+        help: HelpMsg = HelpMsg(),
+    ):
         self.name = name
         self.eval_lists = eval_lists
         self.help = help
@@ -193,6 +198,8 @@ class BuiltinFunc:
         args_pos: Pos = Pos(),
         func_pos: Pos = Pos(),
         precision: int = 15,
+        interpreter=None,
+        env: dict = {},
     ):
         errors = []
         for arg_types, _, func, help, validators, transformer in self._overloads:
@@ -246,6 +253,23 @@ class BuiltinFunc:
                         )
                     else:
                         return True if len(args) == 1 else args[1]
+                elif self.name == "filter":
+                    if not interpreter:
+                        raise ValueError(
+                            "Missing interpreter reference for filter builtin function"
+                        )
+                    return List(
+                        [
+                            e
+                            for e in args[0].elements
+                            if interpreter._eval(
+                                Call(func=args[1], args=[e], pos=func_pos),
+                                env=env | args[0].curry,
+                            )
+                        ],
+                        pos=args[0].pos,
+                        curry=args[0].curry,
+                    )
                 else:
                     try:
                         return func(*args)
