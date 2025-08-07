@@ -314,9 +314,11 @@ Builtins._split.add(
 )
 
 Builtins._format.add(
-    [str, InfiniteOf(str)],
+    [str, InfiniteOf(Any)],
     str,
-    lambda a, *args: a.format(*[str(a) for a in args]),
+    lambda a, *args, precision=15: a.format(
+        *[to_string(a, precision=precision) for a in args]
+    ),
 )
 Builtins._trim.add([str], str, lambda s: s.strip())
 Builtins._toLowerCase.add([str], str, lambda s: s.lower())

@@ -275,7 +275,7 @@ class BuiltinFunc:
                     break
 
             else:
-                if self.name == "String":
+                if self.name in ("String", "format"):
                     return func(*args, precision=precision)
                 elif self.name == "error":
                     nRuntimeError(
