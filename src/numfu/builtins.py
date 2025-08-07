@@ -130,7 +130,7 @@ class Builtins:
     # Lists & Strings
     _append = overload("append")
     _length = overload("length")
-    _member = overload("member")
+    _contains = overload("contains", eval_lists=True)
     _set = overload("set")
     _reverse = overload("reverse")
     _sort = overload("sort", eval_lists=True)
@@ -268,8 +268,8 @@ Builtins._append.add(
     [List, Any], List, lambda a, b: List(a.elements + [b], pos=a.pos, curry=a.curry)
 )
 Builtins._length.add([List | str], Num, lambda a: Num(len(a)))
-Builtins._member.add([Any, List], bool, lambda a, b: a in b).add(
-    [str, str], bool, lambda a, b: a in b
+Builtins._contains.add([List, Any], bool, lambda a, b: b in a).add(
+    [str, str], bool, lambda a, b: b in a
 )
 Builtins._set.add(
     [List, Num, Any],

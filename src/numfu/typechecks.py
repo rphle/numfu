@@ -334,7 +334,7 @@ class BuiltinFunc:
 
         if errors:
             self.exception(
-                errors[-1], errormeta=errormeta, func_pos=func_pos, args_pos=args_pos
+                errors[0], errormeta=errormeta, func_pos=func_pos, args_pos=args_pos
             )
 
         expected_count = len(self._overloads[0][0]) if self._overloads else 0
