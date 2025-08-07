@@ -32,6 +32,8 @@ def check_type(val, typ):
         return isinstance(val, (list, List)) and all(
             check_type(item, typ.element_type) for item in val
         )
+    if typ.__name__ == "mpf" and getattr(val, "name", None) in ("e", "pi"):
+        return True
     return isinstance(val, typ)
 
 

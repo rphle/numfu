@@ -20,6 +20,7 @@ from .ast_types import Call, Lambda, List, PrintOutput
 from .typechecks import BuiltinFunc, HelpMsg, InfiniteOf, ListOf, Validators
 
 Num = mpm.mpf
+mpm.e.name = "e"
 
 
 def overload(name, eval_lists: bool = False, help: HelpMsg = HelpMsg()):
