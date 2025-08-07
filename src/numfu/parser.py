@@ -94,15 +94,30 @@ class AstGenerator(Transformer):
         Converts chains into logical AND expressions:
         a < b <= c becomes (a < b) && (b <= c)
         """
+        if len(args) == 3:
+            left, op, right = args
+            return Call(
+                Variable(str(op), pos=_tokpos(op)),
+                [left, right],
+                pos=Pos(left.pos.start, right.pos.end),
+            )
 
-        left, op, right = args[0], args[1], args[2]
-        expr = Call(
-            Variable(str(op), pos=_tokpos(op)),
-            [left, right],
-            pos=Pos(args[0].pos.start, args[-1].pos.end),
-        )
+        chainable_ops = {"<", "<=", ">", ">="}
+        equality_ops = {"==", "!="}
 
-        if len(args) > 3:
+        operators = [str(args[i]) for i in range(1, len(args), 2)]
+
+        all_chainable = all(op in chainable_ops for op in operators)
+        all_equality = all(op in equality_ops for op in operators)
+
+        if all_chainable or all_equality:
+            left, op, right = args[0], args[1], args[2]
+            expr = Call(
+                Variable(str(op), pos=_tokpos(op)),
+                [left, right],
+                pos=Pos(args[0].pos.start, args[-1].pos.end),
+            )
+
             for i in range(3, len(args), 2):
                 left_of_new_link = args[i - 1]
                 op = args[i]
@@ -120,7 +135,24 @@ class AstGenerator(Transformer):
                     pos=Pos(args[0].pos.start, args[-1].pos.end),
                 )
 
-        return expr
+            return expr
+        else:
+            result = Call(
+                Variable(str(args[1]), pos=_tokpos(args[1])),
+                [args[0], args[2]],
+                pos=Pos(args[0].pos.start, args[2].pos.end),
+            )
+
+            for i in range(3, len(args), 2):
+                op = args[i]
+                right = args[i + 1]
+                result = Call(
+                    Variable(str(op), pos=_tokpos(op)),
+                    [result, right],
+                    pos=Pos(args[0].pos.start, right.pos.end),
+                )
+
+            return result
 
     def pos(self, op, value):
         return value
