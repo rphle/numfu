@@ -139,6 +139,10 @@ class Builtins:
     _split = overload("split")
 
     _format = overload("format")
+    _trim = overload("trim")
+    _toLowerCase = overload("toLowerCase")
+    _toUpperCase = overload("toUpperCase")
+    _replace = overload("replace")
 
     # Functions
     _map = overload("map")
@@ -308,11 +312,16 @@ Builtins._join.add([List, str], str, lambda a, b: b.join(a.elements))
 Builtins._split.add(
     [str, str], List, lambda a, b: List(a.split(b) if b != "" else a.split())
 )
+
 Builtins._format.add(
     [str, InfiniteOf(str)],
     str,
-    lambda a, *args: a.format(*args),
+    lambda a, *args: a.format(*[str(a) for a in args]),
 )
+Builtins._trim.add([str], str, lambda s: s.strip())
+Builtins._toLowerCase.add([str], str, lambda s: s.lower())
+Builtins._toUpperCase.add([str], str, lambda s: s.upper())
+Builtins._replace.add([str, str, str], str, lambda a, b, c: a.replace(b, c))
 
 Builtins._map.add(
     [List, Lambda],
