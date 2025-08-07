@@ -276,7 +276,17 @@ class BuiltinFunc:
 
             else:
                 if self.name in ("String", "format"):
-                    return func(*args, precision=precision)
+                    try:
+                        return func(*args, precision=precision)
+                    except IndexError as e:
+                        if self.name == "format":
+                            nIndexError(
+                                "Incorrect number of placeholders",
+                                args_pos,
+                                errormeta=errormeta,
+                            )
+                        else:
+                            raise e
                 elif self.name == "error":
                     nRuntimeError(
                         args[0],
@@ -311,17 +321,7 @@ class BuiltinFunc:
                         curry=args[0].curry,
                     )
                 else:
-                    try:
-                        return func(*args)
-                    except IndexError as e:
-                        if self.name == "format":
-                            nIndexError(
-                                "Incorrect number of placeholders",
-                                args_pos,
-                                errormeta=errormeta,
-                            )
-                        else:
-                            raise e
+                    return func(*args)
 
         for arg_types, message in self._errors:
             if all(check_type(arg, typ) for arg, typ in zip(args, arg_types)):

@@ -62,7 +62,7 @@ def division(a, b):
             return mpm.mpf("-inf")
 
 
-def set_list(i: int, value, lst: List):
+def set_list(lst: List, i: int, value: Any):
     lst.elements[int(i)] = value
     return lst
 
@@ -143,6 +143,7 @@ class Builtins:
     _toLowerCase = overload("toLowerCase")
     _toUpperCase = overload("toUpperCase")
     _replace = overload("replace")
+    _count = overload("count")
 
     # Functions
     _map = overload("map")
@@ -324,6 +325,7 @@ Builtins._trim.add([str], str, lambda s: s.strip())
 Builtins._toLowerCase.add([str], str, lambda s: s.lower())
 Builtins._toUpperCase.add([str], str, lambda s: s.upper())
 Builtins._replace.add([str, str, str], str, lambda a, b, c: a.replace(b, c))
+Builtins._count.add([str, str], Num, lambda a, b: a.count(b))
 
 Builtins._map.add(
     [List, Lambda],
