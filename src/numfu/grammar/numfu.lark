@@ -4,9 +4,10 @@ start: (expr | expr assertion? ";"?)*
 ?compose_expr: logic_or | compose_expr (COMPOSE logic_or) -> compose_chain
 
 ?logic_or: logic_and | logic_or OR logic_and -> bin_op
-?logic_and: comp | logic_and AND comp -> bin_op
+?logic_and: equality | logic_and AND equality -> bin_op
 
-?comp: arith ( (EQ | NE | LT | GT | LE | GE) arith )*
+?equality: comparison | equality (EQ | NE) comparison -> bin_op
+?comparison: arith | comparison (LT | GT | LE | GE) arith -> bin_op
 ?arith: term | arith (ADD | SUB) term -> bin_op
 ?term: factor | term (MUL | DIV | MOD) factor -> bin_op
 ?factor: power | ADD factor -> pos | SUB factor -> neg | NOT factor -> not_op
