@@ -325,7 +325,7 @@ Builtins._trim.add([str], str, lambda s: s.strip())
 Builtins._toLowerCase.add([str], str, lambda s: s.lower())
 Builtins._toUpperCase.add([str], str, lambda s: s.upper())
 Builtins._replace.add([str, str, str], str, lambda a, b, c: a.replace(b, c))
-Builtins._count.add([str, str], Num, lambda a, b: a.count(b))
+Builtins._count.add([str, str], Num, lambda a, b: Num(a.count(b)))
 
 Builtins._map.add(
     [List, Lambda],
