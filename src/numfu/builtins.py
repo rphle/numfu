@@ -16,7 +16,7 @@ from typing import Any
 
 import mpmath as mpm
 
-from .ast_types import Call, Lambda, List, PrintOutput
+from .ast_types import Call, Lambda, List, PrintOutput, Variable
 from .typechecks import BuiltinFunc, HelpMsg, InfiniteOf, ListOf, Validators
 
 Num = mpm.mpf
@@ -309,7 +309,7 @@ Builtins._slice.add(
     ),
     validators=[None, Validators.string_index, Validators.string_index],
 )
-Builtins._join.add([List, str], str, lambda a, b: b.join(a.elements))
+Builtins._join.add([ListOf(str), str], str, lambda a, b: b.join(a.elements))
 Builtins._split.add(
     [str, str], List, lambda a, b: List(a.split(b) if b != "" else a.split())
 )
@@ -328,10 +328,15 @@ Builtins._replace.add([str, str, str], str, lambda a, b, c: a.replace(b, c))
 Builtins._count.add([str, str], Num, lambda a, b: Num(a.count(b)))
 
 Builtins._map.add(
-    [List, Lambda],
+    [List, Lambda | BuiltinFunc],
     List,
     lambda lst, f: List(
-        [Call(f, [element], pos=f.pos) for element in lst.elements],
+        [
+            Call(f, [element], pos=f.pos)
+            if isinstance(f, Lambda)
+            else Call(Variable(f.name), [element], pos=element.pos)
+            for element in lst.elements
+        ],
         pos=lst.pos,
         curry=lst.curry,
     ),
