@@ -1,0 +1,136 @@
+# NumFu Programming Language
+
+**NumFu** is a functional programming language designed for readable & expressive code, extensibility, and mathematical computing with arbitrary precision arithmetic.
+
+## Features
+
+- **Arbitrary Precision Arithmetic** - Reliable mathematical computing powered by Python's mpmath
+- **First-Class Functions** - Automatic currying, partial application, and function composition
+- **Expressive Syntax** - Infix operators, spread/rest operators, and lots of syntactic sugar
+- **Interactive Development** - Friendly REPL and helpful error messages
+- **Minimal Complexity** - Only four core types: `Number`, `Boolean`, `List`, and `String`
+- **Python Integration** - Large & reliable standard library through NumFu's Python runtime
+- **Extensible** - NumFu is written entirely in Python with the goal of being extensible and easy to understand.
+
+## Quick Start
+
+### Installation
+
+#### From PyPI *(coming soon)*
+```bash
+pip install numfu-lang
+```
+
+#### From Source
+```bash
+git clone https://github.com/dr-lego/numfu
+cd numfu
+./scripts/install.sh
+```
+
+### Hello NumFu!
+
+Create `hello.nfu`:
+```numfu
+// Mathematical computing with arbitrary precision
+let goldenRatio = {depth ->
+  let cf = {d ->
+    if d <= 0 then 1
+    else 1 + 1 / cf(d - 1)
+  } in cf(depth)
+} in goldenRatio(15)  // ~1.6180
+
+// Function composition & piping
+let add1 = {x -> x + 1} in
+let double = {x -> x * 2} in
+let composed = add1 >> double in
+  5 |> composed  // 12
+
+// Built-in testing with assertions
+let square = {x -> x * x} in
+  square(7) ---> _ == 49  // ✓ passes
+```
+
+Run it:
+```bash
+numfu hello.nfu
+```
+
+### Interactive REPL
+
+```bash
+numfu repl
+```
+
+```
+NumFu REPL. Type 'exit' or press Ctrl+D to exit.
+>>> 2 + 3 * 4
+14
+>>> let square = {x -> x * x} in square(7)
+49
+>>> filter([1, 2, 3, 4, 5, 6, 7], {x -> x%2 == 0}) |> max
+6
+```
+
+## 📖 Documentation
+
+- **[Language Guide](https://numfu-docs.example.com/docs/)** - Complete language tutorial & reference
+- **[Built-ins Reference](https://numfu-docs.example.com/docs/reference/builtins)** - All built-in functions and operators
+- **[CLI Reference](https://numfu-docs.example.com/docs/reference/cli)** - Command-line interface guide
+
+## 🛠️ Development
+
+### Prerequisites
+
+- Python ≥ 3.13
+
+### Setup Development Environment
+
+```bash
+git clone https://github.com/dr-lego/numfu
+cd numfu
+
+pip install -r requirements.txt
+
+./scripts/build.sh
+# NumFu contains built-ins written in NumFu itself (src/numfu/stdlib/builtins.nfu). The above script first installs NumFu without the built-ins, then parses and serializes the file, and finally performs a full editable install. The script also builds NumFu and creates wheels.
+```
+
+### Building Documentation
+
+```bash
+cd docusaurus
+npm install
+npm run start # local preview
+npm run build # build to 'docs-build'
+```
+
+## Project Structure
+
+```
+numfu/
+├── src/numfu/
+│   ├── __init__.py         # Package exports
+│   ├── parser.py           # Lark-based parser & AST generator
+│   ├── interpreter.py      # Complete Interpreter
+│   ├── ast_types.py        # AST node definitions
+│   ├── builtins.py         # Built-in functions
+│   ├── cli.py              # Command-line interface
+│   ├── repl.py             # Interactive REPL
+│   ├── errors.py           # Error handling & display
+│   ├── typechecks.py       # Builtin type system
+│   ├── reconstruct.py      # Code reconstruction for printing
+│   ├── grammar/            # Lark grammar files
+│   └── stdlib/             # Standard library modules
+├── docs/                   # Language documentation
+│   ├── guide/              # User guides
+│   └── reference/          # Reference
+├── docusaurus/             # Docusaurus website
+├── tests/                  # Test files
+├── scripts/                # Build and utility scripts
+└── pyproject.toml          # Configuration
+```
+
+## License
+
+This project is licensed under the GNU General Public License - see the [LICENSE](LICENSE) file for details.
