@@ -60,11 +60,17 @@ def default(ctx: click.Context, source: str, precision: int, rec_depth: int) -> 
 @cli.command()
 @click.argument("source", type=click.Path(exists=True, dir_okay=False, readable=True))
 @click.option(
+    "-p",
+    is_flag=True,
+    help="Wether to pretty print the AST instead of saving it.",
+    default=False,
+)
+@click.option(
     "-o",
     "--output",
     type=click.Path(dir_okay=False, writable=True),
     default=None,
-    help="Output file path to save the pickled AST.",
+    help="Output file path to save the parsed file.",
 )
 @click.option(
     "-i",
@@ -89,22 +95,33 @@ def default(ctx: click.Context, source: str, precision: int, rec_depth: int) -> 
     type=int,
     help="Indentation size for AST pretty print.",
 )
-def ast(
-    source: str, output: Optional[str], imports: List[str], max_depth: int, indent: int
+def parse(
+    source: str,
+    p: bool,
+    output: Optional[str],
+    imports: List[str],
+    max_depth: int,
+    indent: int,
 ) -> None:
-    """Parse the input file and pretty-print its AST."""
+    """Parse the input file and serialize or pretty print it"""
     source_path = Path(source)
     code = source_path.read_text()
     errormeta = ErrorMeta(file=source_path, fatal=True)
     parser = Parser(errormeta=errormeta, imports=list(imports))
     repl = REPL(max_depth=max_depth, indent=indent)
 
-    tree, _ = repl.print_ast(parser.parse(code), actually_print=not output)
+    tree, _ = repl.print_ast(parser.parse(code), actually_print=p)
 
-    if output:
-        output_path = Path(output)
-        output_path.write_bytes(pickle.dumps(tree))
-        click.echo(f"Parsed file saved to {output_path}")
+    if not p:
+        if not output:
+            output_path = Path(source.removesuffix(".nfu") + ".nfut")
+        else:
+            output_path = Path(source)
+        try:
+            output_path.write_bytes(pickle.dumps(tree))
+            click.echo(f"Parsed file saved to {output_path}")
+        except Exception as e:
+            click.echo(f"Error saving parsed file: {e}")
 
 
 @cli.group(invoke_without_command=True)
