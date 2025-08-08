@@ -4,8 +4,22 @@ NOTES.md
 TODO.md
 .ruff_cache
 wheels
-.numfu_build_venv
 *.nfut
 build
 tests
 test.py
+
+# Docusaurus
+node_modules
+docs-build
+.docusaurus
+.cache-loader
+
+.DS_Store
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*

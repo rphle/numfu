@@ -1,0 +1,117 @@
+.buttons {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.feature-list {
+    list-style: none;
+    padding: 0;
+}
+
+.feature-list li {
+    margin-bottom: 1.5rem;
+    padding-left: 1.5rem;
+    position: relative;
+    line-height: 1.6;
+}
+
+.feature-list li::before {
+    content: "✓";
+    position: absolute;
+    left: 0;
+    color: var(--ifm-color-success);
+    font-weight: bold;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    font-weight: 600;
+    line-height: 1.25;
+}
+
+.navbar {
+    display: none;
+}
+
+[class*="codeBlockContainer_"] {
+    box-shadow: none;
+    border-radius: 10px;
+    background: transparent !important;
+    border: none;
+}
+
+[class*="toggle_"] {
+    display: none;
+}
+
+[class*="codeBlockTitle_"] {
+    color: var(--text-color);
+    font-size: inherit;
+    border: none;
+}
+
+pre {
+    background: var(--ifm-code-background) !important;
+    border: 0.1rem solid #ebe6e7 !important;
+}
+
+pre .token {
+    color: var(--text-color) !important;
+}
+
+.button {
+    border-radius: 8px;
+    border: 1px solid #ebe6e7;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.button:hover {
+    transform: translateY(-2px);
+    background: transparent;
+    color: var(--text-color);
+}
+
+.clean-btn {
+    background: none !important;
+}
+
+.equal-height {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.equal-height > .col {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.main-wrapper {
+    animation: fade-in 0.5s ease-out;
+}
+
+@keyframes fade-in {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@media screen and (width <= 768px) {
+    :root {
+        --ifm-spacing-horizontal: 1rem;
+    }
+}

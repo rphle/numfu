@@ -1,0 +1,62 @@
+/** @type {import('@docusaurus/types').Config} */
+const config = {
+  title: "NumFu",
+  tagline:
+    "Functional programming language designed for readability, extensibility and arbitrary precision.",
+  favicon: "img/favicon.ico",
+
+  future: {
+    v4: true,
+  },
+
+  url: "https://numfu.dev",
+  baseUrl: "/",
+
+  organizationName: "dr-lego",
+  projectName: "numfu",
+
+  onBrokenLinks: "throw",
+  onBrokenMarkdownLinks: "warn",
+
+  i18n: {
+    defaultLocale: "en",
+    locales: ["en"],
+  },
+
+  presets: [
+    [
+      "classic",
+      /** @type {import('@docusaurus/preset-classic').Options} */
+      ({
+        docs: {
+          path: "../docs",
+          sidebarPath: "./sidebars.js",
+          editUrl: "https://github.com/dr-lego/numfu/tree/main/docs/",
+        },
+
+        theme: {
+          customCss: "./src/css/theme.css",
+        },
+      }),
+    ],
+  ],
+
+  themeConfig:
+    /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
+    ({
+      metadata: [
+        {
+          name: "keywords",
+          content:
+            "numfu, functional programming, programming language, programming, extensible, arbitrary precision, mathematics, computation, pipes, composition",
+        },
+        {
+          name: "description",
+          content:
+            "NumFu is a functional programming language designed for readability, extensibility and arbitrary precision arithmetic.",
+        },
+      ],
+    }),
+};
+
+export default config;

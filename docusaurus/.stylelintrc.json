@@ -1,0 +1,15 @@
+{
+  "extends": ["stylelint-config-standard"],
+  "rules": {
+    "custom-property-empty-line-before": [
+      "always",
+      {
+        "ignore": [
+          "after-custom-property",
+          "inside-single-line-block",
+          "first-nested"
+        ]
+      }
+    ]
+  }
+}
