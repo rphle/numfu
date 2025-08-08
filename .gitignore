@@ -1,7 +1,6 @@
 __pycache__
 *.egg-info
 NOTES.md
-TODO.md
 .ruff_cache
 wheels
 *.nfut

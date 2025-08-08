@@ -143,6 +143,15 @@ To run all tests from the `tests` folder:
 ./scripts/tests.sh
 ```
 
+## Contributing
+
+Got an idea or found a bug? Please [open an issue](https://github.com/dr-lego/numfu/issues) to report bugs or suggest features.
+
+Want to contribute code?
+Check out existing issues and take a look at [TODO.md](TODO.md) for open tasks. Don't forget to run all tests before committing (see above section)!
+
+Pull requests are welcome!
+
 ## License
 
 This project is licensed under the GNU General Public License - see the [LICENSE](LICENSE) file for details.
