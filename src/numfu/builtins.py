@@ -195,7 +195,13 @@ Builtins._or.add([Any, Any], bool, lambda a, b: bool(a) or bool(b))
 Builtins._not.add([Any], bool, lambda a: not bool(a))
 Builtins._xor.add([Any, Any], bool, lambda a, b: bool(a) ^ bool(b))
 
-Builtins._eq.add([Any, Any], bool, operator.eq)
+Builtins._eq.add(
+    [Any, Any],
+    bool,
+    lambda a, b: mpm.almosteq(a, b)
+    if isinstance(a, Num) and isinstance(b, Num)
+    else a == b,
+)
 Builtins._ne.add([Any, Any], bool, operator.ne)
 Builtins._gt.add([Num, Num], bool, operator.gt)
 Builtins._lt.add([Num, Num], bool, operator.lt)
