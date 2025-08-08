@@ -88,6 +88,18 @@ class Interpreter:
     def exception(self, error, message, pos: Pos = Pos(-1, -1)) -> None:
         error(message, pos=pos, errormeta=self._errormeta)
 
+    def eval_lists(self, exprs, eval_all=False, env={}):
+        return [
+            List(
+                self.eval_lists(expr.elements, eval_all=True, env=env | expr.curry),  # type:ignore
+                pos=expr.pos,
+                curry=expr.curry,
+            )
+            if isinstance(expr, List)
+            else (expr if not eval_all else self._eval(expr, env=env))
+            for expr in exprs
+        ]
+
     def _variable(self, this: Variable, env: dict = {}) -> Expr | None:
         try:
             return env[this.name]
@@ -131,16 +143,7 @@ class Interpreter:
 
         if isinstance(func, BuiltinFunc):
             if func.eval_lists:
-                args = [
-                    List(
-                        [self._eval(e, env=env | arg.curry) for e in arg],
-                        pos=arg.pos,
-                        curry=arg.curry,
-                    )
-                    if isinstance(arg, List)
-                    else arg
-                    for arg in args
-                ]
+                args = self.eval_lists(self.eval_lists(args))
 
             args = [arg.expr if isinstance(arg, PrintOutput) else arg for arg in args]
 
