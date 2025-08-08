@@ -88,17 +88,19 @@ class Interpreter:
     def exception(self, error, message, pos: Pos = Pos(-1, -1)) -> None:
         error(message, pos=pos, errormeta=self._errormeta)
 
-    def eval_lists(self, exprs, eval_all=False, env={}):
-        return [
-            List(
-                self.eval_lists(expr.elements, eval_all=True, env=env | expr.curry),  # type:ignore
-                pos=expr.pos,
-                curry=expr.curry,
-            )
-            if isinstance(expr, List)
-            else (expr if not eval_all else self._eval(expr, env=env))
-            for expr in exprs
-        ]
+    def _eval_lists(self, exprs):
+        r = []
+        for expr in exprs:
+            if isinstance(expr, List):
+                elements = [self._eval(arg, env=expr.curry) for arg in expr.elements]
+                for i, res in enumerate(elements):
+                    if isinstance(res, (List, Lambda)):
+                        elements[i] = self._eval_lists([res])[0]
+
+                r.append(List(elements, pos=expr.pos, curry=expr.curry))  # type:ignore
+            else:
+                r.append(expr)
+        return r
 
     def _variable(self, this: Variable, env: dict = {}) -> Expr | None:
         try:
@@ -143,7 +145,7 @@ class Interpreter:
 
         if isinstance(func, BuiltinFunc):
             if func.eval_lists:
-                args = self.eval_lists(self.eval_lists(args))
+                args = self._eval_lists(args)
 
             args = [arg.expr if isinstance(arg, PrintOutput) else arg for arg in args]
 
@@ -156,6 +158,7 @@ class Interpreter:
                 interpreter=self if func.name == "filter" else None,
                 env=env,
             )
+
             if isinstance(r, mpmath.mpc):
                 return r if r.imag == 0 else mpmath.nan  # type: ignore
             elif isinstance(r, PrintOutput):
@@ -359,7 +362,7 @@ class Interpreter:
         if this.printed:
             return this.expr
         else:
-            self.put(self.get_repr([self._restore_atoms(this.expr)])[0] + this.end)
+            self.put(self.get_repr([this.expr])[0] + this.end)
             return PrintOutput(
                 self._eval(this.expr, env=env), end=this.end, printed=True
             )
@@ -411,10 +414,14 @@ class Interpreter:
     def get_repr(self, output: list[Expr]):
         o = []
         for node in output:
-            if isinstance(node, Number):
-                o.append(node.value.removesuffix(".0"))
-            elif isinstance(node, Bool):
-                o.append("true" if node.value else "false")
+            if isinstance(node, (Number, mpmath._ctx_mp._mpf)):
+                o.append(
+                    node.value.removesuffix(".0")
+                    if isinstance(node, Number)
+                    else mpmath.nstr(node, self.precision).removesuffix(".0")
+                )
+            elif isinstance(node, (bool, Bool)):
+                o.append("true" if node else "false")
             elif isinstance(node, Lambda):
                 o.append(reconstruct(node, precision=self.precision, env=self.glob))
             elif isinstance(node, List):
@@ -436,14 +443,6 @@ class Interpreter:
                 o.append(str(node))
         return o
 
-    def _restore_atoms(self, x):
-        if isinstance(x, mpmath.mpf):
-            return Number(mpmath.nstr(x, self.precision))
-        elif isinstance(x, bool):
-            return Bool(x)
-        else:
-            return x
-
     def run(self, tree: list[Expr], errormeta: ErrorMeta | None = None):
         self.tree = tree
         if errormeta is not None:
@@ -460,7 +459,7 @@ class Interpreter:
                 else:
                     o = self._eval(node, self.glob)
                     if o is not None and not isinstance(o, PrintOutput):
-                        self.put(self.get_repr([self._restore_atoms(o)])[0] + "\n")  # type:ignore
+                        self.put(self.get_repr([o])[0] + "\n")  # type:ignore
 
             if self.output and not self.output[-1].endswith("\n"):
                 self.put("\n")
