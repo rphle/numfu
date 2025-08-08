@@ -1,0 +1,67 @@
+true && false             ---> !_
+true && true              ---> _
+false && sqrt("error")    ---> !_
+5 && 0                    ---> !_
+
+true || false             ---> _
+false || false            ---> !_
+true || sqrt("error")     ---> _
+0 || 5                    ---> _
+
+!true               ---> !_
+!false              ---> _
+!0                  ---> _
+!5                  ---> !_
+!""                 ---> _
+!"hello"            ---> !_
+
+xor(true, false)    ---> _
+xor(true, true)     ---> !_
+xor(false, false)   ---> !_
+xor(1, 0)           ---> _
+
+5 == 5              ---> _
+"hello" == "hello"  ---> _;
+[1, 2] == [1, 2]    ---> _;
+5 == "5"            ---> !_
+
+5 != 3              ---> _
+"a" != "b"          ---> _;
+[1, 2] != [2, 1]    ---> _
+
+// Range Checking
+let age = 25 in
+  age >= 18 && age < 65  ---> _
+
+let score = 85 in
+  score >= 0 && score <= 100  ---> _
+
+// Complex Conditions
+let temperature = 22 in
+let humidity = 45 in
+let isComfortable =
+  temperature >= 20 && temperature <= 25 &&
+  humidity >= 30 && humidity <= 60 in
+  isComfortable  ---> _
+
+// Guard Clauses
+let processAge = {age ->
+  if age < 0 then error("Age cannot be negative")
+  else if age > 150 then error("Hmmm, your age seems unrealistic")
+  else format("Age {} is valid", age)
+} in processAge(25) ---> _ == "Age 25 is valid"
+
+// Conditional Assignment
+let status = {score ->
+  if score >= 90 then "excellent"
+  else if score >= 70 then "good"
+  else if score >= 50 then "pass"
+  else "fail"
+} in status(85) ---> _ == "good"
+
+// Conditional Function Selection
+let operation = "square" in
+let processor = if operation == "square" then {x -> x * x}
+                else if operation == "double" then {x -> x * 2}
+                else {x -> x} in
+  processor(6) ---> _ == 36

@@ -1,0 +1,189 @@
+let radius = 5 in pi * radius^2 ---> round(_, 2) == 78.54
+
+let a = 1, b = 5, c = 6 in b^2 - 4*a*c  ---> _ == 1
+
+let principal = 1000, rate = 0.05, years = 10 in
+  principal * (1 + rate)^years  ---> round(_, 2) == 1628.89
+
+// Quadratic formula
+let a = 1, b = -5, c = 6 in
+let discriminant = b^2 - 4*a*c in
+let sqrt_discriminant = sqrt(discriminant) in
+let x1 = (-b + sqrt_discriminant) / (2*a) in
+let x2 = (-b - sqrt_discriminant) / (2*a) in
+  [x1, x2] ---> _ == [3, 2]
+
+// Square root using Newton's method
+let sqrt = {x ->
+  let improve = {guess -> (guess + x / guess) / 2} in
+    let iterate = {guess, n ->
+      if n <= 0 then guess
+      else iterate(improve(guess), n - 1)
+    } in iterate(x / 2, 10)
+} in sqrt(25) ---> _ == 5;
+
+// Prime number test
+let isPrime = {n ->
+  if n <= 1 then false
+  else if n <= 3 then true
+  else if n % 2 == 0 || n % 3 == 0 then false
+  else
+    let checkDivisor = {d ->
+      if d * d > n then true
+      else if n % d == 0 || n % (d + 2) == 0 then false
+      else checkDivisor(d + 6)
+    } in checkDivisor(5)
+} in if isPrime(97) then 1 else 0 ---> _ == 1;
+
+// Exponential approximation using Taylor series
+let exp = {x, terms ->
+  let factorial = {n ->
+    if n <= 1 then 1 else n * factorial(n - 1)
+  } in
+    let term = {n -> x^n / factorial(n)} in
+      let sum = {i, acc ->
+        if i >= terms then acc
+        else sum(i + 1, acc + term(i))
+      } in sum(0, 0)
+} in exp(1, 15) ---> round(_, 5) == 2.71828;
+
+// Golden ratio via continued fraction
+let goldenRatio = {depth ->
+  let cf = {d ->
+    if d <= 0 then 1
+    else 1 + 1 / cf(d - 1)
+  } in cf(depth)
+} in goldenRatio(10) ---> round(_, 5) == 1.61798;
+
+// Numerical integration using Simpson's rule
+let simpson = {f, a, b, n ->
+  let h = (b - a) / n in
+    let sum = {i, acc ->
+      if i > n then acc
+      else
+        let x = a + i * h in
+          let coeff = if i == 0 || i == n then 1
+                       else if i % 2 == 1 then 4
+                       else 2 in
+            sum(i + 1, acc + coeff * f(x))
+    } in (h / 3) * sum(0, 0)
+} in
+  let square = {x -> x * x} in
+    simpson(square, 0, 1, 100) ---> round(_, 3) == 0.333;
+
+// Nth root using generalized Newton's method
+let nthRoot = {x, n, iterations ->
+  let improve = {guess ->
+    ((n - 1) * guess + x / (guess^(n - 1))) / n
+  } in
+    let iterate = {current, i ->
+      if i <= 0 then current
+      else iterate(improve(current), i - 1)
+    } in iterate(x / n, iterations)
+} in nthRoot(32, 5, 20) ---> _ == 2;
+
+// Catalan numbers using recurrence
+let catalan = {n ->
+  let catalanRec = {k, c0 ->
+    if k > n then c0
+    else if k == 0 then catalanRec(1, 1)
+    else
+      let next = c0 * ((4*k - 2) / (k + 1)) in
+        catalanRec(k + 1, next)
+  } in catalanRec(0, 0)
+} in catalan(5) ---> _ == 42;
+
+// Matrix determinant {2x2}
+let det2x2 = {a, b, c, d -> a * d - b * c} in
+  det2x2(3, 2, 1, 4) ---> _ == 10;
+
+// Complex number multiplication
+let complexMult = {a, b, c, d ->
+  let real = a * c - b * d in
+    let imag = a * d + b * c in
+      real^2 + imag^2  // Return magnitude squared
+} in complexMult(3, 4, 1, 2) ---> _ == 125;
+
+// Numerical derivative using central difference
+let derivative = {f, x, h ->
+  (f(x + h) - f(x - h)) / (2 * h)
+} in
+  let cube = {x -> x * x * x} in
+    derivative(cube, 2, 0.001) ---> round(_) == 12;
+
+// Fibonacci using matrix exponentiation concept
+let fibMatrix = {n ->
+  let matMult = {a, b, c, d, e, f, g, h ->
+    // Returns first element of 2x2 matrix multiplication
+    a * e + b * g
+  } in
+    let fibStep = {f1, f2, k ->
+      if k <= 0 then f1
+      else fibStep(f2, f1 + f2, k - 1)
+    } in fibStep(0, 1, n)
+} in fibMatrix(10) ---> _ == 55;
+
+// Euclidean algorithm for GCD
+let euclidGcd = {a, b ->
+  if b == 0 then a
+  else euclidGcd(b, a % b)
+} in euclidGcd(120, 45) ---> _ == 15;
+
+// Sieve of Eratosthenes concept {count primes up to n}
+let countPrimes = {n ->
+  let checkPrime = {num ->
+    if num <= 1 then false
+    else if num <= 3 then true
+    else if num % 2 == 0 then false
+    else
+      let testDivisor = {d ->
+        if d * d > num then true
+        else if num % d == 0 then false
+        else testDivisor(d + 2)
+      } in testDivisor(3)
+  } in
+    let _count = {i, acc ->
+      if i > n then acc
+      else if checkPrime(i) then _count(i + 1, acc + 1)
+      else _count(i + 1, acc)
+    } in _count(2, 0)
+} in countPrimes(20) ---> _ == 8;
+
+// Babylonian square root
+let babylonianSqrt = {n, iterations ->
+  let improve = {x -> (x + n / x) / 2} in
+    let iterate = {x, i ->
+      if i <= 0 then x
+      else iterate(improve(x), i - 1)
+    } in iterate(n, iterations)
+} in babylonianSqrt(2, 5) ---> round(_, 5) == 1.41421;
+
+// Mandelbrot set test
+let mandelbrot = {c_real, c_imag, max_iter ->
+  let iterate = {z_real, z_imag, n ->
+    if n >= max_iter then 1
+    else
+      let mag_sq = z_real*z_real + z_imag*z_imag in
+        if mag_sq > 4 then 0
+        else
+          let new_real = z_real*z_real - z_imag*z_imag + c_real in
+            let new_imag = 2*z_real*z_imag + c_imag in
+              iterate(new_real, new_imag, n + 1)
+  } in iterate(0, 0, 0)
+} in mandelbrot(0, 0, 100) ---> _ == 1;
+
+// Binomial coefficient
+let binomial = {n, k ->
+  if k == 0 || k == n then 1
+  else if k > n then 0
+  else
+    let fact = {x ->
+      if x <= 1 then 1 else x * fact(x - 1)
+    } in fact(n) / (fact(k) * fact(n - k))
+} in binomial(5, 2) ---> _ == 10;
+
+// Pascal's triangle element
+let pascal = {row, col ->
+  if col == 0 || col == row then 1
+  else pascal(row - 1, col - 1) + pascal(row - 1, col)
+} in pascal(4, 2) ---> _ == 6;

@@ -1,0 +1,205 @@
+// Simple function definition
+let square = {x -> x * x} in square(5) ---> _ == 25;
+
+// Multiple parameter functions
+let add = {x, y -> x + y} in add(3, 7) ---> _ == 10;
+
+// Anonymous function application
+{x -> x + 1}(10) ---> _ == 11;
+
+// Function returning function
+let makeAdder = {x -> {y -> x + y}} in
+  let add5 = makeAdder(5) in add5(3) ---> _ == 8;
+
+// Curried functions
+{addMaker: x -> {y -> x + y}}(10)(5) ---> _ == 15;
+
+// Multiple currying levels
+let multiplier = {x -> {y -> {z -> x * y * z}}} in
+  multiplier(2)(3)(4) ---> _ == 24;
+
+// Closure capturing variables
+let outer = 100 in
+  let makeFunction = {multiplier ->
+    let inner = outer * multiplier in
+      {x -> x + inner}
+  } in
+    let f = makeFunction(2) in f(10) ---> _ == 210;
+
+// Function composition
+let add1 = {x -> x + 1} in
+  let double = {x -> x * 2} in
+    let compose = {f, g -> {x -> f(g(x))}} in
+      compose(double, add1)(5) ---> _ == 12;
+
+// Partial application
+let multiplyBy = {factor -> {value -> factor * value}} in
+  let triple = multiplyBy(3) in triple(7) ---> _ == 21;
+
+// Higher-order function
+let applyTwice = {f, x -> f(f(x))} in
+  let increment = {x -> x + 1} in
+    applyTwice(increment, 5) ---> _ == 7;
+
+// Function as conditional result
+let x = 5 in
+  let f = if x > 0 then {y -> y + x} else {y -> y - x} in f(10) ---> _ == 15;
+
+// Nested function definitions
+let makeComplexFunction = {a ->
+  let helper = {b -> a * b} in
+    {c -> helper(c) + a}
+} in makeComplexFunction(3)(4) ---> _ == 15;
+
+// Functions with multiple parameters and closures
+let createCalculator = {base ->
+  {op, x, y ->
+    if op == 1 then base + x + y
+    else if op == 2 then base * x * y
+    else base
+  }
+} in
+  let calc = createCalculator(10) in calc(2, 3, 4) ---> _ == 120;
+
+// Self-application
+{self: x -> self}(42);
+
+// Function equality
+let f = {x -> x + 1} in
+  let g = {x -> x + 1} in
+    if f == g then 1 else 0 ---> _ == 0;
+
+// Complex currying chain
+({x -> {y -> {z -> {w -> x + y * z - w}}}}(1))(2)(3)(4) ---> _ == 3;
+
+// Function factories
+let makePowerFunction = {n ->
+  {x -> x^n}
+} in
+  let cube = makePowerFunction(3) in cube(4) ---> _ == 64;
+
+// Conditional function selection with closures
+let flag = true in
+  let adjust = {x -> if flag then x + 1 else x - 1} in adjust(10) ---> _ == 11;
+
+// Deep nesting with closures
+let a = 1 in
+  let f = {b ->
+    let c = a + b in
+      {d -> c * d}
+  } in f(2)(3) ---> _ == 9;
+
+// Simple recursion - factorial
+let factorial = {n ->
+  if n <= 1 then 1
+  else n * factorial(n - 1)
+} in factorial(5) ---> _ == 120;
+
+// Fibonacci sequence
+let fib = {n ->
+  if n <= 1 then n
+  else fib(n - 1) + fib(n - 2)
+} in fib(10) ---> _ == 55;
+
+// Mutual recursion
+let isEven = {n ->
+  if n == 0 then true
+  else isOdd(n - 1)
+} in
+let isOdd = {n ->
+  if n == 0 then false
+  else isEven(n - 1)
+} in isEven(10) ---> _ == 1;
+
+// Tail recursion - sum from 1 to n
+let sum = {n, acc ->
+  if n <= 0 then acc
+  else sum(n - 1, acc + n)
+} in sum(100, 0) ---> _ == 5050;
+
+// Greatest common divisor
+let gcd = {a, b ->
+  if b == 0 then a
+  else gcd(b, a % b)
+} in gcd(48, 18) ---> _ == 6;
+
+// Tree recursion - count paths
+let countPaths = {n, m ->
+  if n == 0 || m == 0 then 1
+  else countPaths(n - 1, m) + countPaths(n, m - 1)
+} in countPaths(3, 3) ---> _ == 20;
+
+// Ackermann function
+let ackermann = {m, n ->
+  if m == 0 then n + 1
+  else if n == 0 then ackermann(m - 1, 1)
+  else ackermann(m - 1, ackermann(m, n - 1))
+} in ackermann(3, 2) ---> _ == 29;
+
+// Recursive power function
+let power = {base, exp ->
+  if exp == 0 then 1
+  else if exp == 1 then base
+  else base * power(base, exp - 1)
+} in power(2, 10) ---> _ == 1024;
+
+// List simulation with recursion
+let cons = {head, tail -> {op ->
+  if op == 0 then head else tail
+}} in
+let sum_list = {list ->
+  if list == 0 then 0
+  else list(0) + sum_list(list(1))
+} in
+  let myList = cons(1, cons(2, cons(3, 0))) in
+    sum_list(myList) ---> _ == 6;
+
+// Hofstadter Q sequence
+let hofstadterQ = {n ->
+  if n <= 2 then 1
+  else hofstadterQ(n - hofstadterQ(n - 1)) + hofstadterQ(n - hofstadterQ(n - 2))
+} in hofstadterQ(10) ---> _ == 6;
+
+// Tower of Hanoi moves count
+let hanoi = {n ->
+  if n == 1 then 1
+  else 2 * hanoi(n - 1) + 1
+} in hanoi(4) ---> _ == 15;
+
+// McCarthy 91 function
+let mccarthy91 = {n ->
+  if n > 100 then n - 10
+  else mccarthy91(mccarthy91(n + 11))
+} in mccarthy91(95) ---> _ == 91;
+
+// Collatz sequence length
+let collatzLength = {n, count ->
+  if n == 1 then count
+  else if n % 2 == 0 then collatzLength(n / 2, count + 1)
+  else collatzLength(3 * n + 1, count + 1)
+} in collatzLength(13, 0) ---> _ == 9;
+
+// Recursive sum of squares
+let sumOfSquares = {n ->
+  if n <= 0 then 0
+  else n * n + sumOfSquares(n - 1)
+} in sumOfSquares(5) ---> _ == 55;
+
+// Church numeral conversion
+let churchToInt = {n ->
+  n({x -> x + 1})(0)
+} in
+let zero = {f -> {x -> x}} in
+let succ = {n -> {f -> {x -> f(n(f)(x))}}} in
+let three = succ(succ(succ(zero))) in
+  churchToInt(three) ---> _ == 3;
+
+// Mutual recursion with state
+let ping = {n, state ->
+  if n <= 0 then state
+  else pong(n - 1, state + 1)
+} in
+let pong = {n, state ->
+  if n <= 0 then state
+  else ping(n - 1, state * 2)
+} in ping(10, 1) ---> _ == 94;

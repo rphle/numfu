@@ -1,0 +1,38 @@
+let name = "Alice" in
+let age = 30 in
+  "Hello, " + name + "! You are " + String(age) + " years old."
+---> _ == "Hello, Alice! You are 30 years old."
+
+// Formatting
+format("Welcome to {}, {}!", "NumFu", "programmer") ---> _ == "Welcome to NumFu, programmer!"
+format("Result: {} + {} = {}", 2, 3, 5) ---> _ =="Result: 2 + 3 = 5"
+format("Using placeholders {{}}, you can format {}", "strings") ---> _ == "Using placeholders {}, you can format strings"
+
+// Email validation
+{isValidEmail: email ->
+  if count(email, "@") != 1 then false else
+    let splitted = split(email, "@") in
+      count(splitted[1], ".") > 0
+      && splitted[1][-1] != "."
+      && splitted[0][0] != "."
+}
+
+isValidEmail("user@example.com")       ---> _
+isValidEmail("userexample.com")        ---> !_
+isValidEmail("user@email@example.com") ---> !_
+isValidEmail("user@example.com.")      ---> !_
+
+// Text processor factory
+let makeTextProcessor = {options ->
+  let shouldTrim = options[0],
+      shouldLower = options[1],
+      shouldReplace = options[2] in
+    {text ->
+      let step1 = if shouldTrim then trim(text) else text in
+      let step2 = if shouldLower then toLowerCase(step1) else step1 in
+      let step3 = if shouldReplace then replace(step2, " ", "_") else step2 in
+        step3
+    }
+} in
+let processor = makeTextProcessor([true, true, true]) in
+  processor("  Hello World  ") ---> _ == "hello_world"
