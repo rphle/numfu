@@ -212,17 +212,21 @@ class LarkError(nSyntaxError):
         uncaught = True
         if (
             m1 := re.search(
-                r"Unexpected token Token\('[^']*', '[^']*'\) at line (\d+), column (\d+)\.\nExpected one of:",
+                r"Unexpected token Token\('([^']*)', '[^']*'\) at line (\d+), column (\d+)\.\nExpected one of:",
                 message,
             )
         ) and (m2 := re.findall(r"\s\* (\w+)", message)):
-            line, col = int(m1.group(1)), int(m1.group(2)) + 1
-            try:
-                expected = [f"'[bold]{self.tokens[token]}[/bold]'" for token in m2]
-                message = f"Expected {'one of ' if len(expected) > 1 else ''}{', '.join(expected)}"
+            line, col = int(m1.group(2)), int(m1.group(3)) + 1
+            if m1.group(1) == "$END":
+                message = "Unexpected end of input"
                 uncaught = False
-            except KeyError:
-                pass
+            else:
+                try:
+                    expected = [f"'[bold]{self.tokens[token]}[/bold]'" for token in m2]
+                    message = f"Expected {'one of ' if len(expected) > 1 else ''}{', '.join(expected)}"
+                    uncaught = False
+                except KeyError:
+                    pass
 
         if uncaught:
             if (
