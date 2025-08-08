@@ -107,7 +107,7 @@ def parse(
     source_path = Path(source)
     code = source_path.read_text()
     errormeta = ErrorMeta(file=source_path, fatal=True)
-    parser = Parser(errormeta=errormeta, imports=list(imports))
+    parser = Parser(errormeta=errormeta, imports=list(filter(lambda x: x, imports)))
     repl = REPL(max_depth=max_depth, indent=indent)
 
     tree, _ = repl.print_ast(parser.parse(code), actually_print=p)
@@ -118,7 +118,7 @@ def parse(
         else:
             output_path = Path(source)
         try:
-            output_path.write_bytes(pickle.dumps(tree))
+            output_path.write_bytes(b"NFU-TREE-FILE" + pickle.dumps(tree))
             click.echo(f"Parsed file saved to {output_path}")
         except Exception as e:
             click.echo(f"Error saving parsed file: {e}")
@@ -193,11 +193,26 @@ def repl_ast(max_depth: int, indent: int) -> None:
 
 def run_file(source: str, precision: int, rec_depth: int) -> None:
     source_path = Path(source)
-    code = source_path.read_text()
+    parsed = False
+    tree = None
+    with open(source_path, "rb") as f:
+        if f.read(len(b"NFU-TREE-FILE")) == b"NFU-TREE-FILE":
+            code = ""
+            content = f.read()
+            tree = pickle.loads(content) if content else None
+            parsed = True
+        else:
+            try:
+                f.seek(0)
+                code = f.read().decode("utf-8")
+            except UnicodeDecodeError:
+                raise click.FileError(source, "unrecognized file format")
+
     errormeta = ErrorMeta(file=source_path, code=code, fatal=True)
 
-    parser = Parser(errormeta)
-    tree = parser.parse(code)
+    if not parsed:
+        parser = Parser(errormeta)
+        tree = parser.parse(code)
 
     if tree is None:
         return

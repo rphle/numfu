@@ -397,7 +397,7 @@ class Interpreter:
                     pickle.loads(
                         importlib.resources.read_binary(
                             "numfu", f"stdlib/{node.name}.nfut"
-                        )
+                        )[len(b"NFU-TREE-FILE") :]
                     )
                 )
             else:

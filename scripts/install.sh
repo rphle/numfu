@@ -18,7 +18,7 @@ else
     pip install .
 fi
 
-numfu parse src/numfu/stdlib/builtins.nfu  --imports []
+numfu parse src/numfu/stdlib/builtins.nfu  --imports ""
 
 # create an editable install and build wheels
 pip install -e .
