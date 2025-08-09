@@ -58,11 +58,11 @@ AssertionError
 Top-level expressions can use the `--->` operator for readable assertions.
 
 ```numfu
-2 + 2 ---> _ == 4             // same as assert(2 + 2 == 4)
-length("hello") ---> _ == 5
+2 + 2 ---> $ == 4             // same as assert(2 + 2 == 4)
+length("hello") ---> $ == 5
 ```
 
-* `_` refers to the expression on the left
+* `$` refers to the expression on the left
 * This form is **only valid at top-level**, not inside functions
 
 -----
