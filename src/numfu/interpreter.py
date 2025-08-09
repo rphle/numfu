@@ -41,7 +41,7 @@ from .errors import (
     nTypeError,
 )
 from .reconstruct import reconstruct
-from .typechecks import BuiltinFunc, type_name
+from .typechecks import BuiltinFunc, InfiniteOf, type_name
 
 
 class Interpreter:
@@ -213,6 +213,11 @@ class Interpreter:
                     for a in fixed
                 ]
                 filled.extend(it)
+
+                if func.eval_lists:
+                    filled = self._eval_lists(filled)
+                filled = [a.expr if isinstance(a, PrintOutput) else a for a in filled]
+
                 if any(isinstance(a, Variable) and a.name == "_" for a in filled):
                     return BuiltinFunc(
                         func.name,
@@ -220,12 +225,13 @@ class Interpreter:
                         help=func.help,
                         partial=True,
                     ).add(
-                        [Any],
+                        [Any, InfiniteOf(Any)],
                         Any,
                         lambda *ma, **mkw: partial_func(
                             *(_args + ma), **{**kwargs, **mkw}
                         ),
                     )
+
                 return func(
                     *filled,
                     errormeta=self._errormeta,
@@ -238,7 +244,7 @@ class Interpreter:
 
             return BuiltinFunc(
                 func.name, eval_lists=func.eval_lists, help=func.help, partial=True
-            ).add([Any], Any, partial_func)
+            ).add([Any, InfiniteOf(Any)], Any, partial_func)
 
         # Lambda partial application
         if has_placeholder and isinstance(func, Lambda):
@@ -322,11 +328,18 @@ class Interpreter:
             if isinstance(element, Spread):
                 lst = self._eval(element.expr, env=env)
                 if not isinstance(lst, List):
-                    self.exception(
-                        nTypeError,
-                        f"Type '{type_name(lst)}' is not iterable",
-                        pos=element.pos,
-                    )
+                    if isinstance(lst, Variable) and lst.name == "_":
+                        self.exception(
+                            nTypeError,
+                            "Cannot combine spread operator with argument placeholder",
+                            pos=element.pos,
+                        )
+                    else:
+                        self.exception(
+                            nTypeError,
+                            f"Type '{type_name(lst)}' is not iterable",
+                            pos=element.pos,
+                        )
                 else:
                     elements.extend(lst.elements)
             else:

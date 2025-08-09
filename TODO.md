@@ -37,12 +37,3 @@ Implement proper rules to determine the equality of two functions
 
 ### Builtin Function Partial Application
 Make built-ins like `join` also return partially applied functions instead of raising errors if not enough arguments were given.
-
-### "Delay" Arguments
-If you use `_` in a function call, another function that still requires these arguments is returned:
-
-```
-map(_, {x -> x+1})
-// returns
-{a -> map(a, {x -> x+1})}
-```
