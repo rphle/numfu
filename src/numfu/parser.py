@@ -11,6 +11,7 @@ import importlib.resources
 import pickle
 import re
 import zlib
+from dataclasses import dataclass
 
 from lark import Lark, Token, Transformer, Tree, v_args
 
@@ -30,7 +31,7 @@ from .ast_types import (
     String,
     Variable,
 )
-from .errors import ErrorMeta, LarkError, Pos
+from .errors import Error, ErrorMeta, LarkError, Pos
 
 OPERATORS = [
     "+",
@@ -52,6 +53,12 @@ OPERATORS = [
 
 def _tokpos(token: Token):
     return Pos(token.start_pos, token.end_pos)
+
+
+@dataclass
+class UnderscoreError:
+    name: str
+    pos: Pos
 
 
 grammar = importlib.resources.read_text("numfu", "grammar/numfu.lark")
@@ -76,6 +83,10 @@ class AstGenerator(Transformer):
     complex expressions like chained comparisons. Most syntactic sugar is
     already desugared here.
     """
+
+    def __init__(self, *args, **kwargs) -> None:
+        self.invalid = []
+        super().__init__(*args, **kwargs)
 
     def start(self, *exprs):
         return list(exprs)
@@ -192,12 +203,20 @@ class AstGenerator(Transformer):
 
     def lambda_def(self, tree, *args):
         name, params, body = (None, *args) if len(args) == 2 else args
+
+        for param in params.children:
+            if param.value == "_":
+                self.invalid.append(
+                    UnderscoreError("function parameter", _tokpos(param))
+                )
+
         pos = (
             _tokpos(name)
             if name
             else (_tokpos(params.children[0]) if params.children else body.pos)
         )
         arg_names = [str(t.value) for t in params.children]
+
         return Lambda(
             arg_names,
             body,
@@ -214,6 +233,10 @@ class AstGenerator(Transformer):
         'let x = 3 in x * x' becomes '{x -> x * x}(3)'
         """
         names, values = lambda_params.children[::2], lambda_params.children[1::2]
+        for name in names:
+            if name.value == "_":
+                self.invalid.append(UnderscoreError("variable", _tokpos(name)))
+
         return Call(
             Lambda([str(name) for name in names], body, pos=body.pos),
             values,
@@ -330,6 +353,8 @@ class AstGenerator(Transformer):
         )
 
     def constant_def(self, name, value):
+        if name.value == "_":
+            self.invalid.append(UnderscoreError("constant", _tokpos(name)))
         return Constant(name, value, pos=Pos(name.start_pos - 6, name.end_pos))
 
     def conditional(self, test, then_body, else_body):
@@ -376,10 +401,10 @@ class Parser:
         errormeta: ErrorMeta = ErrorMeta(),
         imports: list[str] = ["builtins"],
     ):
+        self.errormeta = errormeta
         self.parser = Lark(grammar, parser="lalr")
         self.lambda_preprocessor = LambdaPreprocessor()
-        self.generator = AstGenerator()
-        self.errormeta = errormeta
+        self.generator = AstGenerator(errormeta)
         self.imports = imports
 
     def _imports(self, code: str) -> tuple[str, list[Expr]]:
@@ -402,6 +427,17 @@ class Parser:
             parse_tree = self.parser.parse(code)
             parse_tree = self.lambda_preprocessor.transform(parse_tree)
             ast_tree = self.generator.transform(parse_tree)
+
+            if self.generator.invalid:
+                # We must handle this here because Lark does generally catch all Exceptions in its Transformer
+                Error(
+                    f"{self.generator.invalid[0].name}s cannot be named '_'",
+                    self.generator.invalid[0].pos,
+                    self.errormeta,
+                    "NameError",
+                )
+                return None
+
             if not isinstance(ast_tree, list):
                 ast_tree = [ast_tree]
 
