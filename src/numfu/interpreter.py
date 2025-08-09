@@ -104,12 +104,17 @@ class Interpreter:
 
     def _partial_lambda(self, this: Lambda, args: list, env={}):
         """Return a Lambda with given args (including _ placeholders) bound, preserving printability"""
-        arg_names = [a.lstrip("...") for a in this.arg_names]
-        partial_env = env.copy()
 
+        partial_env = env.copy()
+        arg_names = [a.lstrip("...") for a in this.arg_names]
         filled_pos = []
-        for i, (name, val) in enumerate(zip(arg_names, args)):
+
+        for i, (orig_name, name, val) in enumerate(
+            zip(this.arg_names, arg_names, args)
+        ):
             if not (isinstance(val, Variable) and val.name == "_"):
+                if orig_name.startswith("...") and not isinstance(val, List):
+                    val = List([val])
                 partial_env[name] = val
                 filled_pos.append(i)
 
