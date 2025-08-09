@@ -1,40 +1,40 @@
-true && false             ---> !_
-true && true              ---> _
-false && sqrt("error")    ---> !_
-5 && 0                    ---> !_
+true && false             ---> !$
+true && true              ---> $
+false && sqrt("error")    ---> !$
+5 && 0                    ---> !$
 
-true || false             ---> _
-false || false            ---> !_
-true || sqrt("error")     ---> _
-0 || 5                    ---> _
+true || false             ---> $
+false || false            ---> !$
+true || sqrt("error")     ---> $
+0 || 5                    ---> $
 
-!true               ---> !_
-!false              ---> _
-!0                  ---> _
-!5                  ---> !_
-!""                 ---> _
-!"hello"            ---> !_
+!true               ---> !$
+!false              ---> $
+!0                  ---> $
+!5                  ---> !$
+!""                 ---> $
+!"hello"            ---> !$
 
-xor(true, false)    ---> _
-xor(true, true)     ---> !_
-xor(false, false)   ---> !_
-xor(1, 0)           ---> _
+xor(true, false)    ---> $
+xor(true, true)     ---> !$
+xor(false, false)   ---> !$
+xor(1, 0)           ---> $
 
-5 == 5              ---> _
-"hello" == "hello"  ---> _;
-[1, 2] == [1, 2]    ---> _;
-5 == "5"            ---> !_
+5 == 5              ---> $
+"hello" == "hello"  ---> $;
+[1, 2] == [1, 2]    ---> $;
+5 == "5"            ---> !$
 
-5 != 3              ---> _
-"a" != "b"          ---> _;
-[1, 2] != [2, 1]    ---> _
+5 != 3              ---> $
+"a" != "b"          ---> $;
+[1, 2] != [2, 1]    ---> $
 
 // Range Checking
 let age = 25 in
-  age >= 18 && age < 65  ---> _
+  age >= 18 && age < 65  ---> $
 
 let score = 85 in
-  score >= 0 && score <= 100  ---> _
+  score >= 0 && score <= 100  ---> $
 
 // Complex Conditions
 let temperature = 22 in
@@ -42,14 +42,14 @@ let humidity = 45 in
 let isComfortable =
   temperature >= 20 && temperature <= 25 &&
   humidity >= 30 && humidity <= 60 in
-  isComfortable  ---> _
+  isComfortable  ---> $
 
 // Guard Clauses
 let processAge = {age ->
   if age < 0 then error("Age cannot be negative")
   else if age > 150 then error("Hmmm, your age seems unrealistic")
   else format("Age {} is valid", age)
-} in processAge(25) ---> _ == "Age 25 is valid"
+} in processAge(25) ---> $ == "Age 25 is valid"
 
 // Conditional Assignment
 let status = {score ->
@@ -57,11 +57,11 @@ let status = {score ->
   else if score >= 70 then "good"
   else if score >= 50 then "pass"
   else "fail"
-} in status(85) ---> _ == "good"
+} in status(85) ---> $ == "good"
 
 // Conditional Function Selection
 let operation = "square" in
 let processor = if operation == "square" then {x -> x * x}
                 else if operation == "double" then {x -> x * 2}
                 else {x -> x} in
-  processor(6) ---> _ == 36
+  processor(6) ---> $ == 36

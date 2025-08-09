@@ -1,80 +1,80 @@
-5 + 3                      ---> _ ==  8
-"Hello" + " " + "World"    ---> _ ==  "Hello World";
-[1, 2] + [3, 4]            ---> _ ==  [1, 2, 3, 4]
+5 + 3                      ---> $ ==  8
+"Hello" + " " + "World"    ---> $ ==  "Hello World";
+[1, 2] + [3, 4]            ---> $ ==  [1, 2, 3, 4]
 
-5 * 3               ---> _ == 15
-"Ha" * 3            ---> _ == "HaHaHa"
-3 * "Ho"            ---> _ == "HoHoHo";
-[1, 2] * 3          ---> _ == [1, 2, 1, 2, 1, 2]
+5 * 3               ---> $ == 15
+"Ha" * 3            ---> $ == "HaHaHa"
+3 * "Ho"            ---> $ == "HoHoHo";
+[1, 2] * 3          ---> $ == [1, 2, 1, 2, 1, 2]
 
-max(1, 5, 3, 9, 2)  ---> _ == 9
-max([1, 5, 3, 9, 2]) ---> _ == 9
-min(1, 5, 3, 9, 2)  ---> _ == 1
-min([1, 5, 3, 9, 2]) ---> _ == 1
+max(1, 5, 3, 9, 2)  ---> $ == 9
+max([1, 5, 3, 9, 2]) ---> $ == 9
+min(1, 5, 3, 9, 2)  ---> $ == 1
+min([1, 5, 3, 9, 2]) ---> $ == 1
 
-Bool(1)             ---> _
-Bool(0)             ---> !_
-Bool("hello")       ---> _
-Bool("")            ---> !_
-Bool([1, 2])        ---> _
-Bool([])            ---> !_
+Bool(1)             ---> $
+Bool(0)             ---> !$
+Bool("hello")       ---> $
+Bool("")            ---> !$
+Bool([1, 2])        ---> $
+Bool([])            ---> !$
 
-Number(true)        ---> _ == 1
-Number(false)       ---> _ == 0
-Number("42")        ---> _ == 42
-Number("3.14")      ---> _ == 3.14
+Number(true)        ---> $ == 1
+Number(false)       ---> $ == 0
+Number("42")        ---> $ == 42
+Number("3.14")      ---> $ == 3.14
 
-List("hello")       ---> _ == ["h", "e", "l", "l", "o"]
-List([1, 2, 3])     ---> _ == [1, 2, 3]
+List("hello")       ---> $ == ["h", "e", "l", "l", "o"]
+List([1, 2, 3])     ---> $ == [1, 2, 3]
 
-append([1, 2, 3], 4)        ---> _ == [1, 2, 3, 4]
-append([], "first")         ---> _ == ["first"]
+append([1, 2, 3], 4)        ---> $ == [1, 2, 3, 4]
+append([], "first")         ---> $ == ["first"]
 
-length([1, 2, 3, 4])        ---> _ == 4
-length("hello")             ---> _ == 5
-length([])                  ---> _ == 0
+length([1, 2, 3, 4])        ---> $ == 4
+length("hello")             ---> $ == 5
+length([])                  ---> $ == 0
 
-contains([1, 2, 3], 2 )     ---> _
-contains("hello", "lo")     ---> _
-contains([1, 2, 3], 4)      ---> !_
+contains([1, 2, 3], 2 )     ---> $
+contains("hello", "lo")     ---> $
+contains([1, 2, 3], 4)      ---> !$
 
-set([1, 2, 3], 1, 99)       ---> _ == [1, 99, 3]
-set("hello", 0, "H")        ---> _ == "Hello"
+set([1, 2, 3], 1, 99)       ---> $ == [1, 99, 3]
+set("hello", 0, "H")        ---> $ == "Hello"
 
-reverse([1, 2, 3, 4])       ---> _ == [4, 3, 2, 1]
-reverse("hello")            ---> _ == "olleh"
+reverse([1, 2, 3, 4])       ---> $ == [4, 3, 2, 1]
+reverse("hello")            ---> $ == "olleh"
 
-sort([3, 1, 4, 1, 5])       ---> _ == [1, 1, 3, 4, 5]
-sort("dcba")                ---> _ == "abcd"
+sort([3, 1, 4, 1, 5])       ---> $ == [1, 1, 3, 4, 5]
+sort("dcba")                ---> $ == "abcd"
 
-slice([1, 2, 3, 4, 5], 1, 3)    ---> _ == [2, 3, 4]
-slice("hello", 1, 3)            ---> _ == "ell"
-slice([1, 2, 3, 4, 5], 2, -2)   ---> _ == [3, 4]
+slice([1, 2, 3, 4, 5], 1, 3)    ---> $ == [2, 3, 4]
+slice("hello", 1, 3)            ---> $ == "ell"
+slice([1, 2, 3, 4, 5], 2, -2)   ---> $ == [3, 4]
 
-join(["hello", "world"], "-")   ---> _ == "hello-world"
-join([], ",")                   ---> _ == ""
+join(["hello", "world"], "-")   ---> $ == "hello-world"
+join([], ",")                   ---> $ == ""
 
-split("hello,world", ",")       ---> _ == ["hello", "world"]
-split("one two three", " ")     ---> _ == ["one", "two", "three"]
-split("hello", "")              ---> _ == ["hello"]
+split("hello,world", ",")       ---> $ == ["hello", "world"]
+split("one two three", " ")     ---> $ == ["one", "two", "three"]
+split("hello", "")              ---> $ == ["hello"]
 
-format("Hello, {}!", "World")               ---> _ == "Hello, World!"
-format("{} + {} = {}", "2", "3", "5")       ---> _ == "2 + 3 = 5"
-format("Name: {}, Age: {}", "Alice", "30")  ---> _ == "Name: Alice, Age: 30"
+format("Hello, {}!", "World")               ---> $ == "Hello, World!"
+format("{} + {} = {}", "2", "3", "5")       ---> $ == "2 + 3 = 5"
+format("Name: {}, Age: {}", "Alice", "30")  ---> $ == "Name: Alice, Age: 30"
 
-trim("  hello  ")       ---> _ == "hello"
+trim("  hello  ")       ---> $ == "hello"
 
-toLowerCase("HELLO")    ---> _ == "hello"
+toLowerCase("HELLO")    ---> $ == "hello"
 
-toUpperCase("hello")    ---> _ == "HELLO"
+toUpperCase("hello")    ---> $ == "HELLO"
 
-replace("hello world", "world", "there") ---> _ == "hello there"
+replace("hello world", "world", "there") ---> $ == "hello there"
 
-count("hello hello", "hello") ---> _ == 2
+count("hello hello", "hello") ---> $ == 2
 
-map([1, 2, 3, 4], {x -> x * x})     ---> _ == [1, 4, 9, 16]
-map(["hello", "world"], length)     ---> _ == [5, 5]
-map([1, 2, 3], {x -> x + 10})       ---> _ == [11, 12, 13]
+map([1, 2, 3, 4], {x -> x * x})     ---> $ == [1, 4, 9, 16]
+map(["hello", "world"], length)     ---> $ == [5, 5]
+map([1, 2, 3], {x -> x + 10})       ---> $ == [11, 12, 13]
 
-filter([1, 2, 3, 4, 5], {x -> x % 2 == 0})                    ---> _ == [2, 4]
-filter(["apple", "banana", "cherry"], {s -> length(s) > 5})   ---> _ == ["banana", "cherry"]
+filter([1, 2, 3, 4, 5], {x -> x % 2 == 0})                    ---> $ == [2, 4]
+filter(["apple", "banana", "cherry"], {s -> length(s) > 5})   ---> $ == ["banana", "cherry"]

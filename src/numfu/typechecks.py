@@ -20,6 +20,23 @@ from .errors import (
     nTypeError,
 )
 
+OPERATORS = (
+    "+",
+    "-",
+    "*",
+    "/",
+    "^",
+    "%",
+    "<",
+    ">",
+    "<=",
+    ">=",
+    "==",
+    "!=",
+    "&&",
+    "||",
+)
+
 
 def check_type(val, typ):
     if typ is Any:
@@ -156,11 +173,13 @@ class BuiltinFunc:
         name,
         eval_lists: bool = False,
         help: HelpMsg = HelpMsg(),
+        partial: bool = False,
     ):
         self.name = name
         self.eval_lists = eval_lists
         self.help = help
-        self.is_operator = len(self.name) == 1
+        self.partial = partial
+        self.is_operator = self.name in OPERATORS
         self._overloads = []
         self._errors = []
 
@@ -275,53 +294,54 @@ class BuiltinFunc:
                     break
 
             else:
-                if self.name in ("String", "format"):
-                    try:
-                        return func(*args, precision=precision)
-                    except IndexError as e:
-                        if self.name == "format":
-                            nIndexError(
-                                "Incorrect number of placeholders",
+                if not self.partial:
+                    if self.name in ("String", "format"):
+                        try:
+                            return func(*args, precision=precision)
+                        except IndexError as e:
+                            if self.name == "format":
+                                nIndexError(
+                                    "Incorrect number of placeholders",
+                                    args_pos,
+                                    errormeta=errormeta,
+                                )
+                            else:
+                                raise e
+                    elif self.name == "error":
+                        nRuntimeError(
+                            args[0],
+                            Pos(func_pos.start, args_pos.end),
+                            errormeta=errormeta,
+                            name=args[1] if len(args) == 2 else None,
+                        )
+                    elif self.name == "assert":
+                        if not args[0]:
+                            nAssertionError(
+                                "",
                                 args_pos,
                                 errormeta=errormeta,
                             )
                         else:
-                            raise e
-                elif self.name == "error":
-                    nRuntimeError(
-                        args[0],
-                        Pos(func_pos.start, args_pos.end),
-                        errormeta=errormeta,
-                        name=args[1] if len(args) == 2 else None,
-                    )
-                elif self.name == "assert":
-                    if not args[0]:
-                        nAssertionError(
-                            "",
-                            args_pos,
-                            errormeta=errormeta,
-                        )
-                    else:
-                        return True if len(args) == 1 else args[1]
-                elif self.name == "filter":
-                    if not interpreter:
-                        raise ValueError(
-                            "Missing interpreter reference for filter builtin function"
-                        )
-                    return List(
-                        [
-                            e
-                            for e in args[0].elements
-                            if interpreter._eval(
-                                Call(func=args[1], args=[e], pos=func_pos),
-                                env=env | args[0].curry,
+                            return True if len(args) == 1 else args[1]
+                    elif self.name == "filter":
+                        if not interpreter:
+                            raise ValueError(
+                                "Missing interpreter reference for filter builtin function"
                             )
-                        ],
-                        pos=args[0].pos,
-                        curry=args[0].curry,
-                    )
-                else:
-                    return func(*args)
+                        return List(
+                            [
+                                e
+                                for e in args[0].elements
+                                if interpreter._eval(
+                                    Call(func=args[1], args=[e], pos=func_pos),
+                                    env=env | args[0].curry,
+                                )
+                            ],
+                            pos=args[0].pos,
+                            curry=args[0].curry,
+                        )
+
+                return func(*args)
 
         for arg_types, message in self._errors:
             if all(check_type(arg, typ) for arg, typ in zip(args, arg_types)):
@@ -345,3 +365,6 @@ class BuiltinFunc:
             func_pos=func_pos,
             args_pos=args_pos,
         )
+
+    def __repr__(self) -> str:
+        return f"{"Partial" if self.partial else ""}BuiltinFunction"

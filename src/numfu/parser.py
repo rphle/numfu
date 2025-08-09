@@ -32,30 +32,14 @@ from .ast_types import (
 )
 from .errors import Error, ErrorMeta, LarkError, Pos
 
-OPERATORS = [
-    "+",
-    "-",
-    "*",
-    "/",
-    "^",
-    "%",
-    "<",
-    ">",
-    "<=",
-    ">=",
-    "==",
-    "!=",
-    "&&",
-    "||",
-]
-
 
 def _tokpos(token: Token):
     return Pos(token.start_pos, token.end_pos)
 
 
 @dataclass
-class UnderscoreError:
+class InvalidNameError:
+    typ: str
     name: str
     pos: Pos
 
@@ -204,9 +188,9 @@ class AstGenerator(Transformer):
         name, params, body = (None, *args) if len(args) == 2 else args
 
         for param in params.children:
-            if param.value == "_":
+            if param.value in ("_", "$"):
                 self.invalid.append(
-                    UnderscoreError("function parameter", _tokpos(param))
+                    InvalidNameError("function parameter", param.value, _tokpos(param))
                 )
 
         pos = Pos(
@@ -240,8 +224,10 @@ class AstGenerator(Transformer):
         """
         names, values = lambda_params.children[::2], lambda_params.children[1::2]
         for name in names:
-            if name.value == "_":
-                self.invalid.append(UnderscoreError("variable", _tokpos(name)))
+            if name.value in ("_", "$"):
+                self.invalid.append(
+                    InvalidNameError("variable", name.value, _tokpos(name))
+                )
 
         return Call(
             Lambda([str(name) for name in names], body, pos=body.pos),
@@ -359,8 +345,8 @@ class AstGenerator(Transformer):
         )
 
     def constant_def(self, name, value):
-        if name.value == "_":
-            self.invalid.append(UnderscoreError("constant", _tokpos(name)))
+        if name.value in ("_", "$"):
+            self.invalid.append(InvalidNameError("constant", name.value, _tokpos(name)))
         return Constant(name, value, pos=Pos(name.start_pos - 6, name.end_pos))
 
     def conditional(self, test, then_body, else_body):
@@ -389,7 +375,7 @@ class AstGenerator(Transformer):
     def assertion_expr(self, left, cond):
         return Call(
             func=Lambda(
-                arg_names=["_"],
+                arg_names=["$"],
                 body=Call(
                     func=Variable("assert", pos=cond.pos),
                     args=[cond, left],
@@ -449,7 +435,7 @@ class Parser:
             if self.generator.invalid:
                 # We must handle this here because Lark does generally catch all Exceptions in its Transformer
                 Error(
-                    f"{self.generator.invalid[0].name}s cannot be named '_'",
+                    f"{self.generator.invalid[0].typ}s cannot be named '{self.generator.invalid[0].name}'",
                     self.generator.invalid[0].pos,
                     self.errormeta,
                     "NameError",

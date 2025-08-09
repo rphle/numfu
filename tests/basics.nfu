@@ -1,68 +1,68 @@
 // Basic arithmetic and operators
-5 + 3 * 2 ---> _ == 11;
-10 - 4 / 2 ---> _ == 8;
-2^3 + 1 ---> _ == 9;
+5 + 3 * 2 ---> $ == 11;
+10 - 4 / 2 ---> $ == 8;
+2^3 + 1 ---> $ == 9;
 
 // Variable bindings
-let x = 42 in x ---> _ == 42;
-let x = 10, y = 20 in x + y ---> _ == 30;
+let x = 42 in x ---> $ == 42;
+let x = 10, y = 20 in x + y ---> $ == 30;
 
 // Nested variable scoping
 let x = 1 in
   let x = x + 1 in
-    let x = x * 2 in x ---> _ == 4;
+    let x = x * 2 in x ---> $ == 4;
 
 // Variable shadowing
 let x = 5 in
   let f = {y -> x + y} in
-    let x = 10 in f(3) ---> _ == 8;
+    let x = 10 in f(3) ---> $ == 8;
 
 // Basic conditionals
-if true then 42 else 0 ---> _ == 42;
-if false then 1 else 2 ---> _ == 2;
+if true then 42 else 0 ---> $ == 42;
+if false then 1 else 2 ---> $ == 2;
 
 // Comparison operators
-if 5 > 3 then 1 else 0 ---> _ == 1;
-if 10 >= 10 then 1 else 0 ---> _ == 1;
+if 5 > 3 then 1 else 0 ---> $ == 1;
+if 10 >= 10 then 1 else 0 ---> $ == 1;
 
 // Boolean logic
-if true && false then 1 else 0 ---> _ == 0;
-if true || false then 1 else 0 ---> _ == 1;
+if true && false then 1 else 0 ---> $ == 0;
+if true || false then 1 else 0 ---> $ == 1;
 
 // Short-circuiting evaluation
-if false && (1/0) then 1 else 0 ---> _ == 0;
-if true || (1/0) then 1 else 0 ---> _ == 1;
+if false && (1/0) then 1 else 0 ---> $ == 0;
+if true || (1/0) then 1 else 0 ---> $ == 1;
 
 // Modulo operation
-let mod = {a, b -> if a >= b then mod(a - b, b) else a} in mod(10, 3) ---> _ == 1;
+let mod = {a, b -> if a >= b then mod(a - b, b) else a} in mod(10, 3) ---> $ == 1;
 
 // Nested conditionals
 let classify = {x ->
   if x < 0 then -1
   else if x == 0 then 0
   else 1
-} in classify(5) ---> _ == 1;
+} in classify(5) ---> $ == 1;
 
 // Multiple variable bindings
-let a = 1, b = 2, c = 3 in a + b + c ---> _ == 6;
+let a = 1, b = 2, c = 3 in a + b + c ---> $ == 6;
 
 // Complex expressions
-let x = 3, y = 4 in x^2 + y^2 ---> _ == 25;
+let x = 3, y = 4 in x^2 + y^2 ---> $ == 25;
 
 // Truthiness of numbers
-if 0 then 1 else 0 ---> _ == 0;
-if 42 then 1 else 0 ---> _ == 1;
+if 0 then 1 else 0 ---> $ == 0;
+if 42 then 1 else 0 ---> $ == 1;
 
 // Operator precedence
-2 + 3 * 4^2 ---> _ == 50;
+2 + 3 * 4^2 ---> $ == 50;
 
 let outer = "outer" in
   let inner = "inner" in
     let result = outer + " and " + inner in
-      result  ---> _ == "outer and inner"
+      result  ---> $ == "outer and inner"
 
 let homeworkAvg = 85, testAvg = 92, finalExam = 88 in
 let homeworkWeight = 0.3, testWeight = 0.4, finalWeight = 0.3 in
   homeworkAvg * homeworkWeight +
   testAvg * testWeight +
-  finalExam * finalWeight ---> _ == 88.7
+  finalExam * finalWeight ---> $ == 88.7

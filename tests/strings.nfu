@@ -1,12 +1,12 @@
 let name = "Alice" in
 let age = 30 in
   "Hello, " + name + "! You are " + String(age) + " years old."
----> _ == "Hello, Alice! You are 30 years old."
+---> $ == "Hello, Alice! You are 30 years old."
 
 // Formatting
-format("Welcome to {}, {}!", "NumFu", "programmer") ---> _ == "Welcome to NumFu, programmer!"
-format("Result: {} + {} = {}", 2, 3, 5) ---> _ =="Result: 2 + 3 = 5"
-format("Using placeholders {{}}, you can format {}", "strings") ---> _ == "Using placeholders {}, you can format strings"
+format("Welcome to {}, {}!", "NumFu", "programmer") ---> $ == "Welcome to NumFu, programmer!"
+format("Result: {} + {} = {}", 2, 3, 5) ---> $ =="Result: 2 + 3 = 5"
+format("Using placeholders {{}}, you can format {}", "strings") ---> $ == "Using placeholders {}, you can format strings"
 
 // Email validation
 {isValidEmail: email ->
@@ -17,10 +17,10 @@ format("Using placeholders {{}}, you can format {}", "strings") ---> _ == "Using
       && splitted[0][0] != "."
 }
 
-isValidEmail("user@example.com")       ---> _
-isValidEmail("userexample.com")        ---> !_
-isValidEmail("user@email@example.com") ---> !_
-isValidEmail("user@example.com.")      ---> !_
+isValidEmail("user@example.com")       ---> $
+isValidEmail("userexample.com")        ---> !$
+isValidEmail("user@email@example.com") ---> !$
+isValidEmail("user@example.com.")      ---> !$
 
 // Text processor factory
 let makeTextProcessor = {options ->
@@ -35,4 +35,4 @@ let makeTextProcessor = {options ->
     }
 } in
 let processor = makeTextProcessor([true, true, true]) in
-  processor("  Hello World  ") ---> _ == "hello_world"
+  processor("  Hello World  ") ---> $ == "hello_world"

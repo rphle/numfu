@@ -117,6 +117,8 @@ class Interpreter:
         return r
 
     def _variable(self, this: Variable, env: dict = {}) -> Expr | None:
+        if this.name == "_":
+            return env.get(this.name, this)
         try:
             return env[this.name]
         except KeyError:
@@ -154,8 +156,36 @@ class Interpreter:
                 )
 
         func = self._eval(this.func, env=env)
-        resolved_args = self._resolve_spread(this.args, env=env)
-        args = [self._eval(arg, env=env) for arg in resolved_args]
+        args = self._resolve_spread(this.args, env=env)
+        args = [self._eval(arg, env=env) for arg in args]
+
+        if any(isinstance(arg, Variable) and arg.name == "_" for arg in args):
+            if isinstance(func, BuiltinFunc):
+                # Create a wrapper builtin function that has the exact same properties as the original and calls the original with the already collected arguments
+                r = BuiltinFunc(
+                    func.name,
+                    eval_lists=func.eval_lists,
+                    help=func.help,
+                    partial=True,
+                ).add(
+                    [Any],
+                    Any,
+                    lambda *_args: func(
+                        *[
+                            _args[i]
+                            if isinstance(arg, Variable) and arg.name == "_"
+                            else arg
+                            for i, arg in enumerate(args.copy())
+                        ],
+                        errormeta=self._errormeta,
+                        args_pos=this.pos,
+                        func_pos=this.func.pos,  # type: ignore
+                        precision=self.precision,
+                        interpreter=self if func.name == "filter" else None,
+                        env=env,
+                    ),
+                )
+                return r
 
         if isinstance(func, BuiltinFunc):
             if func.eval_lists:
@@ -167,7 +197,7 @@ class Interpreter:
                 *args,
                 errormeta=self._errormeta,
                 args_pos=this.pos,
-                func_pos=this.func.pos,  # type: ignore
+                func_pos=getattr(this.func, "pos", None),  # type: ignore
                 precision=self.precision,
                 interpreter=self if func.name == "filter" else None,
                 env=env,
@@ -186,6 +216,9 @@ class Interpreter:
                 f"{type_name(func)} is not callable",
                 pos=this.pos,
             )
+
+    def _builtinfunc(self, this: BuiltinFunc, env={}):
+        return this
 
     def _index(self, this: Index, env: dict = {}):
         target = self._eval(this.target, env=env)

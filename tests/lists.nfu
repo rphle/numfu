@@ -1,47 +1,47 @@
-[1, 2, 3][0] ---> _ == 1;
-[1, 2, 3][1] ---> _ == 2;
-[1, 2, 3][2] ---> _ == 3;
-[1 + 2, 3 * 4][1] ---> _ == 12;
+[1, 2, 3][0] ---> $ == 1;
+[1, 2, 3][1] ---> $ == 2;
+[1, 2, 3][2] ---> $ == 3;
+[1 + 2, 3 * 4][1] ---> $ == 12;
 
-let a = [10, 20, 30] in a[0] ---> _ == 10;
-[[1, 2], [3, 4]][1][0] ---> _ == 3;
+let a = [10, 20, 30] in a[0] ---> $ == 10;
+[[1, 2], [3, 4]][1][0] ---> $ == 3;
 
-let inner = [5, 6] in [1, inner, 7][1][1] ---> _ == 6;
+let inner = [5, 6] in [1, inner, 7][1][1] ---> $ == 6;
 
 let inc = {x -> x + 1} in
-  [inc(4), inc(5)][0] ---> _ == 5;
+  [inc(4), inc(5)][0] ---> $ == 5;
 
 let f = {x -> {y -> x + y}} in
-  [f(1)(2), f(3)(4)][1] ---> _ == 7;
+  [f(1)(2), f(3)(4)][1] ---> $ == 7;
 
 let makeList = {a, b -> [a, b, a + b]} in
-  makeList(3, 4)[2] ---> _ == 7;
+  makeList(3, 4)[2] ---> $ == 7;
 
-let i = 1 in [0, 10, 20][i + 1] ---> _ == 20;
+let i = 1 in [0, 10, 20][i + 1] ---> $ == 20;
 
 let index = {a -> a * 2} in
-  [5, 6, 7, 8, 9][index(1)] ---> _ == 7;
+  [5, 6, 7, 8, 9][index(1)] ---> $ == 7;
 
-[[1, 2], [3, 4], [5, 6]][2][1] ---> _ == 6;
+[[1, 2], [3, 4], [5, 6]][2][1] ---> $ == 6;
 
-let l = [[10, 20], [30, 40]] in l[0][1] ---> _ == 20;
+let l = [[10, 20], [30, 40]] in l[0][1] ---> $ == 20;
 
 let double = {x -> x * 2} in
-  [1, 2, 3][1] |> double ---> _ == 4;
+  [1, 2, 3][1] |> double ---> $ == 4;
 
-[{x -> x + 1}(4), {x -> x * 2}(3)][1] ---> _ == 6;
-
-let head = {lst -> lst[0]} in
-  head([42, 43, 44]) ---> _ == 42;
-
-let sumFirstTwo = {lst -> lst[0] + lst[1]} in
-  sumFirstTwo([1, 2, 3]) ---> _ == 3;
+[{x -> x + 1}(4), {x -> x * 2}(3)][1] ---> $ == 6;
 
 let head = {lst -> lst[0]} in
-  head([42, 43, 44]) ---> _ == 42;
+  head([42, 43, 44]) ---> $ == 42;
 
 let sumFirstTwo = {lst -> lst[0] + lst[1]} in
-  sumFirstTwo([1, 2, 3]) ---> _ == 3;
+  sumFirstTwo([1, 2, 3]) ---> $ == 3;
+
+let head = {lst -> lst[0]} in
+  head([42, 43, 44]) ---> $ == 42;
+
+let sumFirstTwo = {lst -> lst[0] + lst[1]} in
+  sumFirstTwo([1, 2, 3]) ---> $ == 3;
 
 let len = {lst ->
   if lst == 0 then 0
@@ -50,11 +50,11 @@ let len = {lst ->
 let cons = {head, tail -> {i -> if i == 0 then head else tail}} in
 let nil = 0 in
 let myList = cons(1, cons(2, cons(3, nil))) in
-  len(myList) ---> _ == 3;
+  len(myList) ---> $ == 3;
 
 // Generate even squares of numbers 1-10
 let range = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] in
-  filter(map(range, {x -> x * x}), {x -> x % 2 == 0}) ---> _ == [4, 16, 36, 64, 100];
+  filter(map(range, {x -> x * x}), {x -> x % 2 == 0}) ---> $ == [4, 16, 36, 64, 100];
 
 // Sum each row in a matrix
 let matrix = [[1, 2, 3], [4, 5, 6], [7, 8, 9]] in
@@ -63,14 +63,14 @@ let matrix = [[1, 2, 3], [4, 5, 6], [7, 8, 9]] in
       if length(lst) == 0 then 0
       else lst[0] + sum(slice(lst, 1, -1))
     } in sum(row)
-  }) ---> _ == [6, 15, 24];
+  }) ---> $ == [6, 15, 24];
 
 // Flatten a matrix
 let flatten = {lists ->
   if length(lists) == 0 then []
   else lists[0] + flatten(slice(lists, 1, -1))
 } in
-flatten([[1, 2], [3, 4], [5, 6]]) ---> _ == [1, 2, 3, 4, 5, 6];
+flatten([[1, 2], [3, 4], [5, 6]]) ---> $ == [1, 2, 3, 4, 5, 6];
 
 // Transpose a matrix
 let transpose = {matrix ->
@@ -83,7 +83,7 @@ let transpose = {matrix ->
     let range = [0, 1, 2] in  // Assuming 3x3 matrix
       map(range, getColumn)
 } in
-transpose([[1, 2, 3], [4, 5, 6], [7, 8, 9]]) ---> _ == [[1, 4, 7], [2, 5, 8], [3, 6, 9]];
+transpose([[1, 2, 3], [4, 5, 6], [7, 8, 9]]) ---> $ == [[1, 4, 7], [2, 5, 8], [3, 6, 9]];
 
 // Calculate mean of a list
 let mean = {numbers ->
@@ -93,23 +93,23 @@ let mean = {numbers ->
   } in
   sum(numbers) / length(numbers)
 } in
-mean([10, 20, 30, 40, 50]) --->_ == 30;
+mean([10, 20, 30, 40, 50]) ---> $ == 30;
 
 // Safe indexing with default values
 let safeGet = {lst, index, default ->
   if index >= 0 && index < length(lst) then lst[index]
   else default
 } in
-safeGet([1, 2, 3], 5, 0) ---> _ == 0;
+safeGet([1, 2, 3], 5, 0) ---> $ == 0;
 
 // Check if all elements satisfy a condition
 let allPositive = {numbers ->
   length(filter(numbers, {x -> x > 0})) == length(numbers)
 } in
-allPositive([1, 2, 3, 4]) ---> _;
+allPositive([1, 2, 3, 4]) ---> $;
 
 let reduce = {lst, fn, initial ->
   if length(lst) == 0 then initial
   else reduce(slice(lst, 1, -1), fn, fn(initial, lst[0]))
 } in
-reduce([1, 2, 3, 4], {acc, x -> acc * x}, 1) ---> _ == 24
+reduce([1, 2, 3, 4], {acc, x -> acc * x}, 1) ---> $ == 24
