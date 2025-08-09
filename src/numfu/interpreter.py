@@ -313,11 +313,11 @@ class Interpreter:
                 )
 
         # handle partial application
-        elif len(args) < len(arg_names) and not catch_rest:
+        elif len(args) < len(arg_names):
             # create a new lambda with the remaining parameters
-            remaining_params = arg_names[len(args) :]
+            remaining_params = this.arg_names[len(args) :]
             partial_env = new_env.copy()
-            partial_env.update(zip(arg_names[: len(args)], args))
+            partial_env.update(zip(this.arg_names[: len(args)], args))
 
             # create new tree for later reconstruction (delete consumed args)
             tree = b""
