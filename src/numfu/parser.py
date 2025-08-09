@@ -210,10 +210,17 @@ class AstGenerator(Transformer):
                     UnderscoreError("function parameter", _tokpos(param))
                 )
 
-        pos = (
-            _tokpos(name)
-            if name
-            else (_tokpos(params.children[0]) if params.children else body.pos)
+        pos = Pos(
+            start=(
+                _tokpos(name).start
+                if name
+                else (
+                    _tokpos(params.children[0]).start
+                    if params.children
+                    else body.pos.start
+                )
+            ),
+            end=body.pos.end + 1,
         )
         arg_names = [str(t.value) for t in params.children]
 
