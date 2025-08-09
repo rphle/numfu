@@ -32,7 +32,14 @@ from .ast_types import (
     Variable,
 )
 from .builtins import Builtins
-from .errors import ErrorMeta, nIndexError, nNameError, nSyntaxError, nTypeError
+from .errors import (
+    ErrorMeta,
+    nIndexError,
+    nNameError,
+    nRecursionError,
+    nSyntaxError,
+    nTypeError,
+)
 from .reconstruct import reconstruct
 from .typechecks import BuiltinFunc, type_name
 
@@ -85,8 +92,15 @@ class Interpreter:
         if self._print:
             print(o, end="")
 
-    def exception(self, error, message, pos: Pos = Pos(-1, -1)) -> None:
-        error(message, pos=pos, errormeta=self._errormeta)
+    def exception(
+        self, error, message, pos: Pos | None = None, errormeta=None, line_only=False
+    ) -> None:
+        error(
+            message,
+            pos=pos,
+            errormeta=self._errormeta if errormeta is None else errormeta,
+            line_only=line_only,
+        )
 
     def _eval_lists(self, exprs):
         r = []
@@ -449,8 +463,10 @@ class Interpreter:
             self._set_errormeta(errormeta)
         self.resolve_imports()
 
+        pos = None
         try:
             for node in self.tree:
+                pos = node.pos  # type:ignore
                 if isinstance(node, Lambda):
                     if node.name:
                         self.glob[node.name] = node
@@ -464,8 +480,17 @@ class Interpreter:
             if self.output and not self.output[-1].endswith("\n"):
                 self.put("\n")
 
-            return self.output
         except SystemExit:
             if self.errormeta.fatal:
                 sys.exit(1)
-            return self.output
+
+        except RecursionError:
+            self.exception(
+                nRecursionError,
+                "maximum recursion depth exceeded",
+                pos=Pos(pos.start, None) if pos else None,
+                errormeta=self.errormeta,
+                line_only=True,
+            )
+
+        return self.output

@@ -52,13 +52,13 @@ class CPos:
         """
         Convert parser character offsets to line/column positions.
         """
-        if pos.start is None or pos.end is None:
-            raise ValueError("Pos.start and Pos.end must not be None")
         self = cls()
-        self.line = code.count("\n", 0, pos.start) + 1
-        self.col = pos.start - code.rfind("\n", 0, pos.start)
-        self.end_line = code.count("\n", 0, pos.end) + 1
-        self.end_col = pos.end - code.rfind("\n", 0, pos.end)
+        if pos.start is not None:
+            self.line = code.count("\n", 0, pos.start) + 1
+            self.col = pos.start - code.rfind("\n", 0, pos.start)
+        if pos.end is not None:
+            self.end_line = code.count("\n", 0, pos.end) + 1
+            self.end_col = pos.end - code.rfind("\n", 0, pos.end)
         return self
 
     def split(self) -> list["CPos"]:
@@ -100,6 +100,7 @@ class Error:
         pos: Pos | CPos | None = None,
         errormeta: ErrorMeta = ErrorMeta(),
         name=None,
+        line_only=False,
     ):
         if pos is None:
             cpos = None
@@ -111,9 +112,9 @@ class Error:
             raise TypeError(f"Invalid position type: {type(pos)}")
 
         console.print(
-            f"[reset][at [blue]{errormeta.file or 'unknown'}[/blue]:{cpos.line if cpos else '?'}:{cpos.col if cpos else '?'}]"
+            f"[reset][at [blue]{errormeta.file or 'unknown'}[/blue]:{cpos.line if cpos else '?'}:{cpos.col if cpos and not line_only else '?'}]"
         )
-        if cpos is not None:
+        if cpos is not None and not line_only:
             if errormeta.code and 0 < cpos.end_line <= len(errormeta.code.splitlines()):
                 for _cpos in cpos.split():
                     _cpos.end_line = (
@@ -183,6 +184,10 @@ class nRuntimeError(Error):
 
 
 class nAssertionError(Error):
+    pass
+
+
+class nRecursionError(Error):
     pass
 
 

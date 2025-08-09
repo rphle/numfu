@@ -46,7 +46,3 @@ map(_, {x -> x+1})
 // returns
 {a -> map(a, {x -> x+1})}
 ```
-
-
-### Recursion Error
-Catch python's recursion error and display custom ones (very easy).
