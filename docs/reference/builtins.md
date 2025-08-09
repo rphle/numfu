@@ -34,7 +34,7 @@ Mathematical and special constants available globally.
 **Description**: Not a Number (represents undefined mathematical results)
 
 ```numfu
-nan                 // nan
+nan                // nan
 0 / 0              // nan
 sqrt(-1)           // nan
 ```
@@ -242,6 +242,29 @@ xor(1, 0)           // true
 -----
 ## Mathematical Functions
 
+-----
+### `isnan(x)`
+
+**Parameters**: `Number`
+
+**Returns**: `Boolean` - true if x is NaN (Not a Number)
+
+```numfu
+isnan(nan)          // true
+isnan(0/0)          // true
+```
+-----
+### `isinf(x)`
+**Parameters**: `Number`
+
+**Returns**: `Boolean` - true if x is positive or negative infinity
+
+```numfu
+isinf(1/0)          // true
+isinf(-(1/0))       // true
+```
+
+_____
 ### Trigonometric Functions
 
 -----

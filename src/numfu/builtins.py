@@ -122,6 +122,9 @@ class Builtins:
     _max = overload("max", eval_lists=True)
     _min = overload("min", eval_lists=True)
 
+    _isnan = overload("isnan")
+    _isinf = overload("isinf")
+
     _bool = overload("Bool")
     _number = overload("Number")
     _list = overload("List")
@@ -241,6 +244,9 @@ Builtins._min.add([InfiniteOf(Num)], Num, min).add(
     transformer=lambda x: [x.elements],
     help=HelpMsg(invalid_arg="Only numbers are supported"),
 )
+
+Builtins._isnan.add([Num], Num, mpm.isnan)
+Builtins._isinf.add([Num], bool, mpm.isinf)
 
 Builtins._ceil.add([Num], Num, mpm.ceil)
 Builtins._floor.add([Num], Num, mpm.floor)
