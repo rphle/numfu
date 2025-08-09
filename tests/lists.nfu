@@ -113,3 +113,20 @@ let reduce = {lst, fn, initial ->
   else reduce(slice(lst, 1, -1), fn, fn(initial, lst[0]))
 } in
 reduce([1, 2, 3, 4], {acc, x -> acc * x}, 1) ---> $ == 24
+
+// Prime factors
+let primeFactors = {n ->
+  let factors = [] in
+  let helper = {num, divisor, acc ->
+    if num == 1 then acc
+    else if num % divisor == 0 then helper(num / divisor, divisor, append(acc, divisor))
+    else helper(num, divisor + 1, acc)
+  } in helper(n, 2, factors)
+} in
+primeFactors(60) ---> $ == [2,2,3,5];
+
+// List difference (elements in first but not second)
+let listDiff = {lst1, lst2 ->
+  filter(lst1, {x -> !contains(lst2, x)})
+} in
+listDiff([1,2,3,4,5], [3,4,6,7]) ---> $ == [1,2,5];

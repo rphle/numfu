@@ -315,3 +315,14 @@ let sum = {...numbers ->
   } in helper(numbers, 0)
 } in
   sum(1, 2, 3, 4, 5) ---> $ == 15
+
+let normalizeText = {text ->
+  text
+  |> List
+  |> filter(_, {c -> c != " " || true})
+  |> join(_, "")
+  |> {s -> split(s, " ")}
+  |> filter(_, {word -> length(word) > 0})
+  |> join(_, " ")
+} in
+normalizeText("  hello    world   test  ") ---> $ == "hello world test";

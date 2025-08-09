@@ -36,3 +36,35 @@ let makeTextProcessor = {options ->
 } in
 let processor = makeTextProcessor([true, true, true]) in
   processor("  Hello World  ") ---> $ == "hello_world"
+
+// String formatting from scratch
+let advancedFormat = {template, ...args ->
+  let helper = {str, argIndex ->
+    if !contains(str, "{}") then str
+    else
+      let parts = split(str, "{}") in
+      if argIndex >= length(args) then str
+      else
+        parts[0] + String(args[argIndex]) + helper(join(slice(parts, 1, length(parts)), "{}"), argIndex + 1)
+  } in helper(template, 0)
+} in
+advancedFormat("Hello {}, you have {} messages and {} unread", "John", 5, 3)
+---> $ == "Hello John, you have 5 messages and 3 unread";
+
+// String compression (simple RLE)
+let compress = {str ->
+  if length(str) == 0 then ""
+  else
+    let helper = {index, current, count, result ->
+      if index >= length(str) then result + current + String(count)
+      else if str[index] == current then helper(index + 1, current, count + 1, result)
+      else helper(index + 1, str[index], 1, result + current + String(count))
+    } in helper(1, str[0], 1, "")
+} in
+compress("aaabbccccaa") ---> $ == "a3b2c4a2";
+
+"the quick brown fox"
+|> split(_, " ")
+|> map(_, {word -> word[0] + slice(word, 1, length(word))})
+|> filter(_, {word -> length(word) > 3})
+|> join(_, "-") ---> $ == "quick-brown";

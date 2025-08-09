@@ -76,5 +76,11 @@ map([1, 2, 3, 4], {x -> x * x})     ---> $ == [1, 4, 9, 16]
 map(["hello", "world"], length)     ---> $ == [5, 5]
 map([1, 2, 3], {x -> x + 10})       ---> $ == [11, 12, 13]
 
-filter([1, 2, 3, 4, 5], {x -> x % 2 == 0})                    ---> $ == [2, 4]
-filter(["apple", "banana", "cherry"], {s -> length(s) > 5})   ---> $ == ["banana", "cherry"]
+filter([1, 2, 3, 4, 5], {x -> x % 2 == 0})                    ---> $ == [2, 4];
+filter(["apple", "banana", "cherry"], {s -> length(s) > 5})   ---> $ == ["banana", "cherry"];
+
+0 / 0    ---> isnan($);
+sqrt(-1) ---> isnan($);
+
+1 / 0    ---> isinf($);
+-1 / 0   ---> isinf($);

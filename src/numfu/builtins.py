@@ -347,7 +347,9 @@ Builtins._map.add(
             Call(f, [element], pos=f.pos)
             if isinstance(f, Lambda)
             else Call(
-                Variable(f.name) if not f.partial else f, [element], pos=element.pos
+                Variable(f.name) if not f.partial else f,
+                [element],
+                pos=getattr(element, "pos", None),  # type: ignore
             )
             for element in lst.elements
         ],

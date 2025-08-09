@@ -14,6 +14,10 @@ let makeAdder = {x -> {y -> x + y}} in
 // Curried functions
 {addMaker: x -> {y -> x + y}}(10)(5) ---> $ == 15;
 
+// Five-parameter currying chain
+let complex5 = {a -> {b -> {c -> {d -> {e -> a * b + c * d - e}}}}} in
+complex5(2)(3)(4)(5)(1) ---> $ == 25;
+
 // Multiple currying levels
 let multiplier = {x -> {y -> {z -> x * y * z}}} in
   multiplier(2)(3)(4) ---> $ == 24;
@@ -203,3 +207,28 @@ let pong = {n, state ->
   if n <= 0 then state
   else ping(n - 1, state * 2)
 } in ping(10, 1) ---> $ == 94;
+
+// Complex pipe chains with mixed operations
+[1,2,3,4,5] |> map(_, {x -> x^2}) |> filter(_, {x -> x > 10}) |> reverse ---> $ == [25, 16];
+
+// Pipe with partial application
+let addN = {n -> {x -> x + n}} in
+10 |> addN(5) |> addN(3) |> addN(-2) ---> $ == 16;
+
+// Pipe with string operations
+"hello world" |> split(_, " ") |> map(_, {s -> s + "!"}) |> join(_, "-") ---> $ == "hello!-world!";
+
+// Pipe with nested function composition
+5 |> (_ * 2 >> _ + 1 >> _ ^ 2) ---> $ == 121;
+
+5 |> ({x -> x * 3} >> _-2 >> {z -> z^2}) ---> $ == 169;
+
+// Y combinator
+let Y = {f ->
+  {x -> f({v -> x(x)(v)})}({x -> f({v -> x(x)(v)})})
+} in
+let factorialF = {fact -> {n ->
+  if n <= 1 then 1 else n * fact(n - 1)
+}} in
+let factorial = Y(factorialF) in
+factorial(6) ---> $ == 720;

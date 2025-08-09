@@ -187,3 +187,17 @@ let pascal = {row, col ->
   if col == 0 || col == row then 1
   else pascal(row - 1, col - 1) + pascal(row - 1, col)
 } in pascal(4, 2) ---> $ == 6;
+
+// Trapezoidal rule integration
+let trapezoidalIntegration = {f, a, b, n ->
+  let h = (b - a) / n in
+  let sum = (f(a) + f(b)) / 2 in
+  let helper = {i, acc ->
+    if i >= n then acc
+    else
+      let x = a + i * h in
+      helper(i + 1, acc + f(x))
+  } in h * helper(1, sum)
+} in
+let f = {x -> x^2} in
+round(trapezoidalIntegration(f, 0, 2, 1000), 3) ---> $ == 2.667;
