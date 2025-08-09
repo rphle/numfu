@@ -1,5 +1,9 @@
-start: (expr | expr assertion? ";"?)*
-?expr: pipe_expr
+start: (expr ";"?)*
+?expr: assertion_expr
+
+?assertion_expr: pipe_expr assertion?
+?assertion: ("--->" expr)
+
 ?pipe_expr: compose_expr | pipe_expr (PIPE compose_expr) -> pipe_chain
 ?compose_expr: logic_or | compose_expr (COMPOSE logic_or) -> compose_chain
 
@@ -36,7 +40,7 @@ conditional: "if" expr "then" expr "else" expr
 let_binding: "let" let_params "in" expr
 constant_def: "const" NAME "=" expr
 let_params: (NAME "=" expr ("," NAME "=" expr)*)?
-assertion: ("--->" expr)
+
 
 ADD: "+"
 SUB: "-"

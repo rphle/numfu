@@ -16,7 +16,6 @@ from dataclasses import dataclass
 from lark import Lark, Token, Transformer, Tree, v_args
 
 from .ast_types import (
-    Assertion,
     Bool,
     Call,
     Conditional,
@@ -387,8 +386,20 @@ class AstGenerator(Transformer):
     def call_args(self, *args):
         return list(args)
 
-    def assertion(self, cond):
-        return Assertion(cond, pos=cond.pos)
+    def assertion_expr(self, left, cond):
+        return Call(
+            func=Lambda(
+                arg_names=["_"],
+                body=Call(
+                    func=Variable("assert", pos=cond.pos),
+                    args=[cond, left],
+                    pos=cond.pos,
+                ),
+                pos=cond.pos,
+            ),
+            args=[left],
+            pos=cond.pos,
+        )
 
 
 class Parser:
@@ -448,28 +459,9 @@ class Parser:
             if not isinstance(ast_tree, list):
                 ast_tree = [ast_tree]
 
-            tree = []
-            for i, stmt in enumerate(ast_tree):
-                if isinstance(stmt, Assertion):
-                    tree[-1] = Call(
-                        func=Lambda(
-                            arg_names=["_"],
-                            body=Call(
-                                func=Variable("assert", pos=stmt.pos),
-                                args=[stmt.test, tree[-1]],
-                                pos=stmt.pos,
-                            ),
-                            pos=stmt.test.pos,  # type:ignore
-                        ),
-                        args=[tree[-1]],
-                        pos=stmt.test.pos,  # type:ignore
-                    )
-                else:
-                    tree.append(stmt)
-
         except Exception as e:
             LarkError(str(e), self.errormeta)
             return None
 
-        tree = imports + tree
+        tree = imports + ast_tree
         return tree
