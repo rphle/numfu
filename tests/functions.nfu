@@ -209,7 +209,7 @@ let pong = {n, state ->
 } in ping(10, 1) ---> $ == 94;
 
 // Complex pipe chains with mixed operations
-[1,2,3,4,5] |> map(_, {x -> x^2}) |> filter(_, {x -> x > 10}) |> reverse ---> $ == [25, 16];
+[1,2,3,4,5] |> map(_, _^2) |> filter(_, {x -> x > 10}) |> reverse ---> $ == [25, 16];
 
 // Pipe with partial application
 let addN = {n -> {x -> x + n}} in

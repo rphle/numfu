@@ -10,3 +10,4 @@ numfu tests/lists.nfu
 numfu tests/logic.nfu
 numfu tests/strings.nfu
 numfu tests/builtins.nfu
+numfu tests/edgecases.nfu

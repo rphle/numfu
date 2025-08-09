@@ -102,6 +102,48 @@ class Interpreter:
             line_only=line_only,
         )
 
+    def _partial_lambda(self, this: Lambda, args: list, env={}):
+        """Return a Lambda with given args (including _ placeholders) bound, preserving printability"""
+        arg_names = [a.lstrip("...") for a in this.arg_names]
+        partial_env = env.copy()
+
+        filled_pos = []
+        for i, (name, val) in enumerate(zip(arg_names, args)):
+            if not (isinstance(val, Variable) and val.name == "_"):
+                partial_env[name] = val
+                filled_pos.append(i)
+
+        remaining_params = [
+            p for i, p in enumerate(this.arg_names) if i not in filled_pos
+        ]
+
+        tree = b""
+        if this.tree:
+            try:
+                t = pickle.loads(zlib.decompress(this.tree))
+                params_idx = next(
+                    i
+                    for i, c in enumerate(t.children)
+                    if isinstance(c, lark.Tree) and c.data == "lambda_params"
+                )
+                t.children[params_idx].children = [
+                    c
+                    for i, c in enumerate(t.children[params_idx].children)
+                    if i not in filled_pos
+                ]
+                tree = zlib.compress(pickle.dumps(t))
+            except zlib.error:
+                pass
+
+        return Lambda(
+            arg_names=remaining_params,
+            body=this.body,
+            pos=this.pos,
+            name=None,
+            curry=partial_env,
+            tree=tree,
+        )
+
     def _eval_lists(self, exprs):
         r = []
         for expr in exprs:
@@ -130,68 +172,79 @@ class Interpreter:
 
     def _call(self, this: Call, env: dict = {}):
         """
-        Execute function calls, handling both built-in functions and user lambdas.
+        Execute a function call, handling built-in functions, user lambdas, and placeholders.
 
-        1. Check for short-circuiting operators (&& and ||) first
-        2. Evaluate the function expression to get callable
-        3. Resolve any spread operators in arguments (...list)
-        4. Evaluate all argument expressions
-        5. Dispatch to appropriate handler based on function type
+        1. Handle short-circuiting logical operators (&&, ||).
+        2. Evaluate the function expression to obtain the callable object.
+        3. Expand any spread (...list) arguments.
+        4. Evaluate all arguments.
+        5. If any arguments are placeholders (_):
+           - For BuiltinFunc: return a placeholder-aware partial wrapper
+           - For Lambda: return a curried Lambda via _partial_lambda
+        6. Otherwise, dispatch normally
         """
 
         # Handle short-circuiting
         if isinstance(this.func, Variable) and this.func.name in ("&&", "||"):
-            op = this.func.name
-            if op == "&&":
-                return (
-                    bool(self._eval(this.args[1], env=env))
-                    if self._eval(this.args[0], env=env)
-                    else False
-                )
-            elif op == "||":
-                return (
-                    True
-                    if self._eval(this.args[0], env=env)
-                    else bool(self._eval(this.args[1], env=env))
+            left = self._eval(this.args[0], env=env)
+            if this.func.name == "&&":
+                return bool(self._eval(this.args[1], env=env)) if left else False
+            return True if left else bool(self._eval(this.args[1], env=env))
+
+        func = self._eval(this.func, env=env)  # type: ignore
+        args = [
+            self._eval(a, env=env) for a in self._resolve_spread(this.args, env=env)
+        ]
+        has_placeholder = any(isinstance(a, Variable) and a.name == "_" for a in args)
+
+        # BuiltinFunc partial application
+        if has_placeholder and isinstance(func, BuiltinFunc):
+            fixed = args.copy()
+
+            def partial_func(*_args, **kwargs):
+                it = iter(_args)
+                filled = [
+                    next(it, a) if isinstance(a, Variable) and a.name == "_" else a
+                    for a in fixed
+                ]
+                filled.extend(it)
+                if any(isinstance(a, Variable) and a.name == "_" for a in filled):
+                    return BuiltinFunc(
+                        func.name,
+                        eval_lists=func.eval_lists,
+                        help=func.help,
+                        partial=True,
+                    ).add(
+                        [Any],
+                        Any,
+                        lambda *ma, **mkw: partial_func(
+                            *(_args + ma), **{**kwargs, **mkw}
+                        ),
+                    )
+                return func(
+                    *filled,
+                    errormeta=self._errormeta,
+                    args_pos=this.pos,
+                    func_pos=getattr(this.func, "pos", None),  # type: ignore
+                    precision=self.precision,
+                    interpreter=self if func.name == "filter" else None,
+                    env=env,
                 )
 
-        func = self._eval(this.func, env=env)
-        args = self._resolve_spread(this.args, env=env)
-        args = [self._eval(arg, env=env) for arg in args]
+            return BuiltinFunc(
+                func.name, eval_lists=func.eval_lists, help=func.help, partial=True
+            ).add([Any], Any, partial_func)
 
-        if any(isinstance(arg, Variable) and arg.name == "_" for arg in args):
-            if isinstance(func, BuiltinFunc):
-                # Create a wrapper builtin function that has the exact same properties as the original and calls the original with the already collected arguments
-                r = BuiltinFunc(
-                    func.name,
-                    eval_lists=func.eval_lists,
-                    help=func.help,
-                    partial=True,
-                ).add(
-                    [Any],
-                    Any,
-                    lambda *_args: func(
-                        *[
-                            _args[i]
-                            if isinstance(arg, Variable) and arg.name == "_"
-                            else arg
-                            for i, arg in enumerate(args.copy())
-                        ],
-                        errormeta=self._errormeta,
-                        args_pos=this.pos,
-                        func_pos=this.func.pos,  # type: ignore
-                        precision=self.precision,
-                        interpreter=self if func.name == "filter" else None,
-                        env=env,
-                    ),
-                )
-                return r
+        # Lambda partial application
+        if has_placeholder and isinstance(func, Lambda):
+            return self._partial_lambda(func, args=args, env=env)
 
+        # Normal calls
         if isinstance(func, BuiltinFunc):
             if func.eval_lists:
                 args = self._eval_lists(args)
 
-            args = [arg.expr if isinstance(arg, PrintOutput) else arg for arg in args]
+            args = [a.expr if isinstance(a, PrintOutput) else a for a in args]
 
             r = func(
                 *args,
@@ -205,17 +258,14 @@ class Interpreter:
 
             if isinstance(r, mpmath.mpc):
                 return r if r.imag == 0 else mpmath.nan  # type: ignore
-            elif isinstance(r, PrintOutput):
+            if isinstance(r, PrintOutput):
                 return self._eval(r, env=env)
             return r
-        elif isinstance(func, Lambda):
+
+        if isinstance(func, Lambda):
             return self._lambda(func, args, call_pos=this.pos, env=env)
-        else:
-            self.exception(
-                nTypeError,
-                f"{type_name(func)} is not callable",
-                pos=this.pos,
-            )
+
+        self.exception(nTypeError, f"{type_name(func)} is not callable", pos=this.pos)
 
     def _builtinfunc(self, this: BuiltinFunc, env={}):
         return this
@@ -347,38 +397,7 @@ class Interpreter:
 
         # handle partial application
         elif len(args) < len(arg_names):
-            # create a new lambda with the remaining parameters
-            remaining_params = this.arg_names[len(args) :]
-            partial_env = new_env.copy()
-            partial_env.update(zip(this.arg_names[: len(args)], args))
-
-            # create new tree for later reconstruction (delete consumed args)
-            tree = b""
-            if this.tree:
-                try:
-                    tree = pickle.loads(zlib.decompress(this.tree))
-                    params_i = next(
-                        i
-                        for i, c in enumerate(
-                            pickle.loads(zlib.decompress(this.tree)).children
-                        )
-                        if isinstance(c, lark.Tree) and c.data == "lambda_params"
-                    )
-                    del tree.children[params_i].children[
-                        : -(len(arg_names) - len(args))
-                    ]
-                    tree = zlib.compress(pickle.dumps(tree))
-                except zlib.error:
-                    tree = b""
-
-            return Lambda(
-                arg_names=remaining_params,
-                body=this.body,
-                pos=this.pos,
-                name=None,
-                curry=partial_env,
-                tree=tree,
-            )
+            return self._partial_lambda(this, args=args, env=new_env)
 
         # exact match: apply all arguments
         else:
@@ -411,10 +430,12 @@ class Interpreter:
         else:
             self.put(self.get_repr([this.expr])[0] + this.end)
             return PrintOutput(
-                self._eval(this.expr, env=env), end=this.end, printed=True
+                self._eval(this.expr, env=env),  # type: ignore
+                end=this.end,
+                printed=True,
             )
 
-    def _eval(self, node: Expr, env: dict = {}):
+    def _eval(self, node: Expr | BuiltinFunc, env: dict = {}):
         if isinstance(node, Lambda):
             # Don't re-evaluate lambdas that already have a curry environment
             if hasattr(node, "curry") and node.curry:

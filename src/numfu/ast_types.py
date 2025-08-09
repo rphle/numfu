@@ -7,6 +7,7 @@ position information for error reporting.
 """
 
 from dataclasses import dataclass, field
+from typing import Callable
 
 from .errors import Pos
 
@@ -169,7 +170,7 @@ class Conditional(Expr):
 
 @dataclass
 class Call(Expr):
-    func: Expr
+    func: Lambda | Callable | Expr
     args: list[Expr]
     pos: Pos = DEFAULT_POS
 
