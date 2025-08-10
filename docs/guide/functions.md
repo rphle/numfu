@@ -1,7 +1,3 @@
----
-sidebar_position: 5
----
-
 # Functions and Lambdas
 
 As a functional programming language, NumFu treats functions as first-class values that can be created, passed around, and composed to build complex programs from simple parts.

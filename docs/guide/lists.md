@@ -1,7 +1,3 @@
----
-sidebar_position: 6
----
-
 # Lists
 
 Lists are NumFu's primary data structure for working with collections of values. They're immutable, heterogeneous (can contain different types), and come with powerful operations for transformation and manipulation.

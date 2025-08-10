@@ -1,7 +1,3 @@
----
-sidebar_position: 1
----
-
 # Basic Syntax
 
 This is a quick overview on the structure of NumFu programs.

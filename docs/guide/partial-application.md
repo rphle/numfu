@@ -1,7 +1,3 @@
----
-sidebar_position: 6
----
-
 # Partial Application
 
 Partial application in NumFu lets you call a function with *some* of its arguments now, producing a new function that remembers those arguments and waits for the rest.

@@ -1,7 +1,3 @@
----
-sidebar_position: 3
----
-
 # Booleans and Logic
 
 NumFu's boolean system handles true/false values and logical operations with some unique features like chained comparisons and truthiness rules.

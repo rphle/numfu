@@ -1,7 +1,3 @@
----
-sidebar_position: 7
----
-
 # Strings and Text
 
 NumFu treats text as first-class data with powerful string operations. Let's explore how to work with strings in NumFu.

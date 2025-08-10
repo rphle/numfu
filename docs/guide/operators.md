@@ -1,7 +1,3 @@
----
-sidebar_position: 7
----
-
 # Special Operators
 
 NumFu includes several expressive operators to make functional programming more intuitive:

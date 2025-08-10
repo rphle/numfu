@@ -1,7 +1,3 @@
----
-sidebar_position: 2
----
-
 # Numbers and Arithmetic
 
 NumFu's foundation is built on powerful numeric computation with arbitrary precision arithmetic. Let's start with the basics of numbers and mathematical operations.

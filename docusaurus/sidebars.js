@@ -12,7 +12,7 @@ const sidebars = {
     },
     {
       type: "doc",
-      id: "index",
+      id: "readme",
       label: "Getting Started",
     },
     {

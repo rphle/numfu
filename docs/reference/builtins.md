@@ -1,7 +1,3 @@
----
-sidebar_position: 1
----
-
 # Built-ins
 
 NumFu comes with a comprehensive set of built-in constants and functions covering mathematics, string manipulation, list operations, and more. All functions are overloaded to work with appropriate types and provide helpful error messages.

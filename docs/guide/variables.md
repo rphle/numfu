@@ -1,7 +1,3 @@
----
-sidebar_position: 4
----
-
 # Variables and Let Bindings
 
 In NumFu, variables are created using `let` bindings, which create local scopes for your values. This functional approach to variables ensures predictable behavior and prevents many common programming errors.

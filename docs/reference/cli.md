@@ -1,7 +1,3 @@
----
-sidebar_position: 2
----
-
 # CLI
 
 NumFu provides a command-line interface for running programs, interactive development, and debugging. This reference covers all available commands and options.
