@@ -5,10 +5,12 @@ Implements the core interpreter that evaluates NumFu ASTs.
 """
 
 import importlib.resources
+import math
 import pickle
 import sys
 import zlib
 from copy import deepcopy
+from dataclasses import dataclass
 from typing import Any
 
 import lark
@@ -44,6 +46,16 @@ from .reconstruct import reconstruct
 from .typechecks import BuiltinFunc, InfiniteOf, type_name
 
 
+@dataclass
+class Bounce:
+    """tail-call trampoline"""
+
+    func: Lambda
+    args: list
+    env: dict
+    call_pos: Any
+
+
 class Interpreter:
     """
     The main NumFu interpreter that evaluates AST nodes.
@@ -64,10 +76,13 @@ class Interpreter:
         precision: int = 15,
         rec_depth: int = 10000,
         errormeta: ErrorMeta = ErrorMeta(),
+        iter_depth: int = -1,
         _print: bool = True,
     ):
         sys.setrecursionlimit(rec_depth)
         mpmath.mp.dps = precision
+        self.rec_depth = rec_depth
+        self.iter_depth = iter_depth if iter_depth >= 0 else math.inf
 
         self.tree: list[Expr] = []
         self.precision = precision
@@ -191,7 +206,9 @@ class Interpreter:
                 r.append(expr)
         return r
 
-    def _variable(self, this: Variable, env: dict = {}) -> Expr | None:
+    def _variable(
+        self, this: Variable, env: dict = {}, is_tail: bool = False
+    ) -> Expr | None:
         if this.name == "_":
             return env.get(this.name, this)
         try:
@@ -203,7 +220,7 @@ class Interpreter:
                 pos=this.pos,
             )
 
-    def _call(self, this: Call, env: dict = {}):
+    def _call(self, this: Call, env: dict = {}, is_tail: bool = False):
         """
         Execute a function call, handling built-in functions, user lambdas, and placeholders.
 
@@ -301,15 +318,18 @@ class Interpreter:
                 return self._eval(r, env=env)
             return r
 
+        # return a Bounce so the caller's trampoline can iterate instead of recursing.
         if isinstance(func, Lambda):
+            if is_tail:
+                return Bounce(func, args, env, this.pos)
             return self._lambda(func, args, call_pos=this.pos, env=env)
 
         self.exception(nTypeError, f"{type_name(func)} is not callable", pos=this.pos)
 
-    def _builtinfunc(self, this: BuiltinFunc, env={}):
+    def _builtinfunc(self, this: BuiltinFunc, env: dict = {}, is_tail: bool = False):
         return this
 
-    def _index(self, this: Index, env: dict = {}):
+    def _index(self, this: Index, env: dict = {}, is_tail: bool = False):
         target = self._eval(this.target, env=env)
         index = self._eval(this.index, env=env)
 
@@ -374,23 +394,31 @@ class Interpreter:
                 elements.append(element)
         return elements
 
-    def _list(self, this: List, env: dict = {}):
+    def _list(self, this: List, env: dict = {}, is_tail: bool = False):
         this.curry = env.copy()
         this.elements = self._resolve_spread(this.elements, env=env)
         return this
 
-    def _spread(self, this: Spread, env: dict = {}):
+    def _spread(self, this: Spread, env: dict = {}, is_tail: bool = False):
         return this
 
-    def _conditional(self, this: Conditional, env: dict = {}):
+    def _conditional(self, this: Conditional, env: dict = {}, is_tail: bool = False):
         condition = self._eval(this.test, env=env)
-        return self._eval(this.then_body if condition else this.else_body, env=env)
+        return self._eval(
+            this.then_body if condition else this.else_body, env=env, is_tail=is_tail
+        )
 
     def _lambda(
-        self, this: Lambda, args: list = [], call_pos: Pos | None = None, env: dict = {}
+        self,
+        this: Lambda,
+        args: list = [],
+        call_pos: Pos | None = None,
+        env: dict = {},
+        is_tail: bool = False,
     ):
         """
         Handle lambda function calls with currying and partial application.
+        Also handles tail-call Bounces.
 
         - Too few args: return partially applied function
         - Exact match: execute function body
@@ -405,72 +433,102 @@ class Interpreter:
         Returns:
             Result of function execution or partially applied lambda
         """
+        current_lambda = this
+        current_args = args
+        current_env = env
 
-        new_env = env.copy()
-
-        if this.name:
-            new_env[this.name] = this
-
-        # merge curried environment
-        new_env.update(this.curry)
-
-        catch_rest = any(arg.startswith("...") for arg in this.arg_names)
-        arg_names = [arg.lstrip("...") for arg in this.arg_names.copy()]
-
-        # more arguments than parameters
-        if len(args) > len(arg_names) and not catch_rest:
-            # apply all parameters and call the result with remaining args
-            filled_env = new_env.copy()
-            filled_env.update(zip(arg_names, args[: len(arg_names)]))
-            result = self._eval(this.body, env=filled_env)
-
-            # if result is callable, call it with remaining args
-            if isinstance(result, (Lambda, BuiltinFunc)) or hasattr(result, "__call__"):
-                remaining_args = args[len(arg_names) :]
-                if isinstance(result, Lambda):
-                    return self._lambda(
-                        result, remaining_args, call_pos=call_pos, env=env
-                    )
-                else:
-                    # builtin function
-                    return result(*remaining_args)  # type: ignore
-            else:
+        iterations = 0
+        while True:
+            iterations += 1
+            if iterations > self.iter_depth:
                 self.exception(
-                    nTypeError,
-                    f"Cannot apply {len(args) - len(arg_names)} more arguments to non-callable result",
-                    pos=call_pos if call_pos else this.pos,
+                    nRecursionError,
+                    "tail-call recursion limit exceeded",
+                    pos=Pos(call_pos.start, None) if call_pos else None,
+                    errormeta=self.errormeta,
+                    line_only=True,
                 )
 
-        # handle partial application
-        elif len(args) < len(arg_names):
-            return self._partial_lambda(this, args=args, env=new_env)
+            new_env = current_env.copy()
 
-        # exact match: apply all arguments
-        else:
-            if catch_rest:
-                new_env.update(zip(arg_names[:-1], args[: len(arg_names[:-1])]))
-                new_env[arg_names[-1]] = List(args[len(arg_names[:-1]) :])
+            if current_lambda.name:
+                new_env[current_lambda.name] = current_lambda
+
+            new_env.update(current_lambda.curry)
+
+            catch_rest = any(arg.startswith("...") for arg in current_lambda.arg_names)
+            arg_names = [arg.lstrip("...") for arg in current_lambda.arg_names.copy()]
+
+            # more arguments than parameters
+            if len(current_args) > len(arg_names) and not catch_rest:
+                # apply all parameters and evaluate the body
+                filled_env = new_env.copy()
+                filled_env.update(zip(arg_names, current_args[: len(arg_names)]))
+                result = self._eval(current_lambda.body, env=filled_env, is_tail=True)
+
+                # if result is callable, call it with remaining args
+                if isinstance(result, (Lambda, BuiltinFunc)) or hasattr(
+                    result, "__call__"
+                ):
+                    remaining_args = current_args[len(arg_names) :]
+                    if isinstance(result, Lambda):
+                        # tail-call to a lambda: continue loop with new function and args
+                        current_lambda = result
+                        current_args = remaining_args
+                        current_env = env
+                        continue
+                    else:
+                        return result(*remaining_args)  # type: ignore
+                else:
+                    self.exception(
+                        nTypeError,
+                        f"Cannot apply {len(current_args) - len(arg_names)} more arguments to non-callable result",
+                        pos=call_pos if call_pos else current_lambda.pos,
+                    )
+
+            # handle partial application
+            elif len(current_args) < len(arg_names):
+                return self._partial_lambda(
+                    current_lambda, args=current_args, env=new_env
+                )
+
+            # exact match: apply all arguments
             else:
-                new_env.update(zip(arg_names, args))
-            return self._eval(this.body, env=new_env)
+                if catch_rest:
+                    new_env.update(
+                        zip(arg_names[:-1], current_args[: len(arg_names[:-1])])
+                    )
+                    new_env[arg_names[-1]] = List(current_args[len(arg_names[:-1]) :])
+                else:
+                    new_env.update(zip(arg_names, current_args))
 
-    def _number(self, this: Number, env: dict = {}):
+                result = self._eval(current_lambda.body, env=new_env, is_tail=True)
+
+                if isinstance(result, Bounce):
+                    if isinstance(result.func, Lambda):
+                        current_lambda = result.func
+                        current_args = result.args
+                        current_env = result.env
+                        continue
+                return result
+
+    def _number(self, this: Number, env: dict = {}, is_tail: bool = False):
         return mpmath.mpf(this.value)
 
-    def _string(self, this: String, env: dict = {}):
+    def _string(self, this: String, env: dict = {}, is_tail: bool = False):
         return this.value
 
-    def _constant(self, this: Constant, env: dict = {}):
+    def _constant(self, this: Constant, env: dict = {}, is_tail: bool = False):
         self.exception(
             nSyntaxError,
             "Constant definitions must be placed at the top level of the module",
             this.pos,
         )
 
-    def _bool(self, this: Bool, env: dict = {}):
+    def _bool(self, this: Bool, env: dict = {}, is_tail: bool = False):
         return this.value
 
-    def _printoutput(self, this: PrintOutput, env: dict = {}):
+    def _printoutput(self, this: PrintOutput, env: dict = {}, is_tail: bool = False):
         if this.printed:
             return this.expr
         else:
@@ -481,7 +539,7 @@ class Interpreter:
                 printed=True,
             )
 
-    def _eval(self, node: Expr | BuiltinFunc, env: dict = {}):
+    def _eval(self, node: Expr | BuiltinFunc, env: dict = {}, is_tail: bool = False):
         if isinstance(node, Lambda):
             # Don't re-evaluate lambdas that already have a curry environment
             if hasattr(node, "curry") and node.curry:
@@ -505,7 +563,9 @@ class Interpreter:
         elif node is None:
             return mpmath.mpf(0)
         try:
-            return getattr(self, "_" + type(node).__name__.lower())(node, env=env)
+            return getattr(self, "_" + type(node).__name__.lower())(
+                node, env=env, is_tail=is_tail
+            )
         except AttributeError as e:
             raise e
 

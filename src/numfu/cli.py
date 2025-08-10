@@ -51,10 +51,19 @@ def cli(ctx: click.Context) -> None:
     type=int,
     help="Maximum recursion depth during evaluation.",
 )
+@click.option(
+    "--iter-depth",
+    default=-1,
+    show_default=True,
+    type=int,
+    help="Maximum iterations of tail-call optimized recursion during evaluation.",
+)
 @click.pass_context
-def default(ctx: click.Context, source: str, precision: int, rec_depth: int) -> None:
+def default(
+    ctx: click.Context, source: str, precision: int, rec_depth: int, iter_depth: int
+) -> None:
     """Parse and run a NumFu source file."""
-    run_file(source, precision, rec_depth)
+    run_file(source, precision, rec_depth, iter_depth)
 
 
 @cli.command()
@@ -141,12 +150,19 @@ def parse(
     type=int,
     help="Maximum recursion depth during evaluation.",
 )
+@click.option(
+    "--iter-depth",
+    default=-1,
+    show_default=True,
+    type=int,
+    help="Maximum iterations of tail-call optimized recursion during evaluation.",
+)
 @click.pass_context
-def repl(ctx: click.Context, precision: int, rec_depth: int) -> None:
+def repl(ctx: click.Context, precision: int, rec_depth: int, iter_depth: int) -> None:
     """Start an interactive REPL."""
     if ctx.invoked_subcommand is None:
         parser = Parser(errormeta=ErrorMeta(file="REPL", fatal=False))
-        interpreter = Interpreter(precision, rec_depth)
+        interpreter = Interpreter(precision, rec_depth, iter_depth=iter_depth)
 
         def interpret(code: str) -> None:
             tree = parser.parse(code)
@@ -191,7 +207,7 @@ def repl_ast(max_depth: int, indent: int) -> None:
     )
 
 
-def run_file(source: str, precision: int, rec_depth: int) -> None:
+def run_file(source: str, precision: int, rec_depth: int, iter_depth: int) -> None:
     source_path = Path(source)
     parsed = False
     tree = None
@@ -217,5 +233,7 @@ def run_file(source: str, precision: int, rec_depth: int) -> None:
     if tree is None:
         return
 
-    interpreter = Interpreter(precision, rec_depth, errormeta=errormeta)
+    interpreter = Interpreter(
+        precision, rec_depth, errormeta=errormeta, iter_depth=iter_depth
+    )
     interpreter.run(tree)

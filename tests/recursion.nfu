@@ -1,0 +1,110 @@
+// Classic tail recursive factorial
+let factorialTail = {n, acc ->
+  if n <= 1 then acc
+  else factorialTail(n - 1, n * acc)
+} in
+factorialTail(20, 1) ---> $ == 2432902008176640000;
+
+// Fibonacci with two accumulators
+let fibTail = {n, a, b ->
+  if n == 0 then a
+  else if n == 1 then b
+  else fibTail(n - 1, b, a + b)
+} in
+fibTail(30, 0, 1) ---> $ == 832040;
+
+// Tail recursive binary search
+let binarySearchTail = {lst, target, low, high ->
+  if low > high then -1
+  else
+    let mid = (low + high) / 2 in
+    let midVal = lst[round(mid)] in
+    if midVal == target then round(mid)
+    else if midVal < target then binarySearchTail(lst, target, round(mid) + 1, high)
+    else binarySearchTail(lst, target, low, round(mid) - 1)
+} in
+let sortedList = [1,3,5,7,9,11,13,15,17,19] in
+binarySearchTail(sortedList, 7, 0, length(sortedList) - 1) ---> $ == 3;
+
+// Mutual tail recursion test
+let evenTail = {n ->
+  if n == 0 then true
+  else oddTail(n - 1)
+} in
+let oddTail = {n ->
+  if n == 0 then false
+  else evenTail(n - 1)
+} in
+evenTail(10000) ---> $ == true;
+
+// Chain of tail recursive calls
+let chainedTailRecursion = {n, depth ->
+  let step1 = {x, d -> if d <= 0 then x else step2(x + 1, d - 1)} in
+  let step2 = {x, d -> if d <= 0 then x else step3(x * 2, d - 1)} in
+  let step3 = {x, d -> if d <= 0 then x else step1(x - 1, d - 1)} in
+  step1(n, depth)
+} in
+chainedTailRecursion(1, 1000) ---> $ > 0;
+
+// Tail recursive string processing
+let processStringTail = {str, index, acc ->
+  if index >= length(str) then acc
+  else
+    let char = str[index] in
+    let processed = if char == "a" then "A" else char in
+    processStringTail(str, index + 1, acc + processed)
+} in
+processStringTail("abracadabra", 0, "") ---> $ == "AbrAcAdAbrA";
+
+// Tail recursion with early termination
+let earlyTerminationTail = {lst, target, index ->
+  if index >= length(lst) then -1
+  else if lst[index] == target then index
+  else earlyTerminationTail(lst, target, index + 1)
+} in
+earlyTerminationTail([1,2,3,4,5,4,3,2,1], 4, 0) ---> $ == 3;
+
+// Test very deep recursion that would normally cause stack overflow
+println("Testing deep recursion...")
+
+let memoryEfficiencyTest = {n ->
+  let helper = {current, result ->
+    if current <= 0 then result
+    else helper(current - 1, result + 1)
+  } in helper(n, 0)
+} in
+memoryEfficiencyTest(100000) ---> $ == 100000;
+
+let deepCountdown = {n ->
+  let helper = {current, acc ->
+    if current <= 0 then acc
+    else helper(current - 1, acc + current)
+  } in helper(n, 0)
+} in
+deepCountdown(50000) ---> $ == 1250025000;
+
+// Verify tail recursive functions produce same results as iterative versions
+let iterativeSum = {n ->
+  let helper = {current, acc ->
+    if current > n then acc
+    else helper(current + 1, acc + current)
+  } in helper(1, 0)
+} in
+let recursiveSum = {n ->
+  let helper = {current, acc ->
+    if current <= 0 then acc
+    else helper(current - 1, acc + current)
+  } in helper(n, 0)
+} in
+let n = 100 in
+iterativeSum(n) == recursiveSum(n) ---> $ == true;
+
+// Test that optimization doesn't break correctness
+let tailRecursivePower = {base, exp ->
+  let helper = {b, e, acc ->
+    if e == 0 then acc
+    else if e % 2 == 0 then helper(b * b, e / 2, acc)
+    else helper(b, e - 1, acc * b)
+  } in helper(base, exp, 1)
+} in
+tailRecursivePower(2, 16) ---> $ == 65536;
