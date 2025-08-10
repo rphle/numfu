@@ -1,5 +1,4 @@
 ---
-sidebar_position: 1
 slug: /
 ---
 
@@ -111,3 +110,10 @@ NumFu REPL. Type 'exit' or press Ctrl+D to exit.
 >>> [1, 2, 3, 4, 5, 6, 7] |> filter(_, {x -> x%2 == 0}) |> max
 6
 ```
+
+-----
+## What's Next?
+
+- Check out the language guide: Dive deeper into NumFu with the [comprehensive documentation](guide/basic-syntax).
+- Contribute: Help improve NumFu by contributing [code, documentation](https://github.com/Dr-Lego/numfu), or [bug reports](https://github.com/Dr-Lego/numfu/issues/new).
+- Build Projects: Start creating your own projects and share them!
