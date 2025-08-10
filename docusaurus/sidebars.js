@@ -4,6 +4,13 @@
 const sidebars = {
   docsSidebar: [
     {
+      type: "html",
+      value:
+        "<h1 style='font-size: 250%'>NumFu <span style='font-weight: 300'>Docs</span></h1><hr>",
+      className: "sidebar-title",
+      defaultStyle: true,
+    },
+    {
       type: "doc",
       id: "index",
       label: "Getting Started",

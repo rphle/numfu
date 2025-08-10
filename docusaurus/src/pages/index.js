@@ -104,7 +104,7 @@ function IdeasSection() {
           What Makes NumFu Special?
         </Heading>
         <div className="row">
-          <div className="col col--6 margin-top--lg">
+          <div className="col col--6 margin-top--3">
             <ul className="feature-list">
               <li>
                 <strong>Functions First:</strong> Everything is a function. You
