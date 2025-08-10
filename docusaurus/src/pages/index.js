@@ -132,6 +132,9 @@ function IdeasSection() {
               {`{x, y, z -> x + y + z}(_, 2)
 // {x, z -> x+2+z}
 
+[5, 12, 3] |> filter(_, _ > 4) |> map(_, _ * 2)
+// [10, 24]
+
 {
   distance: x1, y1, x2, y2 ->
     let dx = x2 - x1, dy = y2 - y1 in

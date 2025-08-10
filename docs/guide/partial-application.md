@@ -85,7 +85,34 @@ max(2, _)(3, 4)       // 4
 Placeholders remember fixed arguments and validate the rest when filled later.
 
 -----
+## Operators as Functions
 
+In NumFu, operators like `+`, `-`, `>`, `==`, and many others are internally **just regular functions**.
+This means you can use them anywhere you can use a function — including partial application with `_`.
+
+This is especially useful for writing piping chains and simple helper functions without having to define lambdas explicitly.
+
+```numfu
+_ + 1
+// is equivalent to:
+{x -> x + 1}
+
+10 > _
+// is equivalent to:
+{x -> 10 > x}
+```
+
+### Examples in Piping
+
+```numfu
+[1, 2, 3] |> map(_, _ * 2);
+// [2, 4, 6]
+
+[5, 12, 3] |> filter(_, _ > 4) |> map(_, _ * 2)
+// [10, 24]
+```
+
+______
 ## Rest Parameters and `_`
 
 Rest parameters (`...name`) collect all remaining arguments into a list.
@@ -162,4 +189,7 @@ max(5, _)(2, 8, 1)  // 8
 // Creating a reusable partial function
 let divideIt = {x, y -> x / y}(_, 2) in
 10 |> divideIt      // 5
+
+[5, 12, 3] |> filter(_, _ > 4) |> map(_, _ * 2)
+// [10, 24]
 ```

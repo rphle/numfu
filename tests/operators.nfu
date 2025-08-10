@@ -16,9 +16,9 @@ let double = {x -> x * 2} in
 let composed = add1 >> double in
   composed(5) ---> $ == 12;
 
-let add1 = {x -> x + 1} in
-let double = {x -> x * 2} in
-let subtract3 = {x -> x - 3} in
+let add1 = _+1,
+    double =_*2,
+    subtract3 = _-3 in
 let pipeline = add1 >> double >> subtract3 in
   pipeline(10) ---> $ == 19;
 
@@ -36,8 +36,8 @@ let triple = {x -> x * 3} in
   10 |> increment >> double |> triple ---> $ == 66;
 
 let f1 = {x -> x + 2} in
-let f2 = {x -> x * 3} in
-let f3 = {x -> x - 1} in
+let f2 = _*3 in
+let f3 = _-1 in
 let f4 = {x -> x / 2} in
   8 |> f1 >> f2 |> f3 >> f4 ---> $ == 14.5;
 
@@ -250,12 +250,12 @@ let comp = makePowerOf(2) >> makeAdderOf(1) in
   comp(5) ---> $ == 26;
 
 let id = {x -> x} in
-let add1 = {x -> x + 1} in
+let add1 = _+1 in
 let longChain = id >> id >> id >> add1 >> id >> id >> id >> add1 >> id >> add1 in
   longChain(0) ---> $ == 3;
 
-let add1 = {x -> x + 1} in
-let sub1 = {x -> x - 1} in
+let add1 = _+1 in
+let sub1 = _-1 in
 let alternating = add1 >> sub1 >> add1 >> sub1 >> add1 >> sub1 >> add1 in
   alternating(10) ---> $ == 11;
 
