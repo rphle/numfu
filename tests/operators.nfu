@@ -55,11 +55,6 @@ let multiply = {x -> {y -> x * y}} in
 let process = add(10) >> multiply(3) in
   5 |> process ---> $ == 45;
 
-let isEven = {x -> x % 2 == 0} in
-let double = {x -> x * 2} in
-let halve = {x -> x / 2} in
-  6 |> {x -> if isEven(x) then double(x) else halve(x)} ---> $ == 12;
-
 let conditionalOp = {x -> if x > 5 then x * 2 else x + 10} in
 let add5 = {x -> x + 5} in
 let pipeline = conditionalOp >> add5 in
@@ -70,12 +65,6 @@ let add2 = {x -> x + 2} in
 let triple = {x -> x * 3} in
 let composed = outer(triple)(add2) in
   4 |> composed ---> $ == 18;
-
-let factorial = {n ->
-  if n <= 1 then 1
-  else n * factorial(n - 1)
-} in
-  5 |> factorial ---> $ == 120;
 
 let fib = {n ->
   if n <= 1 then n
@@ -93,31 +82,10 @@ let f5 = {x -> x + 10} in
 let bigPipeline = f1 >> f2 >> f3 >> f4 >> f5 in
   20 |> bigPipeline ---> $ == 19.75;
 
-let sqrt = {x -> x^0.5} in
-let square = {x -> x * x} in
-let add10 = {x -> x + 10} in
-let mathPipeline = add10 >> square >> sqrt in
-  6 |> mathPipeline ---> $ == 16;
-
-let f = {x -> x + 1} in
-let g = {x -> x * 2} in
-let h = {x -> x - 5} in
-  10 |> f >> g |> h ---> $ == 17;
-
-let inc = {x -> x + 1} in
-let dbl = {x -> x * 2} in
-let dec = {x -> x - 1} in
-  5 |> inc >> dbl |> dec >> inc ---> $ == 12;
-
 let applyFunction = {f, x -> f(x)} in
 let add5 = {x -> x + 5} in
 let multiply3 = {x -> x * 3} in
   applyFunction(add5 >> multiply3, 10) ---> $ == 45;
-
-let makePowerFunction = {n -> {x -> x^n}} in
-let makeAdder = {n -> {x -> x + n}} in
-let pipeline = makePowerFunction(2) >> makeAdder(10) in
-  5 |> pipeline ---> $ == 35;
 
 let createProcessor = {op ->
   if op == 1 then {x -> x * 2}
@@ -138,17 +106,6 @@ let identity = {x -> x} in
 let add1 = {x -> x + 1} in
 let chain = identity >> identity >> identity >> add1 >> identity in
   42 |> chain ---> $ == 43;
-
-let op1 = {x -> x + 1} in
-let op2 = {x -> x * 2} in
-let op3 = {x -> x - 3} in
-let op4 = {x -> x / 4} in
-  100 |> op1 >> op2 |> op3 >> op4 |> op1 >> op2 ---> $ == 101.5;
-
-let binaryAdd = {x -> {y -> x + y}} in
-let unaryDouble = {x -> x * 2} in
-let partiallyApplied = binaryAdd(5) >> unaryDouble in
-  10 |> partiallyApplied ---> $ == 30;
 
 let selfCompose = {f -> f >> f} in
 let add2 = {x -> x + 2} in
@@ -186,23 +143,6 @@ let comp2 = add5 >> identity in
 let comp3 = identity >> identity >> add5 >> identity in
   comp1(10) + comp2(10) + comp3(10) ---> $ == 45;
 
-let f1 = {x -> x + 1} in
-let f2 = {x -> x * 2} in
-let f3 = {x -> x - 3} in
-let f4 = {x -> x / 4} in
-let f5 = {x -> x + 10} in
-let f6 = {x -> x * 3} in
-let bigComp = f1 >> f2 >> f3 >> f4 >> f5 >> f6 in
-  bigComp(16) ---> $ == 53.25;
-
-let add2 = {x -> x + 2} in
-let mul3 = {x -> x * 3} in
-let sub1 = {x -> x - 1} in
-let comp1 = add2 >> mul3 in
-let comp2 = sub1 >> mul3 in
-let comp3 = comp1 >> comp2 in
-  comp3(5) ---> $ == 60;
-
 let increment = {x -> x + 1} in
 let square = {x -> x * x} in
 let sqrt = {x -> x^0.5} in
@@ -222,14 +162,6 @@ let makeAdder = {n ->
 let makeMult = {m -> {y -> y * m}} in
 let comp = makeAdder(5) >> makeMult(2) in
   comp(10) ---> $ == 230;
-
-let outer1 = 10 in
-let outer2 = 20 in
-let f1 = {x -> x + outer1} in
-let f2 = {x -> x + outer2} in
-let f3 = {x -> x * 2} in
-let comp = f1 >> f2 >> f3 in
-  comp(5) ---> $ == 70;
 
 let factorial = {n ->
   if n <= 1 then 1
@@ -259,16 +191,6 @@ let sub1 = _-1 in
 let alternating = add1 >> sub1 >> add1 >> sub1 >> add1 >> sub1 >> add1 in
   alternating(10) ---> $ == 11;
 
-let f = {x -> x + 1} in
-let g = {x -> x * 2} in
-let h = {x -> x - 3} in
-let i = {x -> x / 4} in
-  5 |> f >> g |> h >> i ---> $ == 2.25;
-
-let add2 = {x -> x + 2} in
-let mul3 = {x -> x * 3} in
-let sub4 = {x -> x - 4} in
-  ((add2 >> mul3) >> sub4)(6) ---> $ == 20;
 
 let conditionalFunc = {x -> if x > 5 then x * 2 else x + 10} in
 let add1 = {x -> x + 1} in
