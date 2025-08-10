@@ -102,10 +102,6 @@ pre .token {
     padding-top: 3rem;
 }
 
-/*[class*="sidebar_"] > nav {
-    padding-top: 0;
-}*/
-
 .main-wrapper {
     animation: fade-in 0.5s ease-out;
 }
