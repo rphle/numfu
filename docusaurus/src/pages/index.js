@@ -112,6 +112,11 @@ function IdeasSection() {
                 application is natively supported.
               </li>
               <li>
+                <strong>Tail Call Optimization:</strong> Write recursive
+                algorithms without fear of stack overflow. NumFu automatically
+                optimizes tail-recursive calls for constant memory usage.
+              </li>
+              <li>
                 <strong>Clean Syntax:</strong> Intuitive syntax inspired by
                 math, designed to be readable even for those who don’t use
                 functional languages daily.
@@ -134,6 +139,13 @@ function IdeasSection() {
 
 [5, 12, 3] |> filter(_, _ > 4) |> map(_, _ * 2)
 // [10, 24]
+
+// Efficient tail-recursive sum
+{sum_to: n, acc ->
+  if n <= 0 then acc
+  else sum_to(n - 1, acc + n)
+}
+sum_to(100000, 0) // 5000050000
 
 {
   distance: x1, y1, x2, y2 ->

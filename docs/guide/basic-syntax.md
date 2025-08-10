@@ -14,7 +14,7 @@ This is a quick overview on the structure of NumFu programs.
 42                      // Simple expression
 println("Hello!")       // Function call
 let x = 5 in x * 2      // Let binding
-sqrt(25) ---> _ == 5    // Assertion
+sqrt(25) ---> $ == 5    // Assertion
 ```
 ```
 42

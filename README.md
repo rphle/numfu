@@ -7,6 +7,7 @@
 - **Arbitrary Precision Arithmetic** - Reliable mathematical computing powered by Python's mpmath
 - **First-Class Functions** - Automatic currying, partial application, and function composition
 - **Expressive Syntax** - Infix operators, spread/rest operators, and lots of syntactic sugar
+- **Tail Call Optimization** for efficient recursive algorithms without stack overflow
 - **Interactive Development** - Friendly REPL and helpful error messages
 - **Minimal Complexity** - Only four core types: `Number`, `Boolean`, `List`, and `String`
 - **Python Integration** - Large & reliable standard library through NumFu's Python runtime
@@ -33,22 +34,27 @@ cd numfu
 Create `hello.nfu`:
 ```numfu
 // Mathematical computing with arbitrary precision
-let goldenRatio = {depth ->
-  let cf = {d ->
-    if d <= 0 then 1
-    else 1 + 1 / cf(d - 1)
-  } in cf(depth)
-} in goldenRatio(15)  // ~1.6180
+let golden = {depth ->
+  let recur =
+    {d -> if d <= 0 then 1 else 1 + 1 / recur(d - 1)}
+  in recur(depth)
+} in golden(10) // ≈ 1.618
 
 // Function composition & piping
-let add1 = {x -> x + 1} in
-let double = {x -> x * 2} in
-let composed = add1 >> double in
-  5 |> composed  // 12
+let add1 = {x -> x + 1},
+    double = {x -> x * 2}
+in 5 |> (add1 >> double) // 12
+
+// Partial Application
+{a, b, c -> a+b+c}(_, 5, _)
+// {a,c -> a+5+c}
+
+// Assertions
+sqrt(49) ---> $ == 7
 
 // Built-in testing with assertions
 let square = {x -> x * x} in
-  square(7) ---> _ == 49  // ✓ passes
+  square(7) ---> $ == 49  // ✓ passes
 ```
 
 Run it:
@@ -68,7 +74,7 @@ NumFu REPL. Type 'exit' or press Ctrl+D to exit.
 14
 >>> let square = {x -> x * x} in square(7)
 49
->>> filter([1, 2, 3, 4, 5, 6, 7], {x -> x%2 == 0}) |> max
+>>> [1, 2, 3, 4, 5, 6, 7] |> filter(_, {x -> x%2 == 0}) |> max
 6
 ```
 
@@ -93,8 +99,10 @@ cd numfu
 pip install -r requirements.txt
 
 ./scripts/build.sh
-# NumFu contains built-ins written in NumFu itself (src/numfu/stdlib/builtins.nfu). The above script first installs NumFu without the built-ins, then parses and serializes the file, and finally performs a full editable install. The script also builds NumFu and creates wheels.
 ```
+
+NumFu contains built-ins written in NumFu itself (src/numfu/stdlib/builtins.nfu).
+`build.sh` first installs NumFu without the built-ins, then parses and serializes the file, and finally performs a full editable install. The script also builds NumFu and creates wheels.
 
 ### Building Documentation
 

@@ -5,12 +5,14 @@ slug: /
 
 # Getting Started with NumFu
 
-**NumFu** is a functional programming language designed for readable & expressive code, extensibility and ease of learning for beginners.
-Moreover, as sketched by its name, NumFu is perfectly suited for mathematical computing because it supports arbitrary-precision arithmetic via its powerful python runtime natively.
+**NumFu** is a functional programming language designed for readable and expressive code, extensibility, and ease of learning for beginners.
 
-- **Expressive syntax**: Infix operators `a + b`, spread/rest operator `...` and easy testing `---> _ == 42`
+As its name suggests, NumFu is ideal for mathematical computing because it natively supports arbitrary-precision arithmetic via its powerful Python runtime.
+
+- **Expressive syntax**: Infix operators `a + b`, spread/rest operator `...` and easy testing `---> $ == 42`
 - **Arbitrary precision arithmetic** for reliable mathematical computing
-- **First-class functions** with automatic currying partial application
+- **First-class functions** with automatic partial application
+- **Tail call optimization** for efficient recursive algorithms without stack overflow
 - **Interactive development** with a friendly REPL and amazing errors
 - **Large standard library** provided by NumFu's python bindings
 - **Minimal complexity** by only having four types: `Number`, `Boolean`, `List` and `String`
@@ -35,6 +37,10 @@ let add1 = {x -> x + 1},
     double = {x -> x * 2} in
 let composed = add1 >> double in
   5 |> composed; // 12
+
+// Native partial application
+{x, y, z -> x + y + z}(_, 2)
+// {x, z -> x+2+z}
 
 // Built-in testing with assertions
 let square = {x -> x * x} in
@@ -78,7 +84,7 @@ println("Hello, NumFu!");
 println(format("The 10th Fibonacci number is: {}", fibonacci(10)))
 
 // Test our function
-fibonacci(5) ---> _ == 5
+fibonacci(5) ---> $ == 5
 ```
 
 Run it:
@@ -102,6 +108,6 @@ NumFu REPL. Type 'exit' or press Ctrl+D to exit.
 14
 >>> let square = {x -> x * x} in square(7)
 49
->>> filter([1, 2, 3, 4, 5, 6, 7], {x -> x%2 == 0}) |> max
+>>> [1, 2, 3, 4, 5, 6, 7] |> filter(_, {x -> x%2 == 0}) |> max
 6
 ```

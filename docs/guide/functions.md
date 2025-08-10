@@ -90,6 +90,37 @@ Named functions can call themselves recursively:
 fibonacci(10)    // 55
 ```
 
+You can control the maximum recursion depth using the CLI argument `--rec-depth` ([see CLI reference](cli#numfu-file-default-command)).
+
+### Tail Call Optimization
+
+NumFu automatically optimizes tail-recursive function calls, allowing you to write recursive algorithms without running into stack overflow or performance issues.
+
+A function call is in "tail position" when it's the last operation before returning. NumFu can optimize these calls to use constant memory instead of growing the call stack:
+
+```numfu
+// Tail-recursive factorial (optimized)
+{factorial: n, acc ->
+  if n <= 0 then acc
+  else factorial(n - 1, acc * n)
+}
+
+// Non tail-recursive factorial (not optimized)
+{factorial_slow: n ->
+  if n <= 0 then 1
+  else n * factorial_slow(n - 1)  // multiplication happens after the call
+}
+```
+The tail-recursive version works, but the non-optimized version fails with large values:
+```
+>>> factorial(10000, 1); factorial_slow(10000)
+2.84625968091707e+35659
+[at REPL:1:?]
+RecursionError: maximum recursion depth exceeded
+```
+
+You can control the maximum maximum number of tail-call iterations using the CLI argument `--iter-depth` ([see CLI reference](cli#numfu-file-default-command)).
+
 -----
 ## Rest Parameters
 
