@@ -105,21 +105,49 @@ class Interpreter:
     def _partial_lambda(self, this: Lambda, args: list, env={}):
         """Return a Lambda with given args (including _ placeholders) bound, preserving printability"""
 
+        def is_placeholder(arg):
+            return isinstance(arg, Variable) and arg.name == "_"
+
         partial_env = env.copy()
         arg_names = [a.lstrip("...") for a in this.arg_names]
         filled_pos = []
 
-        for i, (orig_name, name, val) in enumerate(
-            zip(this.arg_names, arg_names, args)
-        ):
-            if not (isinstance(val, Variable) and val.name == "_"):
-                if orig_name.startswith("...") and not isinstance(val, List):
-                    val = List([val])
-                partial_env[name] = val
+        rest_index = next(
+            (i for i, name in enumerate(this.arg_names) if name.startswith("...")), None
+        )
+
+        for i, (orig_name, name) in enumerate(zip(this.arg_names, arg_names)):
+            if i >= len(args):
+                break
+
+            if orig_name.startswith("..."):
+                rest_args = [arg for arg in args[i:] if not is_placeholder(arg)]
+                if rest_args:
+                    partial_env[name] = List(rest_args)
+                    filled_pos.extend(range(i, len(this.arg_names)))
+                break
+            elif not is_placeholder(args[i]):
+                partial_env[name] = args[i]
                 filled_pos.append(i)
 
+        if rest_index is not None and len(args) > len(arg_names):
+            rest_name = arg_names[rest_index]
+            extra_non_placeholders = [
+                arg for arg in args[len(arg_names) :] if not is_placeholder(arg)
+            ]
+
+            if extra_non_placeholders:
+                existing = partial_env.get(rest_name, List([]))
+                combined_elements = (
+                    existing.elements if isinstance(existing, List) else []
+                ) + extra_non_placeholders
+                partial_env[rest_name] = List(combined_elements)
+
         remaining_params = [
-            p for i, p in enumerate(this.arg_names) if i not in filled_pos
+            p
+            for i, p in enumerate(this.arg_names)
+            if i not in filled_pos
+            and (not p.startswith("...") or p.lstrip("...") not in partial_env)
         ]
 
         tree = b""
