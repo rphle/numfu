@@ -21,6 +21,7 @@ const sidebars = {
         "guide/lists",
         "guide/strings",
         "guide/operators",
+        "guide/partial-application",
         "guide/printing",
       ],
     },

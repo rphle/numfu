@@ -55,46 +55,6 @@ let say = {name, age -> format("{} is {} years old", name, age)} in
 ```
 
 -----
-## Currying and Partial Application
-
-### Automatic Currying
-
-One of NumFu's most powerful features is automatic currying. When you provide fewer arguments than a function expects, you get back a new function:
-
-```numfu
-let add = {x, y -> x + y} in
-let add5 = add(5) in             // Partial application
-  add5(3)                        // 8
-```
-
-Partially applied functions can also be printed:
-```numfu
-{x, y -> x + y}(5)
-// {y -> 5 + y}
-```
-
-### Progressive Application
-
-You can apply arguments one at a time:
-
-```numfu
-let multiply = {x, y, z -> x * y * z} in
-let double = multiply(2) in      // {y, z -> 2 * y * z}
-let doubleBy3 = double(3) in     // {z -> 2 * 3 * z}
-  doubleBy3(4)                   // 24
-```
-
-### Too Many Arguments
-
-Providing too many arguments is an error:
-
-```numfu
-let add = {x, y -> x + y} in
-  add(1, 2, 3)
-// TypeError: Cannot apply 1 more arguments to non-callable result
-```
-
------
 ## Named Functions
 
 ### Named Lambda Syntax

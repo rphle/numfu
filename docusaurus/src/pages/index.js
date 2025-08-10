@@ -53,18 +53,26 @@ let add1 = {x -> x + 1},
     double = {x -> x * 2}
 in 5 |> (add1 >> double) // 12
 
+// Partial Application
+{a, b, c -> a+b+c}(_, 5, _)
+// {a,c -> a+5+c}
+
 // Assertions
-sqrt(49) ---> _ == 7`;
+sqrt(49) ---> $ == 7`;
 
   return (
-    <section className="margin-bottom--lg">
+    <section className="margin-bottom--xl">
       <div className="container">
         <Heading as="h2" className="text--center margin-bottom--md">
           Quickstart
         </Heading>
         <div className={`row equal-height`}>
           <div className="col col--6">
-            <CodeBlock language="numfu" title="Code Example">
+            <CodeBlock
+              className="margin-bottom--none"
+              language="numfu"
+              title="Code Example"
+            >
               {example}
             </CodeBlock>
           </div>
@@ -78,6 +86,9 @@ sqrt(49) ---> _ == 7`;
             <CodeBlock language="bash" title="Run a file">
               numfu example.nfu
             </CodeBlock>
+            <Link className="button button--outline button--lg" to="/docs/">
+              Read the Language Guide
+            </Link>
           </div>
         </div>
       </div>
@@ -118,8 +129,8 @@ function IdeasSection() {
           </div>
           <div className="col col--6">
             <CodeBlock language="numfu" title="A quick demo">
-              {`{x, y, z -> x + y + z}(1, 2)
-// {z -> 1+2+z}
+              {`{x, y, z -> x + y + z}(_, 2)
+// {x, z -> x+2+z}
 
 {
   distance: x1, y1, x2, y2 ->

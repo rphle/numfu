@@ -78,11 +78,11 @@ From highest to lowest precedence:
 12. **Pipe**: `|>`
 
 ```numfu
-2 + 3 * 4;            // 14
-2^3^2;                // 512 (2^(3^2), right-associative)
-!true && false;       // false ((!true) && false)
-1 < 2 == true;        // true ((1 < 2) == true)
-x |> f >> g;          // (x |> f) >> g (pipe before composition)
+2 + 3 * 4            // 14
+2^3^2                // 512 (2^(3^2), right-associative)
+!true && false       // false ((!true) && false)
+1 < 2 == true        // true ((1 < 2) == true)
+x |> f >> g          // x |> (f >> g) (composition before pipe)
 ```
 
 -----
@@ -90,15 +90,15 @@ x |> f >> g;          // (x |> f) >> g (pipe before composition)
 
 ### Left-associative Operators
 ```numfu
-10 - 5 - 2;           // 3 ((10 - 5) - 2)
-12 / 4 / 3;           // 1 ((12 / 4) / 3)
-1 < 2 < 3;            // true ((1 < 2) && (2 < 3))
+10 - 5 - 2           // 3 ((10 - 5) - 2)
+12 / 4 / 3           // 1 ((12 / 4) / 3)
+1 < 2 < 3            // true ((1 < 2) && (2 < 3))
 ```
 
 ### Right-associative Operators
 ```numfu
-2^3^2;                // 512 (2^(3^2))
-f >> g >> h;          // f >> (g >> h)
+2^3^2                // 512 (2^(3^2))
+f >> g >> h          // f >> (g >> h)
 ```
 
 -----
@@ -121,25 +121,25 @@ The following words are reserved and cannot be used as identifiers (it does not 
 ### Valid Identifiers
 ```numfu
 // Letters, numbers, underscores
-myVariable;
-_private;
-camelCase;
-snake_case;
-var123;
-_123;
+myVariable
+_private
+camelCase
+snake_case
+var123
+_123
 ```
 
 ### Invalid Identifiers
 ```numfu
 // Cannot start with numbers
-123var;
+123var
 
 // No unicode letters
-αβγ;
-变量;
+αβγ
+变量
 
 // Cannot contain special characters
-my-var;
-my@var;
-my var;
+my-var
+my@var
+my var
 ```

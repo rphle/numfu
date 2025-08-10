@@ -31,14 +31,14 @@ let goldenRatio = {depth ->
 // 1.61797752808989
 
 // Function composition & piping
-let add1 = {x -> x + 1} in
-let double = {x -> x * 2} in
+let add1 = {x -> x + 1},
+    double = {x -> x * 2} in
 let composed = add1 >> double in
   5 |> composed; // 12
 
 // Built-in testing with assertions
 let square = {x -> x * x} in
-  square(5) ---> _ == 25; // ✓ passes
+  square(5) ---> $ == 25; // ✓ passes
 ```
 
 -----
