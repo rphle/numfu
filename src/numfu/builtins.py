@@ -358,7 +358,7 @@ Builtins._map.add(
     ),
 )
 Builtins._filter.add(
-    [List, Lambda],
+    [List, Lambda | BuiltinFunc],
     List,
     lambda: None,
 )
