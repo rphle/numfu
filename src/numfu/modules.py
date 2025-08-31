@@ -27,10 +27,9 @@ class ImportResolver:
             self.stdlib,
         )
         self.modules: dict[str, Module] = {}
-
         self.builtins = builtins
-
         self.parser = Parser()
+        self._import_stack: list[str] = []
 
     def stdlib(self, node):
         path = f"stdlib/{node.module}.nfut"
@@ -62,11 +61,30 @@ class ImportResolver:
         if not path.is_file():
             return
 
-        with open(path, "r", encoding="utf-8") as f:
-            code = f.read()
-        tree = self._parse(code, node.module)
-        self._module(path, tree, code)  # type: ignore
-        return path
+        # Check for circular import
+        path_str = str(path)
+        if path_str in self._import_stack:
+            cycle = self._import_stack[self._import_stack.index(path_str) :] + [
+                path_str
+            ]
+            cycle_str = " -> ".join(f"'{p}'" for p in cycle)
+            nImportError(
+                f"Circular import detected:\n{cycle_str}",
+                module=Module(
+                    path=self.path,
+                    code=zlib.compress(self.current_code.encode("utf-8")),
+                ),
+            )
+
+        self._import_stack.append(path_str)
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                code = f.read()
+            tree = self._parse(code, node.module)
+            self._module(path, tree, code)  # type: ignore
+            return path
+        finally:
+            self._import_stack.pop()
 
     def _module(self, path: str, tree: list[Expr], code: str, builtins: bool = True):
         imports = (
@@ -89,6 +107,17 @@ class ImportResolver:
                         {name: _id(_path) for name in self.modules[_id(_path)].exports}
                     )
                 else:
+                    if unknown := (
+                        set(n.name for n in _import.names)
+                        ^ set(self.modules[_id(_path)].exports)
+                    ):
+                        nImportError(
+                            f"Module '{_import.module}' does not export an identifier named '{list(unknown)[0]}'",
+                            next(n for n in _import.names if n.name in unknown).pos,
+                            module=Module(
+                                path=path, code=zlib.compress(code.encode("utf-8"))
+                            ),
+                        )
                     imports.update({name.name: _id(_path) for name in _import.names})
             else:
                 prefix = Path(_path).stem
@@ -138,7 +167,7 @@ class ImportResolver:
                         f'Cannot find module "{node.module}"',
                         node.pos,
                         module=Module(
-                            path=path, code=zlib.compress(code.encode("utf-8"))
+                            path=str(path), code=zlib.compress(code.encode("utf-8"))
                         ),
                     )
             else:
@@ -150,6 +179,8 @@ class ImportResolver:
         self, tree: list[Expr | Import], path: str, code: str
     ) -> dict[str, Module]:
         self.path: str = path
+        self.current_code: str = code
+
         self.stdlib(Import(names=[Variable(name="*")], module="builtins"))
         self._module(path=self.path, tree=tree, code=code, builtins=self.builtins)
         print(self.modules)
