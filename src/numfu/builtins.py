@@ -22,6 +22,29 @@ from .typechecks import BuiltinFunc, HelpMsg, InfiniteOf, ListOf, Validators
 Num = mpm.mpf
 mpm.e.name = "e"
 
+ESSENTIALS = [
+    "pi",
+    "e",
+    "nan",
+    "inf",
+    "_add",
+    "_sub",
+    "_mul",
+    "_div",
+    "_mod",
+    "_pow",
+    "_and",
+    "_or",
+    "_xor",
+    "_not",
+    "_eq",
+    "_ne",
+    "_lt",
+    "_le",
+    "_gt",
+    "_ge",
+]
+
 
 def overload(name, eval_lists: bool = False, help: HelpMsg = HelpMsg()):
     """

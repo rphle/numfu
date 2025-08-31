@@ -9,7 +9,12 @@ position information for error reporting.
 from dataclasses import dataclass, field
 from typing import Callable
 
-from .errors import Pos
+
+@dataclass
+class Pos:
+    start: int | None = 0
+    end: int | None = 1
+
 
 DEFAULT_POS = field(default_factory=Pos, repr=False)
 
@@ -113,7 +118,15 @@ class Spread(Expr):
 
 @dataclass
 class Import(Expr):
-    name: str
+    names: list[Variable]
+    module: str
+    pos: Pos = DEFAULT_POS
+
+
+@dataclass
+class Export(Expr):
+    names: list[Variable]
+    pos: Pos = DEFAULT_POS
 
 
 @dataclass

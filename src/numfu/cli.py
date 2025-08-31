@@ -1,3 +1,4 @@
+import os
 import pickle
 from pathlib import Path
 from typing import List, Optional
@@ -5,7 +6,6 @@ from typing import List, Optional
 import click
 
 from ._version import __version__
-from .errors import ErrorMeta
 from .interpreter import Interpreter
 from .parser import Parser
 from .repl import REPL
@@ -58,12 +58,23 @@ def cli(ctx: click.Context) -> None:
     type=int,
     help="Maximum iterations of tail-call optimized recursion during evaluation.",
 )
+@click.option(
+    "--no-builtins",
+    is_flag=True,
+    help="Disable automatic import of built-in functions and constants.",
+    default=False,
+)
 @click.pass_context
 def default(
-    ctx: click.Context, source: str, precision: int, rec_depth: int, iter_depth: int
+    ctx: click.Context,
+    source: str,
+    precision: int,
+    rec_depth: int,
+    iter_depth: int,
+    no_builtins: bool,
 ) -> None:
     """Parse and run a NumFu source file."""
-    run_file(source, precision, rec_depth, iter_depth)
+    run_file(source, precision, rec_depth, iter_depth, no_builtins)
 
 
 @cli.command()
@@ -80,13 +91,6 @@ def default(
     type=click.Path(dir_okay=False, writable=True),
     default=None,
     help="Output file path to save the parsed file.",
-)
-@click.option(
-    "-i",
-    "--imports",
-    multiple=True,
-    default=("builtins",),
-    help="Names to automatically import. Can be specified multiple times.",
 )
 @click.option(
     "-m",
@@ -108,18 +112,16 @@ def parse(
     source: str,
     p: bool,
     output: Optional[str],
-    imports: List[str],
     max_depth: int,
     indent: int,
 ) -> None:
     """Parse the input file and serialize or pretty print it"""
     source_path = Path(source)
     code = source_path.read_text()
-    errormeta = ErrorMeta(file=source_path, fatal=True)
-    parser = Parser(errormeta=errormeta, imports=list(filter(lambda x: x, imports)))
+    parser = Parser(fatal=True)
     repl = REPL(max_depth=max_depth, indent=indent)
 
-    tree, _ = repl.print_ast(parser.parse(code), actually_print=p)
+    tree, _ = repl.print_ast(parser.parse(code, source_path), actually_print=p)
 
     if not p:
         if not output:
@@ -157,19 +159,39 @@ def parse(
     type=int,
     help="Maximum iterations of tail-call optimized recursion during evaluation.",
 )
+@click.option(
+    "--no-builtins",
+    is_flag=True,
+    help="Disable automatic import of built-in functions and constants.",
+    default=False,
+)
 @click.pass_context
-def repl(ctx: click.Context, precision: int, rec_depth: int, iter_depth: int) -> None:
+def repl(
+    ctx: click.Context,
+    precision: int,
+    rec_depth: int,
+    iter_depth: int,
+    no_builtins: bool,
+) -> None:
     """Start an interactive REPL."""
     if ctx.invoked_subcommand is None:
-        parser = Parser(errormeta=ErrorMeta(file="REPL", fatal=False))
-        interpreter = Interpreter(precision, rec_depth, iter_depth=iter_depth)
+        parser = Parser(fatal=False)
+        interpreter = Interpreter(
+            precision,
+            rec_depth,
+            iter_depth=iter_depth,
+            fatal=False,
+            no_builtins=no_builtins,
+        )
+        env = {}
 
         def interpret(code: str) -> None:
-            tree = parser.parse(code)
+            tree = parser.parse(code, path=os.getcwd() + "/")
             if tree is None:
                 return
 
-            interpreter.run(tree, ErrorMeta(file="REPL", code=code, fatal=False))
+            interpreter.run(tree, path=os.getcwd() + "/", code=code, env=env)
+            env.update(interpreter.modules[interpreter.module_id].globals)
 
         repl_instance = REPL()
         repl_instance.start(interpret)
@@ -195,10 +217,10 @@ def repl(ctx: click.Context, precision: int, rec_depth: int, iter_depth: int) ->
 def repl_ast(max_depth: int, indent: int) -> None:
     """Start the interactive AST REPL."""
     repl = REPL(max_depth=max_depth, indent=indent)
-    parser = Parser(errormeta=ErrorMeta(file="REPL", fatal=False))
+    parser = Parser(fatal=False)
 
     def print_ast_repl(code: str):
-        tree = parser.parse(code)
+        tree = parser.parse(code, path=os.getcwd() + "/")
         repl.print_ast(tree)
 
     repl.start(
@@ -207,7 +229,9 @@ def repl_ast(max_depth: int, indent: int) -> None:
     )
 
 
-def run_file(source: str, precision: int, rec_depth: int, iter_depth: int) -> None:
+def run_file(
+    source: str, precision: int, rec_depth: int, iter_depth: int, no_builtins: bool
+) -> None:
     source_path = Path(source)
     parsed = False
     tree = None
@@ -224,16 +248,18 @@ def run_file(source: str, precision: int, rec_depth: int, iter_depth: int) -> No
             except UnicodeDecodeError:
                 raise click.FileError(source, "unrecognized file format")
 
-    errormeta = ErrorMeta(file=source_path, code=code, fatal=True)
-
     if not parsed:
-        parser = Parser(errormeta)
-        tree = parser.parse(code)
+        parser = Parser(fatal=True)
+        tree = parser.parse(code, path=source_path)
 
     if tree is None:
         return
 
     interpreter = Interpreter(
-        precision, rec_depth, errormeta=errormeta, iter_depth=iter_depth
+        precision,
+        rec_depth,
+        fatal=True,
+        iter_depth=iter_depth,
+        no_builtins=no_builtins,
     )
-    interpreter.run(tree)
+    interpreter.run(tree, path=source_path, code=code)

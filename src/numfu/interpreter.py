@@ -4,13 +4,12 @@ NumFu Language Interpreter
 Implements the core interpreter that evaluates NumFu ASTs.
 """
 
-import importlib.resources
 import math
 import pickle
 import sys
 import zlib
-from copy import deepcopy
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
 
 import lark
@@ -21,6 +20,7 @@ from .ast_types import (
     Call,
     Conditional,
     Constant,
+    Export,
     Expr,
     Import,
     Index,
@@ -33,15 +33,16 @@ from .ast_types import (
     String,
     Variable,
 )
-from .builtins import Builtins
+from .builtins import ESSENTIALS, Builtins
+from .classes import Module, State
 from .errors import (
-    ErrorMeta,
     nIndexError,
     nNameError,
     nRecursionError,
     nSyntaxError,
     nTypeError,
 )
+from .modules import ImportResolver
 from .reconstruct import reconstruct
 from .typechecks import BuiltinFunc, InfiniteOf, type_name
 
@@ -75,32 +76,31 @@ class Interpreter:
         self,
         precision: int = 15,
         rec_depth: int = 10000,
-        errormeta: ErrorMeta = ErrorMeta(),
         iter_depth: int = -1,
+        fatal: bool = True,
+        no_builtins: bool = False,
         _print: bool = True,
     ):
         sys.setrecursionlimit(rec_depth)
         mpmath.mp.dps = precision
         self.rec_depth = rec_depth
         self.iter_depth = iter_depth if iter_depth >= 0 else math.inf
+        self.no_builtins = no_builtins
 
-        self.tree: list[Expr] = []
+        self.fatal = fatal
         self.precision = precision
         self._print = _print
 
-        self._set_errormeta(errormeta)
-        self.glob: dict[Any, Any] = {
+        self.modules: dict[str, Module] = {}
+        self.module_id: str
+
+        self.builtins: dict[Any, Any] = {
             getattr(v, "name", name): v
             for name, v in Builtins.__dict__.items()
-            if not name.startswith("__")
+            if (name in ESSENTIALS if no_builtins else True)
         }
 
         self.output: list[str] = []  # this list collects all prints and program outputs
-
-    def _set_errormeta(self, errormeta: ErrorMeta):
-        self.errormeta, self._errormeta = errormeta, deepcopy(errormeta)
-        # internal errors must be fatal so they are catched at the end and the program does not continue execution
-        self._errormeta.fatal = True
 
     def put(self, o: str):
         self.output.append(o)
@@ -108,22 +108,27 @@ class Interpreter:
             print(o, end="")
 
     def exception(
-        self, error, message, pos: Pos | None = None, errormeta=None, line_only=False
+        self,
+        error,
+        message,
+        pos: Pos | None = None,
+        line_only=False,
+        state: State = State(),
     ) -> None:
         error(
             message,
             pos=pos,
-            errormeta=self._errormeta if errormeta is None else errormeta,
+            module=self.modules[state.module],
             line_only=line_only,
         )
 
-    def _partial_lambda(self, this: Lambda, args: list, env={}):
+    def _partial_lambda(self, this: Lambda, args: list, state: State = State()):
         """Return a Lambda with given args (including _ placeholders) bound, preserving printability"""
 
         def is_placeholder(arg):
             return isinstance(arg, Variable) and arg.name == "_"
 
-        partial_env = env.copy()
+        partial_env = state.env.copy()
         arg_names = [a.lstrip("...") for a in this.arg_names]
         filled_pos = []
 
@@ -192,35 +197,57 @@ class Interpreter:
             tree=tree,
         )
 
-    def _eval_lists(self, exprs):
+    def _eval_lists(self, exprs, state: State):
         r = []
         for expr in exprs:
             if isinstance(expr, List):
-                elements = [self._eval(arg, env=expr.curry) for arg in expr.elements]
+                elements = [
+                    self._eval(arg, state=state.edit(env=expr.curry))
+                    for arg in expr.elements
+                ]
                 for i, res in enumerate(elements):
                     if isinstance(res, (List, Lambda)):
-                        elements[i] = self._eval_lists([res])[0]
+                        elements[i] = self._eval_lists([res], state=state)[0]
 
                 r.append(List(elements, pos=expr.pos, curry=expr.curry))  # type:ignore
             else:
                 r.append(expr)
         return r
 
-    def _variable(
-        self, this: Variable, env: dict = {}, is_tail: bool = False
-    ) -> Expr | None:
+    def _variable(self, this: Variable, state: State = State()) -> Expr | None:
         if this.name == "_":
-            return env.get(this.name, this)
-        try:
-            return env[this.name]
-        except KeyError:
+            return state.env.get(this.name, this)
+
+        environments = [
+            state.env,
+            self.modules[state.module].globals,
+            list(self.modules[state.module].imports.keys()),
+            self.builtins,
+        ]  # environment precedence
+        for e in environments:
+            if this.name in e:
+                if isinstance(e, dict):  # normal environment dict
+                    return e[this.name]
+                elif isinstance(e, list):  # import list
+                    module = self.modules[self.modules[state.module].imports[this.name]]
+                    return self._eval(
+                        next(
+                            node.value
+                            for node in module.tree
+                            if isinstance(node, Constant)
+                            and node.name == this.name.split(".")[-1]
+                        ),
+                        state=State(module=module.id),
+                    )  # type: ignore
+        else:
             self.exception(
                 nNameError,
                 f"'{this.name}' is not defined in the current scope",
                 pos=this.pos,
+                state=state,
             )
 
-    def _call(self, this: Call, env: dict = {}, is_tail: bool = False):
+    def _call(self, this: Call, is_tail: bool = False, state: State = State()):
         """
         Execute a function call, handling built-in functions, user lambdas, and placeholders.
 
@@ -236,14 +263,15 @@ class Interpreter:
 
         # Handle short-circuiting
         if isinstance(this.func, Variable) and this.func.name in ("&&", "||"):
-            left = self._eval(this.args[0], env=env)
+            left = self._eval(this.args[0], state=state)
             if this.func.name == "&&":
-                return bool(self._eval(this.args[1], env=env)) if left else False
-            return True if left else bool(self._eval(this.args[1], env=env))
+                return bool(self._eval(this.args[1], state=state)) if left else False
+            return True if left else bool(self._eval(this.args[1], state=state))
 
-        func = self._eval(this.func, env=env)  # type: ignore
+        func = self._eval(this.func, state=state)  # type: ignore
         args = [
-            self._eval(a, env=env) for a in self._resolve_spread(this.args, env=env)
+            self._eval(a, state=state)
+            for a in self._resolve_spread(this.args, state=state)
         ]
         has_placeholder = any(isinstance(a, Variable) and a.name == "_" for a in args)
 
@@ -260,7 +288,7 @@ class Interpreter:
                 filled.extend(it)
 
                 if func.eval_lists:
-                    filled = self._eval_lists(filled)
+                    filled = self._eval_lists(filled, state=state)
                 filled = [a.expr if isinstance(a, PrintOutput) else a for a in filled]
 
                 if any(isinstance(a, Variable) and a.name == "_" for a in filled):
@@ -279,12 +307,12 @@ class Interpreter:
 
                 return func(
                     *filled,
-                    errormeta=self._errormeta,
+                    module=self.modules[state.module],
                     args_pos=this.pos,
                     func_pos=getattr(this.func, "pos", None),  # type: ignore
                     precision=self.precision,
                     interpreter=self if func.name == "filter" else None,
-                    env=env,
+                    env=state.env,
                 )
 
             return BuiltinFunc(
@@ -293,45 +321,47 @@ class Interpreter:
 
         # Lambda partial application
         if has_placeholder and isinstance(func, Lambda):
-            return self._partial_lambda(func, args=args, env=env)
+            return self._partial_lambda(func, args=args, state=state)
 
         # Normal calls
         if isinstance(func, BuiltinFunc):
             if func.eval_lists:
-                args = self._eval_lists(args)
+                args = self._eval_lists(args, state=state)
 
             args = [a.expr if isinstance(a, PrintOutput) else a for a in args]
 
             r = func(
                 *args,
-                errormeta=self._errormeta,
+                module=self.modules[state.module],
                 args_pos=this.pos,
                 func_pos=getattr(this.func, "pos", None),  # type: ignore
                 precision=self.precision,
                 interpreter=self if func.name == "filter" else None,
-                env=env,
+                env=state.env,
             )
 
             if isinstance(r, mpmath.mpc):
                 return r if r.imag == 0 else mpmath.nan  # type: ignore
             if isinstance(r, PrintOutput):
-                return self._eval(r, env=env)
+                return self._eval(r, state=state)
             return r
 
         # return a Bounce so the caller's trampoline can iterate instead of recursing.
         if isinstance(func, Lambda):
             if is_tail:
-                return Bounce(func, args, env, this.pos)
-            return self._lambda(func, args, call_pos=this.pos, env=env)
+                return Bounce(func, args, state.env, this.pos)
+            return self._lambda(func, args, call_pos=this.pos, state=state)
 
-        self.exception(nTypeError, f"{type_name(func)} is not callable", pos=this.pos)
+        self.exception(
+            nTypeError, f"{type_name(func)} is not callable", pos=this.pos, state=state
+        )
 
-    def _builtinfunc(self, this: BuiltinFunc, env: dict = {}, is_tail: bool = False):
+    def _builtinfunc(self, this: BuiltinFunc, state: State = State()):
         return this
 
-    def _index(self, this: Index, env: dict = {}, is_tail: bool = False):
-        target = self._eval(this.target, env=env)
-        index = self._eval(this.index, env=env)
+    def _index(self, this: Index, state: State = State()):
+        target = self._eval(this.target, state=state)
+        index = self._eval(this.index, state=state)
 
         if isinstance(target, (List, str)):
             if not isinstance(index, mpmath.mpf):
@@ -339,6 +369,7 @@ class Interpreter:
                     nTypeError,
                     f"{type_name(type(target))} index must be an integer, not '{type_name(index)}'",
                     pos=this.pos,
+                    state=state,
                 )
 
             if index % 1 != 0:  # type: ignore
@@ -346,6 +377,7 @@ class Interpreter:
                     nTypeError,
                     f"{type_name(type(target))} index must be an integer, not a floating-point number",
                     pos=this.pos,
+                    state=state,
                 )
 
             idx = int(index)  # type: ignore
@@ -354,6 +386,7 @@ class Interpreter:
                     nIndexError,
                     f"{type_name(type(target))} index out of range",
                     pos=this.pos,
+                    state=state,
                 )
 
             if idx < 0:
@@ -362,31 +395,34 @@ class Interpreter:
             if isinstance(target, str):
                 return target[idx]
             else:
-                return self._eval(target[idx], env=target.curry)
+                return self._eval(target[idx], state=state.edit(env=target.curry))
         else:
             self.exception(
                 nTypeError,
                 f"'{type_name(target)}' object is not subscriptable",
                 pos=this.pos,
+                state=state,
             )
 
-    def _resolve_spread(self, _elements, env={}):
+    def _resolve_spread(self, _elements, state: State = State()):
         elements = []
         for i, element in enumerate(_elements):
             if isinstance(element, Spread):
-                lst = self._eval(element.expr, env=env)
+                lst = self._eval(element.expr, state=state)
                 if not isinstance(lst, List):
                     if isinstance(lst, Variable) and lst.name == "_":
                         self.exception(
                             nTypeError,
                             "Cannot combine spread operator with argument placeholder",
                             pos=element.pos,
+                            state=state,
                         )
                     else:
                         self.exception(
                             nTypeError,
                             f"Type '{type_name(lst)}' is not iterable",
                             pos=element.pos,
+                            state=state,
                         )
                 else:
                     elements.extend(lst.elements)
@@ -394,18 +430,22 @@ class Interpreter:
                 elements.append(element)
         return elements
 
-    def _list(self, this: List, env: dict = {}, is_tail: bool = False):
-        this.curry = env.copy()
-        this.elements = self._resolve_spread(this.elements, env=env)
+    def _list(self, this: List, state: State = State()):
+        this.curry = state.env.copy()
+        this.elements = self._resolve_spread(this.elements, state=state)
         return this
 
-    def _spread(self, this: Spread, env: dict = {}, is_tail: bool = False):
+    def _spread(self, this: Spread, state: State = State()):
         return this
 
-    def _conditional(self, this: Conditional, env: dict = {}, is_tail: bool = False):
-        condition = self._eval(this.test, env=env)
+    def _conditional(
+        self, this: Conditional, is_tail: bool = False, state: State = State()
+    ):
+        condition = self._eval(this.test, state=state)
         return self._eval(
-            this.then_body if condition else this.else_body, env=env, is_tail=is_tail
+            this.then_body if condition else this.else_body,
+            is_tail=is_tail,
+            state=state,
         )
 
     def _lambda(
@@ -413,8 +453,8 @@ class Interpreter:
         this: Lambda,
         args: list = [],
         call_pos: Pos | None = None,
-        env: dict = {},
         is_tail: bool = False,
+        state: State = State(),
     ):
         """
         Handle lambda function calls with currying and partial application.
@@ -435,7 +475,7 @@ class Interpreter:
         """
         current_lambda = this
         current_args = args
-        current_env = env
+        current_env = state.env
 
         iterations = 0
         while True:
@@ -445,8 +485,8 @@ class Interpreter:
                     nRecursionError,
                     "tail-call recursion limit exceeded",
                     pos=Pos(call_pos.start, None) if call_pos else None,
-                    errormeta=self.errormeta,
                     line_only=True,
+                    state=state,
                 )
 
             new_env = current_env.copy()
@@ -464,7 +504,9 @@ class Interpreter:
                 # apply all parameters and evaluate the body
                 filled_env = new_env.copy()
                 filled_env.update(zip(arg_names, current_args[: len(arg_names)]))
-                result = self._eval(current_lambda.body, env=filled_env, is_tail=True)
+                result = self._eval(
+                    current_lambda.body, is_tail=True, state=state.edit(env=filled_env)
+                )
 
                 # if result is callable, call it with remaining args
                 if isinstance(result, (Lambda, BuiltinFunc)) or hasattr(
@@ -475,7 +517,7 @@ class Interpreter:
                         # tail-call to a lambda: continue loop with new function and args
                         current_lambda = result
                         current_args = remaining_args
-                        current_env = env
+                        current_env = state.env
                         continue
                     else:
                         return result(*remaining_args)  # type: ignore
@@ -484,12 +526,15 @@ class Interpreter:
                         nTypeError,
                         f"Cannot apply {len(current_args) - len(arg_names)} more arguments to non-callable result",
                         pos=call_pos if call_pos else current_lambda.pos,
+                        state=state,
                     )
 
             # handle partial application
             elif len(current_args) < len(arg_names):
                 return self._partial_lambda(
-                    current_lambda, args=current_args, env=new_env
+                    current_lambda,
+                    args=current_args,
+                    state=state.edit(env=new_env),
                 )
 
             # exact match: apply all arguments
@@ -502,7 +547,9 @@ class Interpreter:
                 else:
                     new_env.update(zip(arg_names, current_args))
 
-                result = self._eval(current_lambda.body, env=new_env, is_tail=True)
+                result = self._eval(
+                    current_lambda.body, is_tail=True, state=state.edit(env=new_env)
+                )
 
                 if isinstance(result, Bounce):
                     if isinstance(result.func, Lambda):
@@ -512,40 +559,43 @@ class Interpreter:
                         continue
                 return result
 
-    def _number(self, this: Number, env: dict = {}, is_tail: bool = False):
+    def _number(self, this: Number, state: State = State()):
         return mpmath.mpf(this.value)
 
-    def _string(self, this: String, env: dict = {}, is_tail: bool = False):
+    def _string(self, this: String, state: State = State()):
         return this.value
 
-    def _constant(self, this: Constant, env: dict = {}, is_tail: bool = False):
+    def _constant(self, this: Constant, state: State = State()):
         self.exception(
             nSyntaxError,
             "Constant definitions must be placed at the top level of the module",
             this.pos,
+            state=state,
         )
 
-    def _bool(self, this: Bool, env: dict = {}, is_tail: bool = False):
+    def _bool(self, this: Bool, state: State = State()):
         return this.value
 
-    def _printoutput(self, this: PrintOutput, env: dict = {}, is_tail: bool = False):
+    def _printoutput(self, this: PrintOutput, state: State = State()):
         if this.printed:
             return this.expr
         else:
             self.put(self.get_repr([this.expr])[0] + this.end)
             return PrintOutput(
-                self._eval(this.expr, env=env),  # type: ignore
+                self._eval(this.expr, state=state),  # type: ignore
                 end=this.end,
                 printed=True,
             )
 
-    def _eval(self, node: Expr | BuiltinFunc, env: dict = {}, is_tail: bool = False):
+    def _eval(
+        self, node: Expr | BuiltinFunc, is_tail: bool = False, state: State = State()
+    ):
         if isinstance(node, Lambda):
             # Don't re-evaluate lambdas that already have a curry environment
             if hasattr(node, "curry") and node.curry:
-                curry = node.curry.copy() | env
+                curry = node.curry.copy() | state.env
             else:
-                curry = env.copy()
+                curry = state.env.copy()
 
             lambda_copy = Lambda(
                 arg_names=node.arg_names,
@@ -563,27 +613,18 @@ class Interpreter:
         elif node is None:
             return mpmath.mpf(0)
         try:
-            return getattr(self, "_" + type(node).__name__.lower())(
-                node, env=env, is_tail=is_tail
+            name = type(node).__name__.lower()
+            return getattr(self, "_" + name)(
+                node,
+                **(
+                    {"is_tail": is_tail}
+                    if name in ("lambda", "conditional", "call")
+                    else {}
+                ),
+                state=state,
             )
         except AttributeError as e:
             raise e
-
-    def resolve_imports(self):
-        imports = []
-        for i, node in enumerate(self.tree):
-            if isinstance(node, Import):
-                imports.extend(
-                    pickle.loads(
-                        importlib.resources.read_binary(
-                            "numfu", f"stdlib/{node.name}.nfut"
-                        )[len(b"NFU-TREE-FILE") :]
-                    )
-                )
-            else:
-                self.tree = self.tree[i:]
-                break
-        self.tree = imports + self.tree
 
     def get_repr(self, output: list[Expr]):
         o = []
@@ -597,10 +638,10 @@ class Interpreter:
             elif isinstance(node, (bool, Bool)):
                 o.append("true" if node else "false")
             elif isinstance(node, Lambda):
-                o.append(reconstruct(node, precision=self.precision, env=self.glob))
+                o.append(reconstruct(node, precision=self.precision, env={}))
             elif isinstance(node, List):
                 elements = [
-                    self._eval(arg, env=node.curry)  # type: ignore
+                    self._eval(arg, state=State(env=node.curry, module=self.module_id))  # type: ignore
                     for arg in node.elements
                 ]
                 for i, res in enumerate(elements):
@@ -617,23 +658,42 @@ class Interpreter:
                 o.append(str(node))
         return o
 
-    def run(self, tree: list[Expr], errormeta: ErrorMeta | None = None):
-        self.tree = tree
-        if errormeta is not None:
-            self._set_errormeta(errormeta)
-        self.resolve_imports()
+    def run(
+        self,
+        tree: list[Expr],
+        path: str | Path | None,
+        code: str = "",
+        env: dict[str, Expr] = {},
+    ):
+        if path and not str(path).endswith("/") and not code:
+            try:
+                code = open(path, "r", encoding="utf-8").read()
+            except FileNotFoundError:
+                pass
 
+        path = str(path) if path else "unknown"
         pos = None
+
         try:
-            for node in self.tree:
+            self.modules = ImportResolver(
+                builtins=not self.no_builtins,
+            ).resolve(tree, path=path, code=code)
+            self.module_id = list(self.modules.keys())[-1]
+            self.modules[self.module_id].globals = env
+
+            for node in tree:
                 pos = node.pos  # type:ignore
                 if isinstance(node, Lambda):
                     if node.name:
-                        self.glob[node.name] = node
+                        self.modules[self.module_id].globals[node.name] = node
                 elif isinstance(node, Constant):
-                    self.glob[node.name] = self._eval(node.value, self.glob)
+                    self.modules[self.module_id].globals[node.name] = self._eval(
+                        node.value, state=State({}, self.module_id)
+                    )
+                elif isinstance(node, (Import, Export)):
+                    pass
                 else:
-                    o = self._eval(node, self.glob)
+                    o = self._eval(node, state=State({}, self.module_id))
                     if o is not None and not isinstance(o, PrintOutput):
                         self.put(self.get_repr([o])[0] + "\n")  # type:ignore
 
@@ -641,7 +701,7 @@ class Interpreter:
                 self.put("\n")
 
         except SystemExit:
-            if self.errormeta.fatal:
+            if self.fatal:
                 sys.exit(1)
 
         except RecursionError:
@@ -649,8 +709,8 @@ class Interpreter:
                 nRecursionError,
                 "maximum recursion depth exceeded",
                 pos=Pos(pos.start, None) if pos else None,
-                errormeta=self.errormeta,
                 line_only=True,
+                state=State(module=self.module_id),
             )
 
         return self.output

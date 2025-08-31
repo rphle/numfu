@@ -10,15 +10,9 @@ from typing import Any, Callable, get_args
 
 import mpmath as mpm
 
-from .ast_types import Call, List
-from .errors import (
-    ErrorMeta,
-    Pos,
-    nAssertionError,
-    nIndexError,
-    nRuntimeError,
-    nTypeError,
-)
+from .ast_types import Call, List, Pos
+from .classes import Module, State
+from .errors import nAssertionError, nIndexError, nRuntimeError, nTypeError
 
 OPERATORS = (
     "+",
@@ -240,20 +234,20 @@ class BuiltinFunc:
     def exception(
         self,
         message: str,
-        errormeta: ErrorMeta,
+        module: Module,
         args_pos: Pos = Pos(),
         func_pos: Pos = Pos(),
     ):
         nTypeError(
             message,
             func_pos if self.is_operator else args_pos,
-            errormeta=errormeta,
+            module=module,
         )
 
     def __call__(
         self,
         *args,
-        errormeta: ErrorMeta = ErrorMeta(),
+        module: Module = Module(),
         args_pos: Pos = Pos(),
         func_pos: Pos = Pos(),
         precision: int = 15,
@@ -287,7 +281,7 @@ class BuiltinFunc:
                     doc = (getattr(v, "__doc__", "") or "").strip()
                     self.exception(
                         doc.format(i=i + 1, typename=type_name(arg), arg=arg),
-                        errormeta=errormeta,
+                        module=module,
                         func_pos=func_pos,
                         args_pos=args_pos,
                     )
@@ -303,7 +297,7 @@ class BuiltinFunc:
                                 nIndexError(
                                     "Incorrect number of placeholders",
                                     args_pos,
-                                    errormeta=errormeta,
+                                    module=module,
                                 )
                             else:
                                 raise e
@@ -311,7 +305,7 @@ class BuiltinFunc:
                         nRuntimeError(
                             args[0],
                             Pos(func_pos.start, args_pos.end),
-                            errormeta=errormeta,
+                            module=module,
                             name=args[1] if len(args) == 2 else None,
                         )
                     elif self.name == "assert":
@@ -319,7 +313,7 @@ class BuiltinFunc:
                             nAssertionError(
                                 "",
                                 args_pos,
-                                errormeta=errormeta,
+                                module=module,
                             )
                         else:
                             return True if len(args) == 1 else args[1]
@@ -334,7 +328,10 @@ class BuiltinFunc:
                                 for e in args[0].elements
                                 if interpreter._eval(
                                     Call(func=args[1], args=[e], pos=func_pos),
-                                    env=env | args[0].curry,
+                                    state=State(
+                                        env=env | args[0].curry,
+                                        module=module.id,
+                                    ),
                                 )
                             ],
                             pos=args[0].pos,
@@ -347,21 +344,21 @@ class BuiltinFunc:
             if all(check_type(arg, typ) for arg, typ in zip(args, arg_types)):
                 self.exception(
                     message,
-                    errormeta=errormeta,
+                    module=module,
                     func_pos=func_pos,
                     args_pos=args_pos,
                 )
 
         if errors:
             self.exception(
-                errors[0], errormeta=errormeta, func_pos=func_pos, args_pos=args_pos
+                errors[0], module=module, func_pos=func_pos, args_pos=args_pos
             )
 
         expected_count = len(self._overloads[0][0]) if self._overloads else 0
         self.exception(
             f"'{self.name}' expected {expected_count} argument{'s' if expected_count != 1 else ''}, got {len(args)}"
             + (f"\nhelp: {self.help.arg_num}" if self.help.arg_num else ""),
-            errormeta=errormeta,
+            module=module,
             func_pos=func_pos,
             args_pos=args_pos,
         )

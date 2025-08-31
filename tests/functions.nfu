@@ -12,7 +12,7 @@ let makeAdder = {x -> {y -> x + y}} in
   let add5 = makeAdder(5) in add5(3) ---> $ == 8;
 
 // Curried functions
-{addMaker: x -> {y -> x + y}}(10)(5) ---> $ == 15;
+{x -> {y -> x + y}}(10)(5) ---> $ == 15;
 
 // Five-parameter currying chain
 let complex5 = {a -> {b -> {c -> {d -> {e -> a * b + c * d - e}}}}} in
@@ -66,7 +66,7 @@ let createCalculator = {base ->
   let calc = createCalculator(10) in calc(2, 3, 4) ---> $ == 120;
 
 // Self-application
-{self: x -> self}(42);
+let self = {x -> self} in self(42);
 
 // Function equality
 let f = {x -> x + 1} in

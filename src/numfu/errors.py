@@ -7,27 +7,16 @@ and colored terminal output.
 
 import re
 import sys
-from dataclasses import dataclass
-from pathlib import Path
+import zlib
 
 from rich.console import Console
 from rich.markup import escape
 from rich.theme import Theme
 
+from .ast_types import Pos
+from .classes import Module
+
 console = Console(theme=Theme({"blue": "#39bae5", "red": "#ef7177"}))
-
-
-@dataclass
-class Pos:
-    start: int | None = 0
-    end: int | None = 1
-
-
-@dataclass
-class ErrorMeta:
-    file: str | Path = "unknown"
-    code: str = ""
-    fatal: bool = True
 
 
 class CPos:
@@ -98,37 +87,38 @@ class Error:
         self,
         message,
         pos: Pos | CPos | None = None,
-        errormeta: ErrorMeta = ErrorMeta(),
+        module: Module = Module(),
         name=None,
+        fatal=True,
         line_only=False,
     ):
+        code = zlib.decompress(module.code).decode("utf-8")
+
         if pos is None:
             cpos = None
         elif isinstance(pos, Pos):
-            cpos = CPos.frompos(pos, errormeta.code)
+            cpos = CPos.frompos(pos, code)
         elif isinstance(pos, CPos):
             cpos = pos
         else:
             raise TypeError(f"Invalid position type: {type(pos)}")
 
         console.print(
-            f"[reset][at [blue]{errormeta.file or 'unknown'}[/blue]:{cpos.line if cpos else '?'}:{cpos.col if cpos and not line_only else '?'}]"
+            f"[reset][at [blue]{("REPL" if module.path.endswith("/") else module.path) if module.path else 'unknown'}[/blue]:{cpos.line if cpos else '?'}:{cpos.col if cpos and not line_only else '?'}]"
         )
         if cpos is not None and not line_only:
-            if errormeta.code and 0 < cpos.end_line <= len(errormeta.code.splitlines()):
+            if code and 0 < cpos.end_line <= len(code.splitlines()):
                 for _cpos in cpos.split():
                     _cpos.end_line = (
-                        _cpos.end_line
-                        if _cpos.end_line > 0
-                        else len(errormeta.code.splitlines())
+                        _cpos.end_line if _cpos.end_line > 0 else len(code.splitlines())
                     )
                     _cpos.end_col = (
                         _cpos.end_col
                         if _cpos.end_col > 0
-                        else len(errormeta.code.splitlines()[_cpos.line - 1]) + 1
+                        else len(code.splitlines()[_cpos.line - 1]) + 1
                     )
 
-                    src = errormeta.code.splitlines()[_cpos.line - 1]
+                    src = code.splitlines()[_cpos.line - 1]
                     start = max(0, _cpos.col - 30)
                     end = min(len(src), _cpos.col + 30)
 
@@ -155,7 +145,7 @@ class Error:
             f"[bold blue]{name or self.__class__.__name__.removeprefix("n")}[/blue bold]{f': [blue]{message}[/blue]' if message else ''}"
         )
 
-        if errormeta.fatal:
+        if fatal:
             sys.exit(1)
 
 
@@ -191,6 +181,10 @@ class nRecursionError(Error):
     pass
 
 
+class nImportError(Error):
+    pass
+
+
 class LarkError(nSyntaxError):
     """
     Handles syntax errors from the Lark parser.
@@ -209,7 +203,7 @@ class LarkError(nSyntaxError):
         "ELSE": "else",
     }
 
-    def __init__(self, message: str, errormeta: ErrorMeta = ErrorMeta()):
+    def __init__(self, message: str, module: Module = Module(), fatal: bool = True):
         self.message = message
 
         token = " "
@@ -247,12 +241,13 @@ class LarkError(nSyntaxError):
                 token, line, col = m.group(1), int(m.group(2)), int(m.group(3))
                 message = f"Unexpected token '{token}'"
             else:
-                super().__init__(message, errormeta=errormeta)
+                super().__init__(message, module=module, fatal=fatal)
                 return
 
         super().__init__(
             message,
-            errormeta=errormeta,
+            module=module,
             name="SyntaxError",
             pos=CPos(line, col, line, col + len(token)) if line and col else None,
+            fatal=fatal,
         )

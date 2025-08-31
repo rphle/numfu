@@ -11,7 +11,7 @@ import importlib.resources
 import pickle
 import re
 import zlib
-from dataclasses import dataclass
+from pathlib import Path
 
 from lark import Lark, Token, Transformer, Tree, v_args
 
@@ -20,28 +20,38 @@ from .ast_types import (
     Call,
     Conditional,
     Constant,
+    Export,
     Expr,
     Import,
     Index,
     Lambda,
     List,
     Number,
+    Pos,
     Spread,
     String,
     Variable,
 )
-from .errors import Error, ErrorMeta, LarkError, Pos
+from .classes import Module
+from .errors import Error, LarkError, nImportError
 
 
 def _tokpos(token: Token):
     return Pos(token.start_pos, token.end_pos)
 
 
-@dataclass
-class InvalidNameError:
-    typ: str
-    name: str
-    pos: Pos
+class InvalidName:
+    def __init__(self, typ: str, name: str, pos: Pos):
+        self.label = "NameError"
+        self.typ, self.name, self.pos = typ, name, pos
+        self.message = (f"{typ}s cannot be named '{name}'",)
+
+
+class InvalidImport:
+    def __init__(self, module: str, pos: Pos):
+        self.label = "ImportError"
+        self.module, self.pos = module, pos
+        self.message = f"'{module}' is an invalid module name"
 
 
 grammar = importlib.resources.read_text("numfu", "grammar/numfu.lark")
@@ -190,7 +200,7 @@ class AstGenerator(Transformer):
         for param in params.children:
             if param.value in ("_", "$"):
                 self.invalid.append(
-                    InvalidNameError("function parameter", param.value, _tokpos(param))
+                    InvalidName("function parameter", param.value, _tokpos(param))
                 )
 
         pos = Pos(
@@ -225,9 +235,7 @@ class AstGenerator(Transformer):
         names, values = lambda_params.children[::2], lambda_params.children[1::2]
         for name in names:
             if name.value in ("_", "$"):
-                self.invalid.append(
-                    InvalidNameError("variable", name.value, _tokpos(name))
-                )
+                self.invalid.append(InvalidName("variable", name.value, _tokpos(name)))
 
         return Call(
             Lambda([str(name) for name in names], body, pos=body.pos),
@@ -346,8 +354,8 @@ class AstGenerator(Transformer):
 
     def constant_def(self, name, value):
         if name.value in ("_", "$"):
-            self.invalid.append(InvalidNameError("constant", name.value, _tokpos(name)))
-        return Constant(name, value, pos=Pos(name.start_pos - 6, name.end_pos))
+            self.invalid.append(InvalidName("constant", name.value, _tokpos(name)))
+        return Constant(name.value, value, pos=Pos(name.start_pos - 6, name.end_pos))
 
     def conditional(self, test, then_body, else_body):
         return Conditional(test, then_body, else_body, pos=test.pos)
@@ -387,6 +395,36 @@ class AstGenerator(Transformer):
             pos=cond.pos,
         )
 
+    def import_stmt(self, *args):
+        path = args[-1].value[1:-1]
+        pattern = re.compile(
+            r"^(?![~/])"  # must not start with / or ~
+            r"(?:"
+            r"[a-zA-Z_][a-zA-Z0-9_]*"  # single name
+            r"|(?=.*(?:\.\.|\.|/)).*/[a-zA-Z_][a-zA-Z0-9_]*"  # path with last part as name
+            r")$"
+        )
+
+        if (
+            not pattern.match(path)
+            or Path(path).suffix != ""
+            or not re.match(r"^[a-zA-Z_][a-zA-Z0-9_]*$", Path(path).stem)
+            or path.startswith("/")
+            or path.startswith("~")
+        ):
+            self.invalid.append(InvalidImport(path, _tokpos(args[-1])))
+
+        return Import(
+            names=[Variable(a.value, _tokpos(a)) for a in args[:-1]],
+            module=path,
+            pos=_tokpos(args[-1]),
+        )
+
+    def export_stmt(self, *args):
+        return Export(
+            names=[Variable(a.value, _tokpos(a)) for a in args],
+        )
+
 
 class Parser:
     """
@@ -397,57 +435,60 @@ class Parser:
 
     Args:
         errormeta: Error reporting context
-        imports: List of modules to automatically import
     """
 
-    def __init__(
-        self,
-        errormeta: ErrorMeta = ErrorMeta(),
-        imports: list[str] = ["builtins"],
-    ):
-        self.errormeta = errormeta
+    def __init__(self, fatal: bool = True):
+        self.fatal = fatal
+
         self.parser = Lark(grammar, parser="lalr")
         self.lambda_preprocessor = LambdaPreprocessor()
-        self.generator = AstGenerator(errormeta)
-        self.imports = imports
+        self.generator = AstGenerator()
 
-    def _imports(self, code: str) -> tuple[str, list[Expr]]:
-        imports = []
-        for i, line in enumerate(
-            [f"import {imp}" for imp in self.imports] + code.splitlines()
-        ):
-            if m := re.search(r"^import\s+(\w+)\s*$", line):
-                imports.append(Import(m.group(1)))
-            else:
-                code = "\n".join(code.splitlines()[max(i - len(self.imports), 0) :])
-                break
-        return code, imports
+    def parse(self, code: str, path: str | Path | None) -> list[Expr] | None:
+        self.module = Module(
+            path=str(path) if path else "unknown",
+            code=zlib.compress(code.encode("utf-8")),
+        )
 
-    def parse(self, code: str, errormeta: ErrorMeta | None = None) -> list[Expr] | None:
-        code, imports = self._imports(code)
-        self.errormeta = errormeta or self.errormeta
-        self.errormeta.code = code
         try:
             parse_tree = self.parser.parse(code)
             parse_tree = self.lambda_preprocessor.transform(parse_tree)
-            ast_tree = self.generator.transform(parse_tree)
+            ast_tree: list[Expr] = self.generator.transform(parse_tree)
 
             if self.generator.invalid:
                 # We must handle this here because Lark does generally catch all Exceptions in its Transformer
-                Error(
-                    f"{self.generator.invalid[0].typ}s cannot be named '{self.generator.invalid[0].name}'",
-                    self.generator.invalid[0].pos,
-                    self.errormeta,
-                    "NameError",
-                )
-                return None
+                e = self.generator.invalid[0]
+                Error(e.message, e.pos, self.module, e.label, fatal=self.fatal)
+                return
 
             if not isinstance(ast_tree, list):
                 ast_tree = [ast_tree]
 
         except Exception as e:
-            LarkError(str(e), self.errormeta)
-            return None
+            LarkError(str(e), self.module, fatal=self.fatal)
+            return
 
-        tree = imports + ast_tree
-        return tree
+        if wrong_import := [
+            node
+            for node in ast_tree[
+                next(
+                    (
+                        i
+                        for i, node in enumerate(ast_tree)
+                        if not isinstance(node, Import)
+                    ),
+                    0,
+                )
+                + 1 :
+            ]
+            if isinstance(node, Import)
+        ]:
+            nImportError(
+                "Imports must be at the top of the file",
+                wrong_import[0].pos,
+                self.module,
+                fatal=self.fatal,
+            )
+            return
+
+        return ast_tree

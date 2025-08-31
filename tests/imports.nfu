@@ -1,0 +1,23 @@
+import {name, isValidEmail, y} from "strings"
+import "./logic"
+import * from "edgecases"
+
+let goldenRatio = {depth ->
+  let cf = {d ->
+    if d <= 0 then 1
+    else 1 + 1 / cf(d - 1)
+  } in cf(depth)
+} in goldenRatio(10)
+
+// import "math"
+
+name
+"Alice"
+const n = "Bob"
+n
+isValidEmail("example@example.com")
+isValidEmail("invalid-email");
+[a, ...[b, c]]
+logic.beep
+
+y
