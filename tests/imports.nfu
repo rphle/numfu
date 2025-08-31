@@ -1,6 +1,7 @@
-import {name, isValidEmail, y} from "strings"
+import {name, isValidEmail} from "strings"
 import "./logic"
 import * from "edgecases"
+import {dog, cat} from "my_module"
 
 let goldenRatio = {depth ->
   let cf = {d ->
@@ -20,4 +21,5 @@ isValidEmail("invalid-email");
 [a, ...[b, c]]
 logic.beep
 
-y
+dog()
+// cat

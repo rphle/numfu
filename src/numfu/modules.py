@@ -24,6 +24,7 @@ class ImportResolver:
     ):
         self.precedence = (
             self.file,
+            self.folder,
             self.stdlib,
         )
         self.modules: dict[str, Module] = {}
@@ -42,6 +43,58 @@ class ImportResolver:
             )
             self._module(path=path, tree=tree, code="", builtins=False)
             return path
+
+    def folder(self, node):
+        """
+        Allows importing a folder by name if it contains an index.nfu file.
+        """
+        folder_path = (
+            (
+                (
+                    Path(self.path).parent
+                    if not self.path.endswith("/")
+                    else Path(self.path)
+                )
+                / Path(node.module)
+            )
+            .resolve()
+            .absolute()
+        )
+
+        if not folder_path.is_dir():
+            return
+
+        index_path = folder_path / "index.nfu"
+        if not index_path.is_file():
+            return
+
+        if _id(index_path) in self.modules:
+            return index_path
+
+        # Check for circular import
+        index_path_str = str(index_path)
+        if index_path_str in self._import_stack:
+            cycle = self._import_stack[self._import_stack.index(index_path_str) :] + [
+                index_path_str
+            ]
+            cycle_str = " -> ".join(f"'{p}'" for p in cycle)
+            nImportError(
+                f"Circular import detected:\n{cycle_str}",
+                module=Module(
+                    path=self.path,
+                    code=zlib.compress(self.current_code.encode("utf-8")),
+                ),
+            )
+
+        self._import_stack.append(index_path_str)
+        try:
+            with open(index_path, "r", encoding="utf-8") as f:
+                code = f.read()
+            tree = self._parse(code, node.module)
+            self._module(index_path, tree, code)  # type: ignore
+            return index_path
+        finally:
+            self._import_stack.pop()
 
     def file(self, node):
         path = (
@@ -115,7 +168,7 @@ class ImportResolver:
                             f"Module '{_import.module}' does not export an identifier named '{list(unknown)[0]}'",
                             next(n for n in _import.names if n.name in unknown).pos,
                             module=Module(
-                                path=path, code=zlib.compress(code.encode("utf-8"))
+                                path=str(path), code=zlib.compress(code.encode("utf-8"))
                             ),
                         )
                     imports.update({name.name: _id(_path) for name in _import.names})
@@ -155,13 +208,17 @@ class ImportResolver:
         for node in tree:
             if isinstance(node, Import):
                 try:
-                    paths.append(
-                        str(
-                            next(
-                                r for f in self.precedence if (r := f(node)) is not None
-                            )
-                        )
+                    original_path = self.path
+                    self.path = str(path)
+
+                    resolved_path = next(
+                        r for f in self.precedence if (r := f(node)) is not None
                     )
+                    paths.append(str(resolved_path))
+
+                    if original_path is not None:
+                        self.path = original_path
+
                 except StopIteration:
                     nImportError(
                         f'Cannot find module "{node.module}"',
@@ -183,5 +240,5 @@ class ImportResolver:
 
         self.stdlib(Import(names=[Variable(name="*")], module="builtins"))
         self._module(path=self.path, tree=tree, code=code, builtins=self.builtins)
-        print(self.modules)
+
         return self.modules

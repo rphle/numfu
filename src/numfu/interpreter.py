@@ -230,6 +230,7 @@ class Interpreter:
                     return e[this.name]
                 elif isinstance(e, list):  # import list
                     module = self.modules[self.modules[state.module].imports[this.name]]
+                    print(module.tree)
                     return self._eval(
                         next(
                             node.value
