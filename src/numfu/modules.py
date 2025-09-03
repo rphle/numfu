@@ -162,13 +162,27 @@ class ImportResolver:
                         {name: _id(_path) for name in self.modules[_id(_path)].exports}
                     )
                 else:
-                    if unknown := (
-                        set(n.name for n in _import.names)
-                        ^ set(self.modules[_id(_path)].exports)
-                    ):
+                    imported_names = set(
+                        n.name
+                        for n in _import.names
+                        if n and hasattr(n, "name") and n.name
+                    )
+                    exported_names = set(self.modules[_id(_path)].exports)
+
+                    if unknown := (imported_names - exported_names):
+                        # find the first import name that's in the unknown set
+                        unknown_import = next(
+                            (n for n in _import.names if n.name in unknown), None
+                        )
+
+                        if len(exported_names):
+                            suggestion = f" Available exports are: {', '.join(sorted(exported_names))}"
+                        else:
+                            suggestion = " This module does not export anything."
+
                         nImportError(
-                            f"Module '{_import.module}' does not export an identifier named '{list(unknown)[0]}'",
-                            next(n for n in _import.names if n.name in unknown).pos,
+                            f"Module '{_import.module}' does not export an identifier named '{list(unknown)[0]}'.{suggestion}",
+                            unknown_import.pos if unknown_import else None,
                             module=Module(
                                 path=str(path),
                                 code=zlib.compress(code.encode("utf-8")),
