@@ -1,8 +1,8 @@
 start: (expr ";"?)*
 ?expr: import_stmt | export_stmt | assertion_expr
 
-import_stmt: "import" (STRING | ("{" NAME ("," NAME)* "}" | IMPORT_ALL) "from" STRING)
-export_stmt: "export" "{" NAME ("," NAME)* "}"
+import_stmt: "import" (STRING | (NAME ("," NAME)* | IMPORT_ALL) "from" STRING)
+export_stmt: "export" NAME ("," NAME)*
 
 ?assertion_expr: pipe_expr assertion?
 ?assertion: ("--->" expr)

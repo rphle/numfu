@@ -2,4 +2,4 @@ const greeting = "Hello from simple_export!"
 const number = 42
 const isValid = true
 
-export {greeting, number, isValid}
+export greeting, number, isValid

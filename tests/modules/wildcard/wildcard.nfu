@@ -4,4 +4,4 @@ const add = {a, b -> a + b}
 const multiply = {a, b -> a * b}
 const square = {x -> x * x}
 
-export {PI, E, add, multiply, square}
+export PI, E, add, multiply, square

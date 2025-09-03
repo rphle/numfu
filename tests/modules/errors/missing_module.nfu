@@ -1,2 +1,2 @@
-import {nothing} from "does_not_exist"
+import nothing from "does_not_exist"
 nothing

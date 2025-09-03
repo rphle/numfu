@@ -1,3 +1,3 @@
-import {triA} from "a"
+import triA from "a"
 const triB = "B -> " + triA
-export {triB}
+export triB

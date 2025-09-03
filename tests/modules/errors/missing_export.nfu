@@ -1,2 +1,2 @@
-import {nonExistent} from "../simple_export"
+import nonExistent from "../simple_export"
 nonExistent

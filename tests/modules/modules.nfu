@@ -1,26 +1,26 @@
 // This file imports and exercises all valid module test cases
 // Error cases that should fail are handled separately by test_errors.sh
 
-import {greeting, number, isValid} from "simple_export"
-import {number} from "simple_export"
+import greeting, number, isValid from "simple_export"
+import number from "simple_export"
 import * from "wildcard/wildcard"
-import {level1Value} from "nested/level1"
+import level1Value from "nested/level1"
 
-import {deepValue} from "nested/level1/level2"
-import {deeperValue} from "nested/level1/level2/level3"
-import {deepestValue} from "nested/level1/level2/level3/level4"
+import deepValue from "nested/level1/level2"
+import deeperValue from "nested/level1/level2/level3"
+import deepestValue from "nested/level1/level2/level3/level4"
 
-import {parentValue} from "relative/parent_module"
-import {childValue} from "relative/subdir/child"
-import {siblingValue} from "relative/subdir/sibling"
+import parentValue from "relative/parent_module"
+import childValue from "relative/subdir/child"
+import siblingValue from "relative/subdir/sibling"
 
-import {valueA} from "chains/a"
-import {valueB} from "chains/b"
-import {valueE} from "chains/e"
+import valueA from "chains/a"
+import valueB from "chains/b"
+import valueE from "chains/e"
 
-import {mixedResult} from "mixed/mixed_imports"
-import {VERSION, greeting} from "mixed/re_export"
-import {add, factorial, computedConstant} from "mixed/utilities"
+import mixedResult from "mixed/mixed_imports"
+import VERSION, greeting from "mixed/re_export"
+import add, factorial, computedConstant from "mixed/utilities"
 
 
 greeting

@@ -1,2 +1,2 @@
 const valueE = "Final value E"
-export {valueE}
+export valueE

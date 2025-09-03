@@ -1,2 +1,2 @@
 const siblingValue = "Sibling value"
-export {siblingValue}
+export siblingValue

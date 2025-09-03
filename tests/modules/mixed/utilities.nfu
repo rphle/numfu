@@ -3,4 +3,4 @@ const add = {a, b -> a + b}
 const factorial = {n -> if n <= 1 then 1 else n * factorial(n - 1)}
 const computedConstant = add(5, 10) * 2
 
-export {VERSION, add, factorial, computedConstant}
+export VERSION, add, factorial, computedConstant
