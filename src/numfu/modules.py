@@ -6,7 +6,7 @@ import zlib
 from functools import lru_cache
 from pathlib import Path
 
-from .ast_types import Constant, Export, Expr, Import, Lambda, Variable
+from .ast_types import Constant, Export, Expr, Import, Variable
 from .classes import Module
 from .errors import nImportError
 from .parser import Parser
@@ -83,6 +83,7 @@ class ImportResolver:
                 module=Module(
                     path=self.path,
                     code=zlib.compress(self.current_code.encode("utf-8")),
+                    depth=len(self._import_stack),
                 ),
             )
 
@@ -126,6 +127,7 @@ class ImportResolver:
                 module=Module(
                     path=self.path,
                     code=zlib.compress(self.current_code.encode("utf-8")),
+                    depth=len(self._import_stack),
                 ),
             )
 
@@ -168,7 +170,9 @@ class ImportResolver:
                             f"Module '{_import.module}' does not export an identifier named '{list(unknown)[0]}'",
                             next(n for n in _import.names if n.name in unknown).pos,
                             module=Module(
-                                path=str(path), code=zlib.compress(code.encode("utf-8"))
+                                path=str(path),
+                                code=zlib.compress(code.encode("utf-8")),
+                                depth=len(self._import_stack),
                             ),
                         )
                     imports.update({name.name: _id(_path) for name in _import.names})
@@ -188,7 +192,8 @@ class ImportResolver:
             tree=[
                 expr
                 for expr in tree
-                if isinstance(expr, (Lambda, Constant)) and expr.name
+                if (isinstance(expr, Constant) and expr.name)
+                or isinstance(expr, Import)
             ],
             exports=list(
                 itertools.chain.from_iterable(
@@ -198,6 +203,7 @@ class ImportResolver:
             if tree
             else [],
             imports=imports,
+            depth=len(self._import_stack),
         )
 
     def _parse(self, code: str, path: str):
@@ -224,7 +230,9 @@ class ImportResolver:
                         f'Cannot find module "{node.module}"',
                         node.pos,
                         module=Module(
-                            path=str(path), code=zlib.compress(code.encode("utf-8"))
+                            path=str(path),
+                            code=zlib.compress(code.encode("utf-8")),
+                            depth=len(self._import_stack),
                         ),
                     )
             else:

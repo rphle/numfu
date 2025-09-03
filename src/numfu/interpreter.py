@@ -4,6 +4,7 @@ NumFu Language Interpreter
 Implements the core interpreter that evaluates NumFu ASTs.
 """
 
+import dataclasses
 import math
 import pickle
 import sys
@@ -36,6 +37,7 @@ from .ast_types import (
 from .builtins import ESSENTIALS, Builtins
 from .classes import Module, State
 from .errors import (
+    Error,
     nIndexError,
     nNameError,
     nRecursionError,
@@ -109,8 +111,8 @@ class Interpreter:
 
     def exception(
         self,
-        error,
-        message,
+        error: type[Error],
+        message: str,
         pos: Pos | None = None,
         line_only=False,
         state: State = State(),
@@ -230,16 +232,16 @@ class Interpreter:
                     return e[this.name]
                 elif isinstance(e, list):  # import list
                     module = self.modules[self.modules[state.module].imports[this.name]]
-                    print(module.tree)
-                    return self._eval(
-                        next(
-                            node.value
-                            for node in module.tree
-                            if isinstance(node, Constant)
-                            and node.name == this.name.split(".")[-1]
+
+                    res = self._eval(
+                        self._eval(
+                            dataclasses.replace(this, name=this.name.split(".")[-1]),  # type: ignore
+                            state=State(module=module.id),
                         ),
                         state=State(module=module.id),
-                    )  # type: ignore
+                    )
+
+                    return res  # type: ignore
         else:
             self.exception(
                 nNameError,
@@ -270,6 +272,9 @@ class Interpreter:
             return True if left else bool(self._eval(this.args[1], state=state))
 
         func = self._eval(this.func, state=state)  # type: ignore
+        if isinstance(func, Lambda) and func.pos.module is not None:
+            state = state.edit(module=func.pos.module)
+
         args = [
             self._eval(a, state=state)
             for a in self._resolve_spread(this.args, state=state)
@@ -604,7 +609,16 @@ class Interpreter:
                 name=node.name,
                 curry=curry,
                 tree=node.tree,
-                pos=node.pos,
+                pos=dataclasses.replace(
+                    node.pos,
+                    module=state.module
+                    if self.modules[state.module].depth
+                    >= self.modules.get(
+                        node.pos.module,  # type: ignore
+                        self.modules[state.module],
+                    ).depth
+                    else node.pos.module,
+                ),
             )
             return lambda_copy
         elif isinstance(node, (float, int, mpmath.mpf)):
@@ -634,10 +648,12 @@ class Interpreter:
                 o.append(
                     node.value.removesuffix(".0")
                     if isinstance(node, Number)
-                    else mpmath.nstr(node, self.precision).removesuffix(".0")
+                    else mpmath.nstr(node, self.precision).removesuffix(".0")  # type: ignore
                 )
             elif isinstance(node, (bool, Bool)):
                 o.append("true" if node else "false")
+            elif isinstance(node, String):
+                o.append(node.value)
             elif isinstance(node, Lambda):
                 o.append(reconstruct(node, precision=self.precision, env={}))
             elif isinstance(node, List):
@@ -647,7 +663,7 @@ class Interpreter:
                 ]
                 for i, res in enumerate(elements):
                     if isinstance(res, mpmath.mpf):
-                        elements[i] = Number(mpmath.nstr(res, self.precision))
+                        elements[i] = Number(mpmath.nstr(res, self.precision))  # type: ignore
                     elif isinstance(res, bool):
                         elements[i] = Bool(res)
                     elif isinstance(res, str):
@@ -681,6 +697,10 @@ class Interpreter:
             ).resolve(tree, path=path, code=code)
             self.module_id = list(self.modules.keys())[-1]
             self.modules[self.module_id].globals = env
+            for module_id, module in self.modules.items():
+                module.globals.update(
+                    {c.name: c.value for c in module.tree if isinstance(c, Constant)}
+                )
 
             for node in tree:
                 pos = node.pos  # type:ignore

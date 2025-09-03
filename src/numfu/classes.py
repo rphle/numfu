@@ -15,6 +15,7 @@ class Module:
     exports: list[str] = field(default_factory=lambda: [])
     imports: dict[str, str] = field(default_factory=lambda: {})
     globals: dict[str, Any] = field(default_factory=lambda: {})
+    depth: int = field(default_factory=lambda: 0)
 
 
 @dataclass

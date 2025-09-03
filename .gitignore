@@ -6,6 +6,7 @@ wheels
 *.nfut
 build
 test.py
+my_module
 
 # Docusaurus
 node_modules

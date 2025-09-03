@@ -14,6 +14,7 @@ from typing import Callable
 class Pos:
     start: int | None = 0
     end: int | None = 1
+    module: str | None = None
 
 
 DEFAULT_POS = field(default_factory=Pos, repr=False)
