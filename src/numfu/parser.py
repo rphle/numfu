@@ -468,30 +468,21 @@ class Parser:
             LarkError(str(e), self.module, fatal=self.fatal)
             return
 
-        if wrong_import := [
-            node
-            for node in ast_tree[
-                (
-                    next(
-                        (
-                            i
-                            for i, node in enumerate(ast_tree)
-                            if not isinstance(node, Import)
-                        ),
-                        0,
-                    )
-                    + 1
-                ) :
-            ]
-            if isinstance(node, Import)
-        ]:
-            if not any(True for node in ast_tree if isinstance(node, Import)):
-                nImportError(
-                    "Imports must be at the top of the file",
-                    wrong_import[0].pos,
-                    self.module,
-                    fatal=self.fatal,
-                )
-                return
+        seen_non_import = False
+        wrong_import = []
+        for node in ast_tree:
+            if not isinstance(node, Import):
+                seen_non_import = True
+            elif seen_non_import:
+                wrong_import.append(node)
+
+        if wrong_import:
+            nImportError(
+                "Imports must be at the top of the file",
+                wrong_import[0].pos,
+                self.module,
+                fatal=self.fatal,
+            )
+            return
 
         return ast_tree
