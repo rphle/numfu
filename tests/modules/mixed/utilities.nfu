@@ -1,7 +1,6 @@
 const VERSION = "1.0.0"
 const add = {a, b -> a + b}
 const factorial = {n -> if n <= 1 then 1 else n * factorial(n - 1)}
-let computed = add(5, 10) in
-const computedConstant = computed * 2
+const computedConstant = add(5, 10) * 2
 
 export {VERSION, add, factorial, computedConstant}

@@ -1,17 +1,5 @@
-### Import/Export System
-a.nfu:
-
-```
-export func, my_var
-```
-
-b.nfu:
-```
-import func, my_var from a
-```
-
 ### Syntax Highlighting
-Syntax highlighting and editor support, mainly using [tree-sitter](https://tree-sitter.github.io/tree-sitter/)
+Syntax highlighting and editor support, create [tree-sitter](https://tree-sitter.github.io/tree-sitter/) grammar
 
 ### "Delete last output" Function
 `del()` function that removes the last printed text from stdout (all printed values are collected in the `output` list in the interpreter)
