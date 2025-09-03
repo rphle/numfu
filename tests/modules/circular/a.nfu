@@ -1,0 +1,3 @@
+import {triC} from "c"
+const triA = "A -> " + triC
+export {triA}

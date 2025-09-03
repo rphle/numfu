@@ -1,0 +1,3 @@
+print("I just made the import statement below me invalid.")
+
+import "invalid"

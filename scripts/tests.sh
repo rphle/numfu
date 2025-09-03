@@ -10,5 +10,7 @@ numfu tests/lists.nfu
 numfu tests/logic.nfu
 numfu tests/strings.nfu
 numfu tests/builtins.nfu
-numfu tests/recursion.nfu
+numfu tests/modules/modules.nfu
+./tests/modules/module_errors.sh
 numfu tests/edgecases.nfu
+numfu tests/recursion.nfu

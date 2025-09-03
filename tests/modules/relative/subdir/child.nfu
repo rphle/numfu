@@ -1,0 +1,4 @@
+import {parentValue} from "../parent_module"
+import {siblingValue} from "sibling"
+const childValue = "Child: " + parentValue + " + " + siblingValue
+export {childValue}

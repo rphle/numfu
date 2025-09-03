@@ -1,0 +1,4 @@
+import {value} from "/absolute/path"
+import {value} from "~/home/path"
+import {value} from "invalid.extension"
+import {value} from "123invalid"

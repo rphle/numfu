@@ -1,0 +1,3 @@
+import {deepestValue} from "level4"
+const deeperValue = "Level 3 -> " + deepestValue
+export {deeperValue}

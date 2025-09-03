@@ -1,0 +1,2 @@
+import {nonExistent} from "../simple_export"
+nonExistent

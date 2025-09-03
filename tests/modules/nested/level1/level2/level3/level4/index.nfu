@@ -1,0 +1,2 @@
+const deepestValue = "Level 4 (deepest)"
+export {deepestValue}

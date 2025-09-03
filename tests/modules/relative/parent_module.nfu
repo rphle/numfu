@@ -1,0 +1,2 @@
+const parentValue = "I am in parent"
+export {parentValue}

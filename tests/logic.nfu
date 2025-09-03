@@ -91,7 +91,3 @@ let processValue = {x ->
 } in
 [processValue(3), processValue(7), processValue(30), processValue(60)]
 ---> $ == [6, 17, 25, 30];
-
-const beep = "beeep"
-
-export {beep}

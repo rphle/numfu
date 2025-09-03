@@ -1,0 +1,4 @@
+import {VERSION, add} from "utilities"
+import {greeting} from "../simple_export"
+
+export {VERSION, add, greeting}

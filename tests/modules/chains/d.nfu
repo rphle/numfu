@@ -1,0 +1,3 @@
+import {valueE} from "e"
+const valueD = "Value D -> " + valueE
+export {valueD}

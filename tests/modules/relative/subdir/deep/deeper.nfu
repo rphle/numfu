@@ -1,0 +1,4 @@
+import {parentValue} from "../../parent_module"
+import {siblingValue} from "../sibling"
+const deepValue = "Deep: " + parentValue + " | " + siblingValue
+export {deepValue}

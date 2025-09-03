@@ -1,6 +1,3 @@
-import "logic"
-const name = "Alice" + logic.beep
-
 let name = "Alice" in
 let age = 30 in
   "Hello, " + name + "! You are " + String(age) + " years old."
@@ -71,5 +68,3 @@ compress("aaabbccccaa") ---> $ == "a3b2c4a2";
 |> map(_, {word -> word[0] + slice(word, 1, length(word))})
 |> filter(_, {word -> length(word) > 3})
 |> join(_, "-") ---> $ == "quick-brown";
-
-export {isValidEmail, name}

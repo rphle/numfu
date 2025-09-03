@@ -16,9 +16,3 @@ max(1,_,_)(2)(3) ---> $ == 3;
 
 ({a -> {b -> a*b}})(2);
 // {b -> 2*b}
-
-const a = 1
-const b = 2
-const c = 3
-
-export {a,b,c}

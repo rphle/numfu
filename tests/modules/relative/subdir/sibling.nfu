@@ -1,0 +1,2 @@
+const siblingValue = "Sibling value"
+export {siblingValue}

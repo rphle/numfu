@@ -1,0 +1,2 @@
+const valueE = "Final value E"
+export {valueE}
