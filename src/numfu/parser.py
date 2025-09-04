@@ -60,7 +60,7 @@ def validate_top_level(tree: Tree) -> Tree | None:
             for child in node.children:
                 if (
                     isinstance(child, Tree)
-                    and child.data in ("import_stmt", "export_stmt", "delete_stmt")
+                    and child.data in ("import_stmt", "export_stmt", "del_stmt")
                     and not top_level
                 ):
                     return child
@@ -525,7 +525,7 @@ class Parser:
 
         if (res := validate_top_level(parse_tree)) is not None:
             nSyntaxError(
-                f"{ {'import_stmt':'Import', 'export_stmt':'Export', 'delete_stmt':'Delete'}[res.data] } must be at the top level",
+                f"{ {'import_stmt':'Import', 'export_stmt':'Export', 'del_stmt':'Delete'}[res.data] } must be at the top level",
                 Pos(res.children[0].start_pos, _find_tree_end_pos(res)),  # type: ignore
                 self.module,
                 fatal=self.fatal,
