@@ -2,7 +2,7 @@
 Syntax highlighting and editor support, create [tree-sitter](https://tree-sitter.github.io/tree-sitter/) grammar
 
 ### "Delete last output" Function
-`del()` function that removes the last printed text from stdout (all printed values are collected in the `output` list in the interpreter)
+`unprint()` function that removes the last printed text from stdout (all printed values are collected in the `output` list in the interpreter)
 
 ### Lambda comparisons
 Implement proper rules to determine the equality of two functions

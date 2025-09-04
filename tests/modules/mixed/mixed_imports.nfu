@@ -2,5 +2,4 @@ import VERSION from "utilities"
 import * from "../simple_export"
 import childValue from "../relative/subdir/child"
 
-const mixedResult = VERSION + " | " + greeting + " | " + childValue
-export mixedResult
+export mixedResult = VERSION + " | " + greeting + " | " + childValue

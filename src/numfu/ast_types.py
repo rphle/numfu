@@ -131,6 +131,15 @@ class Export(Expr):
 
 
 @dataclass
+class InlineExport(Expr):
+    """This type is only used temporarily in the parser and later resolved to a Constant and an Export"""
+
+    name: Variable
+    value: Expr
+    pos: Pos = DEFAULT_POS
+
+
+@dataclass
 class Lambda(Expr):
     """
     Lambda function/closure.
@@ -171,6 +180,12 @@ class Lambda(Expr):
 class Constant(Expr):
     name: str
     value: Expr
+    pos: Pos = DEFAULT_POS
+
+
+@dataclass
+class Delete(Expr):
+    name: str
     pos: Pos = DEFAULT_POS
 
 

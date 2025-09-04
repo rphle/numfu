@@ -21,6 +21,7 @@ from .ast_types import (
     Call,
     Conditional,
     Constant,
+    Delete,
     Export,
     Expr,
     Import,
@@ -123,6 +124,31 @@ class Interpreter:
             module=self.modules[state.module],
             line_only=line_only,
         )
+
+    def validate_exports(self, module: Module):
+        """
+        Verify that export statements only export previously declared symbols.
+        """
+        declared = set(module.imports.keys())
+        for node in module.tree:
+            # Check if node is an export statement which contains a name not contained in declared
+            # (I use iterators & co. way too much, I'm sorry)
+            if isinstance(node, Export):
+                if (
+                    missing := next(
+                        (name for name in node.names if name.name not in declared),
+                        None,
+                    )
+                ) is not None:
+                    nNameError(
+                        f"'{missing.name}' is not defined in the current scope",
+                        missing.pos,
+                        self.modules[module.id],
+                        fatal=self.fatal,
+                    )
+
+            elif isinstance(node, Constant):
+                declared.add(node.name)
 
     def _partial_lambda(self, this: Lambda, args: list, state: State = State()):
         """Return a Lambda with given args (including _ placeholders) bound, preserving printability"""
@@ -697,7 +723,9 @@ class Interpreter:
             ).resolve(tree, path=path, code=code)
             self.module_id = list(self.modules.keys())[-1]
             self.modules[self.module_id].globals = env
+
             for module_id, module in self.modules.items():
+                self.validate_exports(module)
                 module.globals.update(
                     {c.name: c.value for c in module.tree if isinstance(c, Constant)}
                 )
@@ -711,6 +739,8 @@ class Interpreter:
                     self.modules[self.module_id].globals[node.name] = self._eval(
                         node.value, state=State({}, self.module_id)
                     )
+                elif isinstance(node, Delete):
+                    del self.modules[self.module_id].globals[node.name]
                 elif isinstance(node, (Import, Export)):
                     pass
                 else:

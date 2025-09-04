@@ -1,8 +1,9 @@
 start: (expr ";"?)*
-?expr: import_stmt | export_stmt | assertion_expr
+?expr: import_stmt | export_stmt | del_stmt | assertion_expr
 
 import_stmt: IMPORT (STRING | (NAME ("," NAME)* | IMPORT_ALL) "from" STRING)
-export_stmt: EXPORT NAME ("," NAME)*
+export_stmt: EXPORT ((NAME ("," NAME)*) | (NAME ASSIGN expr))
+del_stmt: DEL NAME
 
 ?assertion_expr: pipe_expr assertion?
 ?assertion: ("--->" expr)
@@ -41,7 +42,7 @@ lambda_params: (NAME ("," NAME)* ("," rest_param)?)? | rest_param
 rest_param: "..." NAME
 conditional: "if" expr "then" expr "else" expr
 let_binding: "let" let_params "in" expr
-constant_def: "const" NAME "=" expr
+constant_def: CONST NAME "=" expr
 let_params: (NAME "=" expr ("," NAME "=" expr)*)?
 
 
@@ -64,9 +65,12 @@ PIPE: "|>"
 COMPOSE: ">>"
 SPREAD: "..."
 IMPORT_ALL: "*"
+ASSIGN: "="
 
 IMPORT: "import"
 EXPORT: "export"
+CONST: "const"
+DEL: "del"
 
 BOOLEAN.2: "true" | "false"
 NUMBER: /((0|[1-9][\d_]*)(\.[\d_]+)?|\.[\d_]+)([eE][+-]?[\d_]+)?/

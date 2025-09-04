@@ -20,10 +20,12 @@ from .ast_types import (
     Call,
     Conditional,
     Constant,
+    Delete,
     Export,
     Expr,
     Import,
     Index,
+    InlineExport,
     Lambda,
     List,
     Number,
@@ -40,6 +42,14 @@ def _tokpos(token: Token):
     return Pos(token.start_pos, token.end_pos)
 
 
+def _find_tree_end_pos(node):
+    return (
+        node.children[-1].end_pos
+        if isinstance(node.children[-1], Token)
+        else _find_tree_end_pos(node.children[-1])
+    )
+
+
 def validate_top_level(tree: Tree) -> Tree | None:
     """
     Verify that import/export statements only appear at the top level in the parse tree.
@@ -50,7 +60,7 @@ def validate_top_level(tree: Tree) -> Tree | None:
             for child in node.children:
                 if (
                     isinstance(child, Tree)
-                    and child.data in ("import_stmt", "export_stmt")
+                    and child.data in ("import_stmt", "export_stmt", "delete_stmt")
                     and not top_level
                 ):
                     return child
@@ -385,10 +395,15 @@ class AstGenerator(Transformer):
             pos=_tokpos(pipes[0]) if pipes else Pos(0, 0),
         )
 
-    def constant_def(self, name, value):
+    def constant_def(self, token, name, value):
         if name.value in ("_", "$"):
             self.invalid.append(InvalidName("constant", name.value, _tokpos(name)))
-        return Constant(name.value, value, pos=Pos(name.start_pos - 6, name.end_pos))
+        return Constant(name.value, value, pos=Pos(token.start_pos, name.end_pos))
+
+    def del_stmt(self, token, name):
+        if name.value in ("_", "$"):
+            self.invalid.append(InvalidName("constant", name.value, _tokpos(name)))
+        return Delete(name.value, pos=Pos(token.start_pos, name.end_pos))
 
     def conditional(self, test, then_body, else_body):
         return Conditional(test, then_body, else_body, pos=test.pos)
@@ -454,9 +469,19 @@ class AstGenerator(Transformer):
         )
 
     def export_stmt(self, token, *args):
-        return Export(
-            names=[Variable(a.value, _tokpos(a)) for a in args],
-        )
+        if len(args) == 3 and isinstance(args[1], Token) and args[1].value == "=":
+            name, value = args[0], args[2]
+            if name.value in ("_", "$"):
+                self.invalid.append(InvalidName("export", name.value, _tokpos(name)))
+            return InlineExport(
+                Variable(name.value, _tokpos(name)),
+                value,
+                pos=Pos(token.start_pos, name.end_pos),
+            )
+        else:
+            return Export(
+                names=[Variable(a.value, _tokpos(a)) for a in args],
+            )
 
 
 class Parser:
@@ -500,8 +525,8 @@ class Parser:
 
         if (res := validate_top_level(parse_tree)) is not None:
             nSyntaxError(
-                f"{ {'import_stmt':'Import', 'export_stmt':'Export'}[res.data] } must be at the top level",
-                Pos(res.children[0].start_pos, res.children[-1].end_pos),  # type: ignore
+                f"{ {'import_stmt':'Import', 'export_stmt':'Export', 'delete_stmt':'Delete'}[res.data] } must be at the top level",
+                Pos(res.children[0].start_pos, _find_tree_end_pos(res)),  # type: ignore
                 self.module,
                 fatal=self.fatal,
             )
@@ -518,5 +543,12 @@ class Parser:
 
         if not isinstance(ast_tree, list):
             ast_tree = [ast_tree]
+
+        for i in range(len(ast_tree) - 1, -1, -1):
+            node = ast_tree[i]
+            if isinstance(node, InlineExport):
+                ast_tree[i] = Constant(node.name.name, node.value, node.pos)
+                ast_tree.insert(i + 1, Export([node.name], node.pos))
+                ast_tree.insert(i + 2, Delete(node.name.name, node.pos))
 
         return ast_tree

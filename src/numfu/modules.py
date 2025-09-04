@@ -207,7 +207,7 @@ class ImportResolver:
                 expr
                 for expr in tree
                 if (isinstance(expr, Constant) and expr.name)
-                or isinstance(expr, Import)
+                or isinstance(expr, (Import, Export))
             ],
             exports=list(
                 itertools.chain.from_iterable(
