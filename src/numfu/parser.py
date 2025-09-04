@@ -33,11 +33,44 @@ from .ast_types import (
     Variable,
 )
 from .classes import Module
-from .errors import Error, LarkError, nImportError
+from .errors import Error, LarkError, nSyntaxError
 
 
 def _tokpos(token: Token):
     return Pos(token.start_pos, token.end_pos)
+
+
+def validate_top_level(tree: Tree) -> Tree | None:
+    """
+    Verify that import/export statements only appear at the top level in the parse tree.
+    """
+
+    def traverse(node: Tree, top_level: bool = True) -> Tree | None:
+        if isinstance(node, Tree):
+            for child in node.children:
+                if (
+                    isinstance(child, Tree)
+                    and child.data in ("import_stmt", "export_stmt")
+                    and not top_level
+                ):
+                    return child
+
+                if (grandchild := traverse(child, False)) is not None:
+                    return grandchild
+
+    return traverse(tree)
+
+
+def validate_imports(tree: Tree) -> Tree | None:
+    """
+    Verify that import statements only appear at the top level in the parse tree.
+    """
+    seen_non_import = False
+    for node in tree.children:
+        if not (isinstance(node, Tree) and node.data == "import_stmt"):
+            seen_non_import = True
+        elif seen_non_import:
+            return node
 
 
 class InvalidName:
@@ -48,10 +81,10 @@ class InvalidName:
 
 
 class InvalidImport:
-    def __init__(self, module: str, pos: Pos):
+    def __init__(self, module_name: str, pos: Pos):
         self.label = "ImportError"
-        self.module, self.pos = module, pos
-        self.message = f"'{module}' is an invalid module name"
+        self.pos = pos
+        self.message = f"'{module_name}' is an invalid module name"
 
 
 grammar = importlib.resources.read_text("numfu", "grammar/numfu.lark")
@@ -395,7 +428,7 @@ class AstGenerator(Transformer):
             pos=cond.pos,
         )
 
-    def import_stmt(self, *args):
+    def import_stmt(self, token, *args):
         path = args[-1].value[1:-1]
         pattern = re.compile(
             r"^(?![~/])"  # must not start with / or ~
@@ -420,7 +453,7 @@ class AstGenerator(Transformer):
             pos=_tokpos(args[-1]),
         )
 
-    def export_stmt(self, *args):
+    def export_stmt(self, token, *args):
         return Export(
             names=[Variable(a.value, _tokpos(a)) for a in args],
         )
@@ -452,37 +485,38 @@ class Parser:
 
         try:
             parse_tree = self.parser.parse(code)
-            parse_tree = self.lambda_preprocessor.transform(parse_tree)
-            ast_tree: list[Expr] = self.generator.transform(parse_tree)
-
-            if self.generator.invalid:
-                # We must handle this here because Lark does generally catch all Exceptions in its Transformer
-                e = self.generator.invalid[0]
-                Error(e.message, e.pos, self.module, e.label, fatal=self.fatal)
-                return
-
-            if not isinstance(ast_tree, list):
-                ast_tree = [ast_tree]
-
         except Exception as e:
             LarkError(str(e), self.module, fatal=self.fatal)
             return
 
-        seen_non_import = False
-        wrong_import = []
-        for node in ast_tree:
-            if not isinstance(node, Import):
-                seen_non_import = True
-            elif seen_non_import:
-                wrong_import.append(node)
-
-        if wrong_import:
-            nImportError(
+        if res := validate_imports(parse_tree):
+            nSyntaxError(
                 "Imports must be at the top of the file",
-                wrong_import[0].pos,
+                Pos(res.children[0].start_pos, res.children[-1].end_pos),  # type: ignore
                 self.module,
                 fatal=self.fatal,
             )
             return
+
+        if (res := validate_top_level(parse_tree)) is not None:
+            nSyntaxError(
+                f"{ {'import_stmt':'Import', 'export_stmt':'Export'}[res.data] } must be at the top level",
+                Pos(res.children[0].start_pos, res.children[-1].end_pos),  # type: ignore
+                self.module,
+                fatal=self.fatal,
+            )
+            return
+
+        parse_tree = self.lambda_preprocessor.transform(parse_tree)
+        ast_tree: list[Expr] = self.generator.transform(parse_tree)
+
+        if self.generator.invalid:
+            # We must handle this here because Lark does generally catch all Exceptions in its Transformer
+            e = self.generator.invalid[0]
+            Error(e.message, e.pos, self.module, e.label, fatal=self.fatal)
+            return
+
+        if not isinstance(ast_tree, list):
+            ast_tree = [ast_tree]
 
         return ast_tree

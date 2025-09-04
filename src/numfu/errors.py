@@ -130,7 +130,7 @@ class Error:
 
                     highlighted = (
                         f"{escape(src[start:_cpos.col-1])}"
-                        f"[red{bg}]{escape(src[_cpos.col-1:_cpos.end_col-1])}{" " if bg else ""}[/red{bg}]"
+                        f"[reset][red{bg}]{escape(src[_cpos.col-1:_cpos.end_col-1])}{" " if bg else ""}[/red{bg}]"
                         f"{escape(src[_cpos.end_col-1:end])}"
                     )
                     prefix = "..." if start > 0 else ""
@@ -138,7 +138,7 @@ class Error:
 
                     console.print(
                         f"[reset][dim][{_cpos.line}][/dim]   {prefix}[reset]{highlighted}{suffix}\n"
-                        f"{' ' * len( f"[{_cpos.line}]   {prefix}{src[start:_cpos.col-1]}")}[red bold]{'^' * (_cpos.end_col - _cpos.col)}[/bold red]"
+                        f"{' ' * len( f"[{_cpos.line}]   {prefix}{src[start:_cpos.col-1]}")}[reset][red bold]{'^' * (_cpos.end_col - _cpos.col)}[/bold red]"
                     )
 
         console.print(

@@ -1,8 +1,8 @@
 start: (expr ";"?)*
 ?expr: import_stmt | export_stmt | assertion_expr
 
-import_stmt: "import" (STRING | (NAME ("," NAME)* | IMPORT_ALL) "from" STRING)
-export_stmt: "export" NAME ("," NAME)*
+import_stmt: IMPORT (STRING | (NAME ("," NAME)* | IMPORT_ALL) "from" STRING)
+export_stmt: EXPORT NAME ("," NAME)*
 
 ?assertion_expr: pipe_expr assertion?
 ?assertion: ("--->" expr)
@@ -64,6 +64,9 @@ PIPE: "|>"
 COMPOSE: ">>"
 SPREAD: "..."
 IMPORT_ALL: "*"
+
+IMPORT: "import"
+EXPORT: "export"
 
 BOOLEAN.2: "true" | "false"
 NUMBER: /((0|[1-9][\d_]*)(\.[\d_]+)?|\.[\d_]+)([eE][+-]?[\d_]+)?/

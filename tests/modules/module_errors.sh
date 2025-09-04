@@ -24,3 +24,4 @@ test_numfu "$base_dir/missing_module.nfu" "Cannot find module" "Missing Module I
 test_numfu "$base_dir/missing_export.nfu" "does not export an identifier named" "Missing Export Test"
 test_numfu "$base_dir/invalid_names.nfu" "is an invalid module name" "Invalid Module Names Test"
 test_numfu "$base_dir/invalid_import.nfu" "Imports must be at the top of the file" "Top-Level Imports Test"
+test_numfu "$base_dir/nested_export.nfu" "Export must be at the top level" "Top-Level Exports Test"
