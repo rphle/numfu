@@ -175,10 +175,9 @@ Like let statements, `del` statements can only be used at the module (file) leve
 
 ## Variable Naming
 
-Avoid NumFu keywords as variable names. Using them as identifiers may not directly raise errors but you won't get very far:
+The keywords and special symbols listed below cannot be used as variable names or function parameters. The parser will throw an error if you try to use them.
 
-
-`let`, `in`, `const`, `if`, `then`, `else`, `true`, `false`
+`let`, `in`, `if`, `then`, `else`, `del`,`import`, `export`, `from`, `true`, `false`, `$`, `_`
 
 -----
 ## Examples

@@ -37,6 +37,22 @@ from .ast_types import (
 from .classes import Module
 from .errors import Error, LarkError, nSyntaxError
 
+KEYWORDS = {
+    "let",
+    "in",
+    "if",
+    "then",
+    "else",
+    "import",
+    "export",
+    "from",
+    "del",
+    "true",
+    "false",
+    "$",
+    "_",
+}
+
 
 def _tokpos(token: Token):
     return Pos(token.start_pos, token.end_pos)
@@ -116,6 +132,16 @@ class AstGenerator(Transformer):
     def __init__(self, *args, **kwargs) -> None:
         self.invalid: list[dict] = []
         super().__init__(*args, **kwargs)
+
+    def _check_name(self, name: str, label: str, pos: Pos):
+        if name in KEYWORDS:
+            self.invalid.append(
+                {
+                    "type": "NameError",
+                    "msg": f"{label} cannot be named '{name}'",
+                    "pos": pos,
+                }
+            )
 
     def start(self, *exprs):
         return list(exprs)
@@ -234,14 +260,7 @@ class AstGenerator(Transformer):
         name, params, body = (None, *args) if len(args) == 2 else args
 
         for param in params.children:
-            if param.value in ("_", "$"):
-                self.invalid.append(
-                    {
-                        "type": "NameError",
-                        "msg": f"function parameters cannot be named {param.value}",
-                        "pos": _tokpos(param),
-                    }
-                )
+            self._check_name(param.value, "function parameters", _tokpos(param))
 
         pos = Pos(
             start=(
@@ -287,26 +306,12 @@ class AstGenerator(Transformer):
                 )
                 return
             name, value = lambda_params.children
-            if name.value in ("_", "$"):
-                self.invalid.append(
-                    {
-                        "type": "NameError",
-                        "msg": f"variables cannot be named '{ name.value}'",
-                        "pos": _tokpos(name),
-                    }
-                )
+            self._check_name(name.value, "variables", _tokpos(name))
             return Constant(name.value, value, pos=Pos(token.start_pos, name.end_pos))
         else:
             names, values = lambda_params.children[::2], lambda_params.children[1::2]
             for name in names:
-                if name.value in ("_", "$"):
-                    self.invalid.append(
-                        {
-                            "type": "NameError",
-                            "msg": f"variables cannot be named '{ name.value}'",
-                            "pos": _tokpos(name),
-                        }
-                    )
+                self._check_name(name.value, "variables", _tokpos(name))
 
             return Call(
                 Lambda([str(name) for name in names], body, pos=body.pos),
@@ -425,13 +430,8 @@ class AstGenerator(Transformer):
 
     def del_stmt(self, token, name):
         if name.value in ("_", "$"):
-            self.invalid.append(
-                {
-                    "type": "NameError",
-                    "msg": f"constants cannot be named '{ name.value}'",
-                    "pos": _tokpos(name),
-                }
-            )
+            self._check_name(name.value, "variables", _tokpos(name))
+
         return Delete(name.value, pos=Pos(token.start_pos, name.end_pos))
 
     def conditional(self, test, then_body, else_body):
@@ -507,13 +507,8 @@ class AstGenerator(Transformer):
         if len(args) == 3 and isinstance(args[1], Token) and args[1].value == "=":
             name, value = args[0], args[2]
             if name.value in ("_", "$"):
-                self.invalid.append(
-                    {
-                        "type": "NameError",
-                        "msg": f"exports cannot be named {name.value}",
-                        "pos": _tokpos(name),
-                    }
-                )
+                self._check_name(name.value, "exports", _tokpos(name))
+
             return InlineExport(
                 Variable(name.value, _tokpos(name)),
                 value,
