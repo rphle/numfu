@@ -334,6 +334,11 @@ class BuiltinFunc:
                             pos=args[0].pos,
                             curry=args[0].curry,
                         )
+                    elif self.name == "range":
+                        return List(
+                            [mpm.mpf(i) for i in range(int(args[0]), int(args[1]))],
+                            pos=func_pos,
+                        )
 
                 return func(*args)
 

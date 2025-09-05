@@ -174,10 +174,12 @@ class Builtins:
     # Functions
     _map = overload("map")
     _filter = overload("filter")
+    _range = overload("range")
 
-    # Output
+    # I/O
     _print = overload("print")
     _println = overload("println")
+    _input = overload("input")
 
     # Random
     _random = overload("random")
@@ -385,6 +387,12 @@ Builtins._filter.add(
     List,
     lambda: None,
 )
+Builtins._range.add(
+    [Num, Num],
+    List,
+    lambda: None,
+    validators=[Validators.is_integer, Validators.is_integer],
+)
 
 Builtins._println.add(
     [Any],
@@ -395,6 +403,15 @@ Builtins._print.add(
     [Any],
     Any,
     lambda expr: PrintOutput(expr),
+)
+Builtins._input.add(
+    [],
+    str,
+    input,
+).add(
+    [str],
+    str,
+    input,
 )
 
 Builtins._random.add([], Num, lambda: Num(random.random()))

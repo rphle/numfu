@@ -651,6 +651,19 @@ filter(["apple", "banana", "cherry"], {s -> length(s) > 5})   // ["banana", "che
 ```
 
 -----
+## Utility Functions
+
+-----
+### `range(start, end)`
+**Parameters**: `Number, Number`
+
+**Returns**: `List` - list of numbers from start to end (end not included)
+
+```numfu
+range(1, 5) // [1, 2, 3, 4]
+```
+
+-----
 ## Output Functions
 
 -----
