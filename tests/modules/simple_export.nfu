@@ -1,5 +1,5 @@
-const greeting = "Hello from simple_export!"
-const number = 42
-const isValid = true
+let greeting = "Hello from simple_export!"
+let number = 42
+let isValid = true
 
 export greeting, number, isValid

@@ -1,2 +1,2 @@
-const parentValue = "I am in parent"
+let parentValue = "I am in parent"
 export parentValue

@@ -1,2 +1,2 @@
-const deepestValue = "Level 4 (deepest)"
+let deepestValue = "Level 4 (deepest)"
 export deepestValue

@@ -9,7 +9,7 @@ format("Result: {} + {} = {}", 2, 3, 5) ---> $ =="Result: 2 + 3 = 5"
 format("Using placeholders {{}}, you can format {}", "strings") ---> $ == "Using placeholders {}, you can format strings"
 
 // Email validation
-const isValidEmail = {email ->
+let isValidEmail = {email ->
   if count(email, "@") != 1 then false else
     let splitted = split(email, "@") in
       count(splitted[1], ".") > 0

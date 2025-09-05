@@ -89,7 +89,7 @@ const result = square(PI)  // Code after imports
 
 // Incorrect - will raise a syntax error:
 const x = 42
-import format from "string_utils"  // Error: Imports must be at the top of the file
+import format from "string_utils"  // SyntaxError: Imports allowed only at top level
 ```
 
 -----

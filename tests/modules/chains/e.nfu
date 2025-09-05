@@ -1,2 +1,2 @@
-const valueE = "Final value E"
+let valueE = "Final value E"
 export valueE

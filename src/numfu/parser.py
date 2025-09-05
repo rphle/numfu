@@ -52,7 +52,7 @@ def _find_tree_end_pos(node):
 
 def validate_top_level(tree: Tree) -> Tree | None:
     """
-    Verify that import/export statements only appear at the top level in the parse tree.
+    Verify that certain statements only appear at the top level in the parse tree.
     """
 
     def traverse(node: Tree | str, top_level: bool = True) -> Tree | None:
@@ -61,6 +61,13 @@ def validate_top_level(tree: Tree) -> Tree | None:
                 if (
                     isinstance(child, Tree)
                     and child.data in ("import_stmt", "export_stmt", "del_stmt")
+                    and not top_level
+                ):
+                    return child
+                elif (
+                    isinstance(child, Tree)
+                    and child.data == "let_binding"
+                    and len(child.children) == 2  # no body
                     and not top_level
                 ):
                     return child
@@ -258,23 +265,54 @@ class AstGenerator(Transformer):
             tree=bytes.fromhex(tree),
         )
 
-    def let_binding(self, lambda_params, body):
+    def let_binding(self, token, lambda_params, body=None):
         """
         Handle let bindings like: let x = 49 in sqrt(x)
+        and constant definitions at top level.
 
         Converts environment definitions into closure calls:
         'let x = 3 in x * x' becomes '{x -> x * x}(3)'
         """
-        names, values = lambda_params.children[::2], lambda_params.children[1::2]
-        for name in names:
+        if body is None:
+            if len(lambda_params.children) != 2:
+                self.invalid.append(
+                    {
+                        "type": "SyntaxError",
+                        "msg": "cannot assign multiple identifiers here",
+                        "pos": Pos(
+                            lambda_params.children[2].start_pos,
+                            lambda_params.children[-1].pos.end,
+                        ),
+                    }
+                )
+                return
+            name, value = lambda_params.children
             if name.value in ("_", "$"):
-                self.invalid.append(InvalidName("variable", name.value, _tokpos(name)))
+                self.invalid.append(
+                    {
+                        "type": "NameError",
+                        "msg": f"variables cannot be named '{ name.value}'",
+                        "pos": _tokpos(name),
+                    }
+                )
+            return Constant(name.value, value, pos=Pos(token.start_pos, name.end_pos))
+        else:
+            names, values = lambda_params.children[::2], lambda_params.children[1::2]
+            for name in names:
+                if name.value in ("_", "$"):
+                    self.invalid.append(
+                        {
+                            "type": "NameError",
+                            "msg": f"variables cannot be named '{ name.value}'",
+                            "pos": _tokpos(name),
+                        }
+                    )
 
-        return Call(
-            Lambda([str(name) for name in names], body, pos=body.pos),
-            values,
-            pos=_tokpos(names[0]),
-        )
+            return Call(
+                Lambda([str(name) for name in names], body, pos=body.pos),
+                values,
+                pos=_tokpos(names[0]),
+            )
 
     def list_element(self, value):
         return value
@@ -384,11 +422,6 @@ class AstGenerator(Transformer):
             tree=zlib.compress(pickle.dumps(lambda_tree)),
             pos=_tokpos(pipes[0]) if pipes else Pos(0, 0),
         )
-
-    def constant_def(self, token, name, value):
-        if name.value in ("_", "$"):
-            self.invalid.append(InvalidName("constant", name.value, _tokpos(name)))
-        return Constant(name.value, value, pos=Pos(token.start_pos, name.end_pos))
 
     def del_stmt(self, token, name):
         if name.value in ("_", "$"):
@@ -533,7 +566,7 @@ class Parser:
 
         if (res := validate_top_level(parse_tree)) is not None:
             nSyntaxError(
-                f"{ {'import_stmt':'Import', 'export_stmt':'Export', 'del_stmt':'Delete'}[res.data] } must be at the top level",
+                f"{ {'import_stmt':'Import', 'export_stmt':'Export', 'del_stmt':'Delete', 'let_binding':"Missing 'in' — bare 'let'"}[res.data] } allowed only at top level",
                 Pos(res.children[0].start_pos, _find_tree_end_pos(res)),  # type: ignore
                 self.module,
                 fatal=self.fatal,
@@ -541,6 +574,7 @@ class Parser:
             return
 
         parse_tree = self.lambda_preprocessor.transform(parse_tree)
+        self.generator.invalid.clear()
         ast_tree: list[Expr] = self.generator.transform(parse_tree)
 
         if self.generator.invalid:
