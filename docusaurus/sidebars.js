@@ -6,7 +6,7 @@ const sidebars = {
     {
       type: "html",
       value:
-        "<h1 style='font-size: 250%'>NumFu <span style='font-weight: 300'>Docs</span></h1><hr>",
+        "<h1 style='font-size: 250%'><a href='/' style='text-decoration: none; color: var(--text-color)'>NumFu</a> <span style='font-weight: 300'>Docs</span></h1><hr>",
       className: "sidebar-title",
       defaultStyle: true,
     },
