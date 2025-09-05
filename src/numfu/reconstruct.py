@@ -29,7 +29,7 @@ def tree_repr(node, precision: int = 15, env: dict = {}):
                     "NUMBER",  # type: ignore
                     node.value
                     if isinstance(node, Number)
-                    else mpmath.nstr(node, precision).removesuffix(".0"),
+                    else str(mpmath.nstr(node, precision)).removesuffix(".0"),
                 )
             ],  # type: ignore
         )

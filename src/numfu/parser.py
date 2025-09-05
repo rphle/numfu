@@ -55,7 +55,7 @@ def validate_top_level(tree: Tree) -> Tree | None:
     Verify that import/export statements only appear at the top level in the parse tree.
     """
 
-    def traverse(node: Tree, top_level: bool = True) -> Tree | None:
+    def traverse(node: Tree | str, top_level: bool = True) -> Tree | None:
         if isinstance(node, Tree):
             for child in node.children:
                 if (

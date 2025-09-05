@@ -63,7 +63,7 @@ def overload(name, eval_lists: bool = False, help: HelpMsg = HelpMsg()):
 
 def to_string(x, precision):
     if isinstance(x, mpm._ctx_mp._mpf):
-        return mpm.nstr(x, n=precision).removesuffix(".0")  # type: ignore
+        return str(mpm.nstr(x, n=precision)).removesuffix(".0")  # type: ignore
     elif isinstance(x, bool):
         return "true" if x else "false"
     else:
