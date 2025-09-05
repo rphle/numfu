@@ -339,7 +339,7 @@ class BuiltinFunc:
                             [mpm.mpf(i) for i in range(int(args[0]), int(args[1]))],
                             pos=func_pos,
                         )
-                    elif self.name == "set":
+                    elif self.name == "set" and isinstance(args[0], List):
                         lst, i, value = args
                         try:
                             lst.elements[int(i)] = value

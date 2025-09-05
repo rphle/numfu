@@ -41,6 +41,11 @@ class Variable(Expr):
     name: str
     pos: Pos = DEFAULT_POS
 
+    def __repr__(self):
+        if self.name == "_":
+            return "_"  # just a workaround, we need to block this somehow
+        return f"Variable({self.name})"
+
 
 @dataclass
 class Number(Expr):
