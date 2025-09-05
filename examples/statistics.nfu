@@ -1,0 +1,16 @@
+// Statistics functions
+
+let mean = {nums ->
+  sum(nums) / length(nums)
+}
+
+let variance = {nums ->
+  let m = mean(nums) in
+  sum(map(nums, {x -> (x-m)^2})) / length(nums)
+}
+
+let stddev = {nums -> sqrt(variance(nums))}
+
+let data = [2,4,4,4,5,5,7,9]
+println("mean = " + String(mean(data)))
+println("stddev = " + String(stddev(data)))

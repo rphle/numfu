@@ -105,7 +105,7 @@ make build
 ```
 
 NumFu contains built-ins written in NumFu itself (src/numfu/stdlib/builtins.nfu).
-`build.sh` first installs NumFu without the built-ins, then parses and serializes the file, and finally performs a full editable install. The script also builds NumFu and creates wheels.
+`make build` first installs NumFu without the built-ins, then parses and serializes the file, and finally performs a full editable install. The script also builds NumFu and creates wheels.
 
 ### Building Documentation
 
@@ -159,12 +159,13 @@ make test
 
 ## Contributing
 
-Got an idea or found a bug? Please [open an issue](https://github.com/dr-lego/numfu/issues) to report bugs or suggest features.
+Found a bug or have an idea? [Open an issue](https://github.com/dr-lego/numfu/issues).
 
 Want to contribute code?
-Check out existing issues and take a look at [TODO.md](TODO.md) for open tasks. Don't forget to run all tests before committing (see above section)!
+- Check existing issues and [TODO.md](TODO.md) for open tasks.
+- Run all tests before committing.
+- Pull requests are welcome!
 
-Pull requests are welcome!
 
 ## License
 

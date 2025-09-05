@@ -1,0 +1,6 @@
+println("Hello, NumFu!")
+
+let square = {x -> x * x} in
+  square(5) ---> $ == 25;
+
+[1, 2, 3, 4, 5] |> map(_, _ * 2) |> println

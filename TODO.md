@@ -1,6 +1,9 @@
 ### Syntax Highlighting
 Syntax highlighting and editor support, create [tree-sitter](https://tree-sitter.github.io/tree-sitter/) grammar
 
+### More examples
+There are already some examples in the `examples` directory but more examples are always welcome!
+
 ### "Delete last output" Function
 `unprint()` function that removes the last printed text from stdout (all printed values are collected in the `output` list in the interpreter)
 

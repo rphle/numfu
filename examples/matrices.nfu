@@ -1,0 +1,33 @@
+// Sum each row in a matrix
+let matrix = [[1, 2, 3], [4, 5, 6], [7, 8, 9]] in
+  map(matrix, {row ->
+    let sum = {lst ->
+      if length(lst) == 0 then 0
+      else lst[0] + sum(slice(lst, 1, -1))
+    } in sum(row)
+  })
+// [6, 15, 24];
+
+
+// Flatten a matrix
+let flatten = {lists ->
+  if length(lists) == 0 then []
+  else lists[0] + flatten(slice(lists, 1, -1))
+} in
+  flatten([[1, 2], [3, 4], [5, 6]])
+// [1, 2, 3, 4, 5, 6];
+
+
+// Transpose a matrix
+let transpose = {matrix ->
+  if length(matrix) == 0 then []
+  else
+    let numCols = length(matrix[0]) in
+    let getColumn = {col ->
+      map(matrix, {row -> row[col]})
+    } in
+    let range = [0, 1, 2] in  // Assuming 3x3 matrix
+      map(range, getColumn)
+} in
+  transpose([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+// [[1, 4, 7], [2, 5, 8], [3, 6, 9]];

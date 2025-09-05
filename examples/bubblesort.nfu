@@ -1,0 +1,21 @@
+// Bubble Sort implementation
+
+let bubbleSort = {arr ->
+  let n = length(arr) in
+  let bubblePass = {currentArr, passes ->
+    if passes >= n then currentArr
+    else
+      let singlePass = {workingArr, i ->
+        if i >= n - 1 - passes then workingArr
+        else if workingArr[i] > workingArr[i + 1] then
+          let temp = workingArr[i] in
+          let swapped = set(set(workingArr, i, workingArr[i + 1]), i + 1, temp) in
+          singlePass(swapped, i + 1)
+        else singlePass(workingArr, i + 1)
+      } in
+      bubblePass(singlePass(currentArr, 0), passes + 1)
+  } in
+  bubblePass(arr, 0)
+}
+
+bubbleSort([5,3,8,2,7,1,4])

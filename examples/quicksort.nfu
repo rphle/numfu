@@ -1,0 +1,13 @@
+// Quick Sort implementation
+
+let quickSort = {lst ->
+  if length(lst) <= 1 then lst
+  else
+    let pivot = lst[round(length(lst) / 2)] in
+    let smaller = filter(lst, {x -> x < pivot}),
+        equal = filter(lst, {x -> x == pivot}),
+        larger = filter(lst, {x -> x > pivot}) in
+    quickSort(smaller) + equal + quickSort(larger)
+}
+
+quickSort([5,3,8,2,7,1,4])
