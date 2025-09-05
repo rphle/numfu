@@ -26,7 +26,7 @@ pip install numfu-lang
 ```bash
 git clone https://github.com/dr-lego/numfu
 cd numfu
-./scripts/install.sh
+make install
 ```
 
 ### Hello NumFu!
@@ -101,7 +101,7 @@ cd numfu
 
 pip install -r requirements.txt
 
-./scripts/build.sh
+make build
 ```
 
 NumFu contains built-ins written in NumFu itself (src/numfu/stdlib/builtins.nfu).
@@ -110,10 +110,10 @@ NumFu contains built-ins written in NumFu itself (src/numfu/stdlib/builtins.nfu)
 ### Building Documentation
 
 ```bash
-cd docusaurus
-npm install
-npm run start # local preview
-npm run build # build to 'docs-build'
+cd docusaurus && npm i && cd .. # make sure to install dependencies
+
+make serve  # local preview
+make docs   # build to 'docs-build'
 ```
 
 ## Project Structure
@@ -154,7 +154,7 @@ Every test is self-validating using assertions and fails with an error if the ou
 To run all tests from the `tests` folder:
 
 ```bash
-./scripts/tests.sh
+make test
 ```
 
 ## Contributing

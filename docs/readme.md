@@ -62,7 +62,7 @@ pip install numfu-lang
 ```bash
 git clone https://github.com/dr-lego/numfu
 cd numfu
-./scripts/install.sh
+make install
 ```
 
 -----
