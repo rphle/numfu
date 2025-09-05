@@ -339,6 +339,13 @@ class BuiltinFunc:
                             [mpm.mpf(i) for i in range(int(args[0]), int(args[1]))],
                             pos=func_pos,
                         )
+                    elif self.name == "set":
+                        lst, i, value = args
+                        try:
+                            lst.elements[int(i)] = value
+                        except IndexError:
+                            nIndexError("Index out of range", args_pos, module)
+                        return lst
 
                 return func(*args)
 

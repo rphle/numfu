@@ -32,6 +32,9 @@ class PrintOutput(Expr):
     end: str = ""
     printed: bool = False
 
+    def __repr__(self):
+        return repr(self.expr)
+
 
 @dataclass
 class Variable(Expr):

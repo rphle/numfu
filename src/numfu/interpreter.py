@@ -608,7 +608,7 @@ class Interpreter:
         if this.printed:
             return this.expr
         else:
-            self.put(self.get_repr(this.expr) + this.end)
+            self.put(self.get_repr(this.expr, state=state) + this.end)
             return PrintOutput(
                 self._eval(this.expr, state=state),  # type: ignore
                 end=this.end,
@@ -668,7 +668,7 @@ class Interpreter:
         except AttributeError as e:
             raise e
 
-    def get_repr(self, node: Expr) -> Any:
+    def get_repr(self, node: Expr, state: State = State()) -> Any:
         if isinstance(node, (Number, mpmath._ctx_mp._mpf)):
             return (
                 node.value.removesuffix(".0")
@@ -683,7 +683,7 @@ class Interpreter:
             return reconstruct(node, precision=self.precision, env={})
         elif isinstance(node, List):
             elements = [
-                self._eval(arg, state=State(env=node.curry, module=self.module_id))  # type: ignore
+                self._eval(arg, state=state.edit(env=node.curry))  # type: ignore
                 for arg in node.elements
             ]
             for i, res in enumerate(elements):
@@ -694,7 +694,7 @@ class Interpreter:
                 elif isinstance(res, str):
                     elements[i] = String(res)
                 elif isinstance(res, (List, Lambda)):
-                    elements[i] = self.get_repr(res)
+                    elements[i] = self.get_repr(res, state=state)
             return repr(List(elements))  # type:ignore
         elif node is not None:
             return str(node)
@@ -743,7 +743,13 @@ class Interpreter:
                         node, state=State(env, self.module_id, tree.index(node))
                     )
                     if o is not None and not isinstance(o, PrintOutput):
-                        self.put(self.get_repr(o) + "\n")  # type:ignore
+                        self.put(
+                            self.get_repr(
+                                o,  # type:ignore
+                                state=State(env, self.module_id, tree.index(node)),
+                            )
+                            + "\n"
+                        )
 
             if self.output and not self.output[-1].endswith("\n"):
                 self.put("\n")

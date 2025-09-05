@@ -88,11 +88,6 @@ def division(a, b):
             return mpm.mpf("-inf")
 
 
-def set_list(lst: List, i: int, value: Any):
-    lst.elements[int(i)] = value
-    return lst
-
-
 @dataclass(frozen=True)
 class Builtins:
     pi = mpm.pi
@@ -315,7 +310,7 @@ Builtins._contains.add([List, Any], bool, lambda a, b: b in a).add(
 Builtins._set.add(
     [List, Num, Any],
     List,
-    set_list,
+    lambda: None,
     validators=[None, Validators.list_index, None],
 ).add(
     [str, Num, str],
