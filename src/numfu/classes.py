@@ -22,6 +22,7 @@ class Module:
 class State:
     env: dict = field(default_factory=lambda: {})
     module: str = ""
+    index: int | None = None
 
     def edit(self, **kwargs):
         return replace(self, **kwargs)

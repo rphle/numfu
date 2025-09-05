@@ -544,11 +544,18 @@ class Parser:
         if not isinstance(ast_tree, list):
             ast_tree = [ast_tree]
 
-        for i in range(len(ast_tree) - 1, -1, -1):
-            node = ast_tree[i]
+        index = 0
+        while index < len(ast_tree):
+            node = ast_tree[index]
             if isinstance(node, InlineExport):
-                ast_tree[i] = Constant(node.name.name, node.value, node.pos)
-                ast_tree.insert(i + 1, Export([node.name], node.pos))
-                ast_tree.insert(i + 2, Delete(node.name.name, node.pos))
+                ast_tree[index] = Constant(node.name.name, node.value, node.pos)
+                ast_tree.insert(index + 1, Export([node.name], node.pos))
+                ast_tree.insert(index + 2, Delete(node.name.name, node.pos))
+
+            ast_tree[index].pos.index = index  # type: ignore
+            if isinstance(node, Constant):
+                ast_tree[index].value.pos.index = index  # type: ignore
+
+            index += 1
 
         return ast_tree

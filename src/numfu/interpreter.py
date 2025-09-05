@@ -10,6 +10,7 @@ import pickle
 import sys
 import zlib
 from dataclasses import dataclass
+from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
@@ -42,7 +43,6 @@ from .errors import (
     nIndexError,
     nNameError,
     nRecursionError,
-    nSyntaxError,
     nTypeError,
 )
 from .modules import ImportResolver
@@ -150,6 +150,15 @@ class Interpreter:
             elif isinstance(node, Constant):
                 declared.add(node.name)
 
+    @lru_cache()
+    def _declared_constants(self, module_id: str, index: int):
+        # find all constants declared up to a given index in the tree
+        return {
+            c.name: c.value
+            for c in self.modules[module_id].tree[: index + 1]
+            if isinstance(c, Constant)
+        }
+
     def _partial_lambda(self, this: Lambda, args: list, state: State = State()):
         """Return a Lambda with given args (including _ placeholders) bound, preserving printability"""
 
@@ -246,35 +255,33 @@ class Interpreter:
         if this.name == "_":
             return state.env.get(this.name, this)
 
-        environments = [
-            state.env,
-            self.modules[state.module].globals,
-            list(self.modules[state.module].imports.keys()),
-            self.builtins,
-        ]  # environment precedence
-        for e in environments:
-            if this.name in e:
-                if isinstance(e, dict):  # normal environment dict
-                    return e[this.name]
-                elif isinstance(e, list):  # import list
-                    module = self.modules[self.modules[state.module].imports[this.name]]
+        if this.name in (env := state.env):
+            return env[this.name]
+        elif this.name in self._declared_constants(state.module, state.index):
+            return self.modules[state.module].globals[this.name]
+        elif this.name in list(self.modules[state.module].imports.keys()):
+            # resolve variable which was imported from another module
+            module = self.modules[self.modules[state.module].imports[this.name]]
 
-                    res = self._eval(
-                        self._eval(
-                            dataclasses.replace(this, name=this.name.split(".")[-1]),  # type: ignore
-                            state=State(module=module.id),
-                        ),
-                        state=State(module=module.id),
-                    )
-
-                    return res  # type: ignore
-        else:
-            self.exception(
-                nNameError,
-                f"'{this.name}' is not defined in the current scope",
-                pos=this.pos,
-                state=state,
+            res = self._eval(
+                self._eval(
+                    dataclasses.replace(this, name=this.name.split(".")[-1]),  # type: ignore
+                    state=state.edit(module=module.id),
+                ),
+                state=state.edit(module=module.id),
             )
+
+            return res  # type: ignore
+        elif this.name in (env := self.builtins):
+            return env[this.name]
+
+        print(state)
+        self.exception(
+            nNameError,
+            f"'{this.name}' is not defined in the current scope",
+            pos=this.pos,
+            state=state,
+        )
 
     def _call(self, this: Call, is_tail: bool = False, state: State = State()):
         """
@@ -598,12 +605,7 @@ class Interpreter:
         return this.value
 
     def _constant(self, this: Constant, state: State = State()):
-        self.exception(
-            nSyntaxError,
-            "Constant definitions must be placed at the top level of the module",
-            this.pos,
-            state=state,
-        )
+        return self._eval(this.value, state=state)
 
     def _bool(self, this: Bool, state: State = State()):
         return this.value
@@ -622,6 +624,24 @@ class Interpreter:
     def _eval(
         self, node: Expr | BuiltinFunc, is_tail: bool = False, state: State = State()
     ):
+        if state.env == {}:
+            if hasattr(node, "pos") and hasattr(node.pos, "index"):
+                print(
+                    "HAS AN INDEX",
+                    type(node).__name__,
+                    node.pos.index,
+                    state.index,
+                    node,
+                )
+            else:
+                print("NO INDEX", type(node).__name__)
+        if (
+            hasattr(node, "pos")
+            and hasattr(node.pos, "index")
+            and node.pos.index is not None
+        ):  # type: ignore
+            # print("INDEX EDITED", node.pos.index)
+            state = state.edit(index=node.pos.index)  # type: ignore
         if isinstance(node, Lambda):
             # Don't re-evaluate lambdas that already have a curry environment
             if hasattr(node, "curry") and node.curry:
@@ -732,10 +752,7 @@ class Interpreter:
 
             for node in tree:
                 pos = node.pos  # type:ignore
-                if isinstance(node, Lambda):
-                    if node.name:
-                        self.modules[self.module_id].globals[node.name] = node
-                elif isinstance(node, Constant):
+                if isinstance(node, Constant):
                     self.modules[self.module_id].globals[node.name] = self._eval(
                         node.value, state=State({}, self.module_id)
                     )
@@ -744,7 +761,7 @@ class Interpreter:
                 elif isinstance(node, (Import, Export)):
                     pass
                 else:
-                    o = self._eval(node, state=State({}, self.module_id))
+                    o = self._eval(node, state=State(env, self.module_id))
                     if o is not None and not isinstance(o, PrintOutput):
                         self.put(self.get_repr([o])[0] + "\n")  # type:ignore
 
