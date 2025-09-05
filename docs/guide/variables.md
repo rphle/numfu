@@ -1,13 +1,15 @@
-# Variables and Let Bindings
+# Variables and Let Expressions
 
-In NumFu, variables are created using `let` bindings, which create local scopes for your values. This functional approach to variables ensures predictable behavior and prevents many common programming errors.
+In NumFu, variables can be created in two ways:
+1. Using `let` bindings with `in`, which create local scopes for values
+2. Using top-level `let` statements, which define program-wide variables
+
+This provides both functional scoping and practical module-level state management.
 
 -----
-## Let Expressions Basics
+## Let Bindings
 
-### Simple Let Binding
-
-The basic syntax for creating a variable is `let name = value in expression`:
+Let bindings create local scopes and return values. The basic syntax is `let name = value in expression`:
 
 ```numfu
 let x = 42 in x              // 42
@@ -134,29 +136,43 @@ let data = replace(data, " ", "_") in   // Replace spaces
 ```
 
 -----
-## Constants
+## Let Statements
 
-Use `const` for values that should be available throughout your program:
+Let statements define variables that are available throughout your program:
 
 ```numfu
-const PI = 3.14159
-const GREETING = "Welcome to NumFu!"
+let PI = 3.14159
+let greeting = "Welcome to NumFu!"
 
 // These are available in all expressions below
-println(GREETING)
+println(greeting)
 print("pi^2 = ")
 PI^2
 ```
 
-Constants can only be defined at the module (file) level:
+Let statements must be at the module (file) level and can only assign one variable at a time:
 
 ```numfu
 let x = 5 in
-  const INVALID = 10
-// SyntaxError: Constant definitions must be placed at the top level of the module
+  let INVALID = 10
+// SyntaxError: Missing 'in' — bare 'let' allowed only at top level
+
+let a = 1, b = 2
+// SyntaxError: Cannot assign multiple identifiers here
 ```
 
------
+## Deleting Variables
+
+To remove a variable which was previously declared using a let statement, use the `del` statement:
+
+```numfu
+let temp = "temporary"
+// ... use temp ...
+del temp  // Variable is no longer available
+```
+
+Like let statements, `del` statements can only be used at the module (file) level.
+
 ## Variable Naming
 
 Avoid NumFu keywords as variable names. Using them as identifiers may not directly raise errors but you won't get very far:

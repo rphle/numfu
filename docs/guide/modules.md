@@ -5,13 +5,13 @@ NumFu supports a robust module system that allows you to organize and reuse code
 -----
 ## Basic Module Structure
 
-A module in NumFu is simply a file with the `.nfu` extension that can contain any valid NumFu code. Modules can define constants, functions, and other values, and can choose which of these to make available to other modules.
+A module in NumFu is simply a file with the `.nfu` extension that can contain any valid NumFu code. Modules can define variables, functions, and other values, and can choose which of these to make available to other modules.
 
 ```numfu
 // math_utils.nfu
-const PI = 3.14159
-const square = x -> x * x
-const cube = x -> x * x * x
+let PI = 3.14159
+let square = x -> x * x
+let cube = x -> x * x * x
 
 export PI, square, cube
 ```
@@ -22,12 +22,12 @@ export PI, square, cube
 To make values available to other modules, use the `export` keyword followed by a comma-separated list of identifiers:
 
 ```numfu
-const greeting = "Hello, World!"
+let greeting = "Hello, World!"
 export greeting
 
-const VERSION = "1.0.0"
-const add = {a, b -> a + b}
-const sub = {a, b -> a - b}
+let VERSION = "1.0.0"
+let add = {a, b -> a + b}
+let sub = {a, b -> a - b}
 
 export VERSION, add, sub
 ```
@@ -85,10 +85,10 @@ import PI, E from "math_constants"
 import square, cube from "math_functions"
 import format from "string_utils"
 
-const result = square(PI)  // Code after imports
+let result = square(PI)  // Code after imports
 
 // Incorrect - will raise a syntax error:
-const x = 42
+let x = 42
 import format from "string_utils"  // SyntaxError: Imports allowed only at top level
 ```
 
