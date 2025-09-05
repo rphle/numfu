@@ -51,34 +51,12 @@ let say = {name, age -> format("{} is {} years old", name, age)} in
 ```
 
 -----
-## Named Functions
-
-### Named Lambda Syntax
-
-You can give functions names using the syntax `{name: parameters -> body}`:
-
-```numfu
-{divide: a, b -> a / b}
-```
-
-### Top-Level Named Functions
-
-Named functions at the top level act like constants:
-
-```numfu
-{printImportant: text -> println("Important: " + text)}
-
-// Now printImportant is available everywhere in the file
-printImportant("Cookies are delicious")
-// Important: Cookies are delicious
-```
-
-### Recursive Functions
+## Recursive Functions
 
 Named functions can call themselves recursively:
 
 ```numfu
-{fibonacci: n ->
+let fibonacci = {n ->
   if n <= 1 then n
   else fibonacci(n - 1) + fibonacci(n - 2)
 }
@@ -96,13 +74,13 @@ A function call is in "tail position" when it's the last operation before return
 
 ```numfu
 // Tail-recursive factorial (optimized)
-{factorial: n, acc ->
+let factorial = {n, acc ->
   if n <= 0 then acc
   else factorial(n - 1, acc * n)
 }
 
 // Non tail-recursive factorial (not optimized)
-{factorial_slow: n ->
+let factorial_slow = {n ->
   if n <= 0 then 1
   else n * factorial_slow(n - 1)  // multiplication happens after the call
 }
@@ -137,14 +115,13 @@ Each function can only have a single rest parameter which must come at the end.
 ### Example
 
 ```numfu
-{sum: ...numbers ->
+let sum = {...numbers ->
   let helper = {nums, acc ->
     if length(nums) == 0 then acc
     else helper(slice(nums, 1, -1), acc + nums[0])
   } in helper(numbers, 0)
-}
-
-sum(1, 2, 3, 4, 5)    // 15
+} in
+  sum(1, 2, 3, 4, 5)    // 15
 ```
 
 -----
@@ -239,12 +216,11 @@ let processor = if operation == "square" then {x -> x * x}
 
 ```numfu
 // Distance between two points
-{distance: x1, y1, x2, y2 ->
+let distance = {x1, y1, x2, y2 ->
   let dx = x2 - x1, dy = y2 - y1 in
     sqrt(dx^2 + dy^2)
-}
-
-distance(0, 0, 3, 4)    // 5
+} in
+  distance(0, 0, 3, 4)    // 5
 ```
 
 ### Function Composition Function
@@ -277,11 +253,11 @@ let triple = makeMultiplier(3) in
 ### Recursive Functions
 ```numfu
 // Factorial function
-{factorial: n ->
+let factorial = {n ->
   if n <= 1 then 1
   else n * factorial(n - 1)
-}
-factorial(5)    // 120
+} in
+  factorial(5)    // 120
 ```
 
 ```numfu

@@ -259,21 +259,21 @@ transpose([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
 ### Statistics
 #### Calculate mean of a list
 ```numfu
-{mean: numbers ->
+let mean = {numbers ->
   let sum = {lst ->
     if length(lst) == 0 then 0
     else lst[0] + sum(slice(lst, 1, -1))
   } in
   sum(numbers) / length(numbers)
-}
-mean([10, 20, 30, 40, 50])            // 30
+} in
+  mean([10, 20, 30, 40, 50])            // 30
 ```
 
 ### Safe List Access
 
 ```numfu
 // Safe indexing with default values
-{safeGet: lst, index, default ->
+let safeGet = {lst, index, default ->
   if index >= 0 && index < length(lst) then lst[index]
   else default
 };
@@ -285,9 +285,9 @@ safeGet([1, 2, 3], 1, 0);             // 2 (actual value)
 
 ```numfu
 // Check if all elements satisfy a condition
-{allPositive: numbers ->
+let allPositive = {numbers ->
   length(filter(numbers, {x -> x > 0})) == length(numbers)
-}
+};
 allPositive([1, 2, 3, 4]);            // true
 allPositive([1, -2, 3, 4]);           // false
 ```
@@ -295,10 +295,10 @@ allPositive([1, -2, 3, 4]);           // false
 ### List Reduction
 
 ```numfu
-{reduce: lst, fn, initial ->
+let reduce = {lst, fn, initial ->
   if length(lst) == 0 then initial
   else reduce(slice(lst, 1, -1), fn, fn(initial, lst[0]))
-}
+};
 reduce([1, 2, 3, 4], {acc, x -> acc + x}, 0);  // 10
 reduce([1, 2, 3, 4], {acc, x -> acc * x}, 1);  // 24
 ```

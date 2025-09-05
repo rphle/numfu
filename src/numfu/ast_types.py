@@ -148,7 +148,6 @@ class Lambda(Expr):
     Args:
         arg_names: Parameter names, may include rest parameter prefixed with "..."
         body: The function body expression
-        name: Optional function name
         curry: Captured environment for lazy evaluation
         tree: Serialized parse tree for code reconstruction
     """
@@ -156,14 +155,11 @@ class Lambda(Expr):
     arg_names: list[str]
     body: Expr
     pos: Pos = DEFAULT_POS
-    name: str | None = field(default_factory=lambda: None, repr=False)
     curry: dict[str, Expr] = field(default_factory=lambda: {}, repr=False)
     tree: bytes = field(default_factory=lambda: b"", repr=False)
 
     def __repr__(self):
         fields = [f"arg_names={self.arg_names!r}", f"body={self.body!r}"]
-        if self.name is not None:
-            fields.insert(0, f"name={self.name!r}")
         return f"Lambda({', '.join(fields)})"
 
     def __eq__(self, other):
@@ -172,7 +168,6 @@ class Lambda(Expr):
         return (
             self.arg_names == other.arg_names
             and self.body == other.body
-            and self.name == other.name
             and self.curry == other.curry
         )
 

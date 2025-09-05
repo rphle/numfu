@@ -200,7 +200,7 @@ let age = 30 in
 ### String Validation
 
 ```numfu
-{isValidEmail: email ->
+let isValidEmail = {email ->
   if count(email, "@") != 1 then false else
     let splitted = split(email, "@") in
       count(splitted[1], ".") > 0
@@ -220,7 +220,7 @@ Take a list of boolean options to determine whether to trim, lowercase, and repl
 
 ```numfu
 // Text processor factory
-{makeTextProcessor: options ->
+let makeTextProcessor = {options ->
   let shouldTrim = options[0],
       shouldLower = options[1],
       shouldReplace = options[2] in

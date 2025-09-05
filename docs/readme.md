@@ -72,10 +72,10 @@ Create a file called `hello.nfu`:
 
 ```numfu
 // hello.nfu
-println("Hello, NumFu!");
+println("Hello, NumFu!")
 
 // Let's do some math
-{fibonacci: n ->
+let fibonacci = {n ->
   if n <= 1 then n
   else fibonacci(n - 1) + fibonacci(n - 2)
 }

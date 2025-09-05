@@ -256,21 +256,13 @@ class AstGenerator(Transformer):
         this.value = "..." + this.value
         return this
 
-    def lambda_def(self, tree, *args):
-        name, params, body = (None, *args) if len(args) == 2 else args
-
+    def lambda_def(self, tree, params, body):
         for param in params.children:
             self._check_name(param.value, "function parameters", _tokpos(param))
 
         pos = Pos(
             start=(
-                _tokpos(name).start
-                if name
-                else (
-                    _tokpos(params.children[0]).start
-                    if params.children
-                    else body.pos.start
-                )
+                _tokpos(params.children[0]).start if params.children else body.pos.start
             ),
             end=body.pos.end + 1,
         )
@@ -279,7 +271,6 @@ class AstGenerator(Transformer):
         return Lambda(
             arg_names,
             body,
-            name=str(name) if name else None,
             pos=pos,
             tree=bytes.fromhex(tree),
         )

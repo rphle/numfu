@@ -229,7 +229,6 @@ class Interpreter:
             arg_names=remaining_params,
             body=this.body,
             pos=this.pos,
-            name=None,
             curry=partial_env,
             tree=tree,
         )
@@ -528,10 +527,6 @@ class Interpreter:
                 )
 
             new_env = current_env.copy()
-
-            if current_lambda.name:
-                new_env[current_lambda.name] = current_lambda
-
             new_env.update(current_lambda.curry)
 
             catch_rest = any(arg.startswith("...") for arg in current_lambda.arg_names)
@@ -639,7 +634,6 @@ class Interpreter:
             lambda_copy = Lambda(
                 arg_names=node.arg_names,
                 body=node.body,
-                name=node.name,
                 curry=curry,
                 tree=node.tree,
                 pos=dataclasses.replace(

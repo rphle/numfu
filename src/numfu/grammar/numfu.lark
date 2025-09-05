@@ -36,7 +36,7 @@ call_args: "(" [list_element ("," list_element)*] ")"
 
 list_literal: "[" [list_element ("," list_element)*] "]"
 list_element: SPREAD expr -> spread_op | expr
-lambda_def: "{" (NAME ":")? lambda_params "->" expr "}"
+lambda_def: "{" lambda_params "->" expr "}"
 lambda_params: (NAME ("," NAME)* ("," rest_param)?)? | rest_param
 rest_param: "..." NAME
 conditional: "if" expr "then" expr "else" expr

@@ -134,25 +134,24 @@ function IdeasSection() {
           </div>
           <div className="col col--6">
             <CodeBlock language="numfu" title="A quick demo">
-              {`{x, y, z -> x + y + z}(_, 2)
+              {`{x, y, z -> x + y + z}(_, 2);
 // {x, z -> x+2+z}
 
 [5, 12, 3] |> filter(_, _ > 4) |> map(_, _ * 2)
 // [10, 24]
 
 // Efficient tail-recursive sum
-{sum_to: n, acc ->
+let sum_to = {n, acc ->
   if n <= 0 then acc
   else sum_to(n - 1, acc + n)
-}
-sum_to(100000, 0) // 5000050000
+} in
+  sum_to(100000, 0) // 5000050000
 
-{
-  distance: x1, y1, x2, y2 ->
+let distance = {x1, y1, x2, y2 ->
     let dx = x2 - x1, dy = y2 - y1 in
       sqrt(dx^2 + dy^2)
-}
-distance(0, 0, 3, 4) // 5
+} in
+  distance(0, 0, 3, 4) // 5
 
 0.1 + 0.2 == 0.3
 // true`}

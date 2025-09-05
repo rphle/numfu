@@ -12,14 +12,14 @@ Use `print` and `println` for output. All values are automatically converted to 
 print("I like cheese")
 print(" and tomatoes.\n")
 
-println("These are indeed very delicious.")
+println("They are indeed very delicious.")
 ```
 
 **Output:**
 
 ```
 I like cheese and tomatoes.
-These are indeed very delicious.
+They are indeed very delicious.
 ```
 
 `println(x)` is equivalent to `print(x + "\n")`.
@@ -37,9 +37,9 @@ Use assertions to validate that values match expectations. They throw an error i
 assert(2 + 2 == 4)
 
 // Optional return value for use in expressions
-{greet: name -> "Hello " + assert(length(name) == 5, name)}
+let greet = {name -> "Hello " + assert(length(name) == 5, name)}
 
-greet("Peter")
+greet("James")
 greet("Mary")
 ```
 
@@ -47,7 +47,7 @@ greet("Mary")
 
 ```
 true
-Hello Peter
+Hello James
 ...
 AssertionError
 ```
@@ -72,11 +72,11 @@ length("hello") ---> $ == 5
 Use `error(message)` to stop execution with a custom message.
 
 ```numfu
-{divide: a, b ->
+let divide = {a, b ->
   if b != 0 then a / b
   else error("Cannot divide by zero!")
-}
-divide(42, 0)
+} in
+  divide(42, 0)
 
 // RuntimeError: Cannot divide by zero!
 ```
