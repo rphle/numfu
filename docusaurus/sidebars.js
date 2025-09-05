@@ -30,6 +30,7 @@ const sidebars = {
         "guide/operators",
         "guide/partial-application",
         "guide/printing",
+        "guide/modules",
       ],
     },
     {
