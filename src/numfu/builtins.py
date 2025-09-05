@@ -17,6 +17,7 @@ from typing import Any
 import mpmath as mpm
 
 from .ast_types import Call, Lambda, List, PrintOutput, Variable
+from .reconstruct import reconstruct
 from .typechecks import BuiltinFunc, HelpMsg, InfiniteOf, ListOf, Validators
 
 Num = mpm.mpf
@@ -66,6 +67,8 @@ def to_string(x, precision):
         return str(mpm.nstr(x, n=precision)).removesuffix(".0")  # type: ignore
     elif isinstance(x, bool):
         return "true" if x else "false"
+    elif isinstance(x, Lambda):
+        return reconstruct(x, precision=precision, env=x.curry)
     else:
         return str(x)
 

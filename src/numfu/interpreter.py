@@ -608,7 +608,7 @@ class Interpreter:
         if this.printed:
             return this.expr
         else:
-            self.put(self.get_repr([this.expr])[0] + this.end)
+            self.put(self.get_repr(this.expr) + this.end)
             return PrintOutput(
                 self._eval(this.expr, state=state),  # type: ignore
                 end=this.end,
@@ -668,39 +668,36 @@ class Interpreter:
         except AttributeError as e:
             raise e
 
-    def get_repr(self, output: list[Expr]):
-        o = []
-        for node in output:
-            if isinstance(node, (Number, mpmath._ctx_mp._mpf)):
-                o.append(
-                    node.value.removesuffix(".0")
-                    if isinstance(node, Number)
-                    else mpmath.nstr(node, self.precision).removesuffix(".0")  # type: ignore
-                )
-            elif isinstance(node, (bool, Bool)):
-                o.append("true" if node else "false")
-            elif isinstance(node, String):
-                o.append(node.value)
-            elif isinstance(node, Lambda):
-                o.append(reconstruct(node, precision=self.precision, env={}))
-            elif isinstance(node, List):
-                elements = [
-                    self._eval(arg, state=State(env=node.curry, module=self.module_id))  # type: ignore
-                    for arg in node.elements
-                ]
-                for i, res in enumerate(elements):
-                    if isinstance(res, mpmath.mpf):
-                        elements[i] = Number(mpmath.nstr(res, self.precision))  # type: ignore
-                    elif isinstance(res, bool):
-                        elements[i] = Bool(res)
-                    elif isinstance(res, str):
-                        elements[i] = String(res)
-                    elif isinstance(res, (List, Lambda)):
-                        elements[i] = self.get_repr([res])[0]
-                o.append(repr(List(elements)))  # type:ignore
-            elif node is not None:
-                o.append(str(node))
-        return o
+    def get_repr(self, node: Expr) -> Any:
+        if isinstance(node, (Number, mpmath._ctx_mp._mpf)):
+            return (
+                node.value.removesuffix(".0")
+                if isinstance(node, Number)
+                else mpmath.nstr(node, self.precision).removesuffix(".0")  # type: ignore
+            )
+        elif isinstance(node, (bool, Bool)):
+            return "true" if node else "false"
+        elif isinstance(node, String):
+            return node.value
+        elif isinstance(node, Lambda):
+            return reconstruct(node, precision=self.precision, env={})
+        elif isinstance(node, List):
+            elements = [
+                self._eval(arg, state=State(env=node.curry, module=self.module_id))  # type: ignore
+                for arg in node.elements
+            ]
+            for i, res in enumerate(elements):
+                if isinstance(res, mpmath.mpf):
+                    elements[i] = Number(mpmath.nstr(res, self.precision))  # type: ignore
+                elif isinstance(res, bool):
+                    elements[i] = Bool(res)
+                elif isinstance(res, str):
+                    elements[i] = String(res)
+                elif isinstance(res, (List, Lambda)):
+                    elements[i] = self.get_repr(res)
+            return repr(List(elements))  # type:ignore
+        elif node is not None:
+            return str(node)
 
     def run(
         self,
@@ -746,7 +743,7 @@ class Interpreter:
                         node, state=State(env, self.module_id, tree.index(node))
                     )
                     if o is not None and not isinstance(o, PrintOutput):
-                        self.put(self.get_repr([o])[0] + "\n")  # type:ignore
+                        self.put(self.get_repr(o) + "\n")  # type:ignore
 
             if self.output and not self.output[-1].endswith("\n"):
                 self.put("\n")
