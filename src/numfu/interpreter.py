@@ -275,7 +275,6 @@ class Interpreter:
         elif this.name in (env := self.builtins):
             return env[this.name]
 
-        print(state)
         self.exception(
             nNameError,
             f"'{this.name}' is not defined in the current scope",
