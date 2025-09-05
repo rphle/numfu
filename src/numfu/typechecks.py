@@ -252,7 +252,7 @@ class BuiltinFunc:
         func_pos: Pos = Pos(),
         precision: int = 15,
         interpreter=None,
-        env: dict = {},
+        state: State = State(),
     ):
         errors = []
         for arg_types, _, func, help, validators, transformer in self._overloads:
@@ -328,10 +328,7 @@ class BuiltinFunc:
                                 for e in args[0].elements
                                 if interpreter._eval(
                                     Call(func=args[1], args=[e], pos=func_pos),
-                                    state=State(
-                                        env=env | args[0].curry,
-                                        module=module.id,
-                                    ),
+                                    state=state.edit(env=state.env | args[0].curry),
                                 )
                             ],
                             pos=args[0].pos,

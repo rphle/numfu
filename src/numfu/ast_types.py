@@ -18,7 +18,7 @@ class Pos:
     index: int | None = None
 
 
-DEFAULT_POS = field(default_factory=Pos, repr=False)
+DEFAULT_POS = field(default_factory=Pos, repr=True)
 
 
 @dataclass

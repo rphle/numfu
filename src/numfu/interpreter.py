@@ -351,7 +351,7 @@ class Interpreter:
                     func_pos=getattr(this.func, "pos", None),  # type: ignore
                     precision=self.precision,
                     interpreter=self if func.name == "filter" else None,
-                    env=state.env,
+                    state=state,
                 )
 
             return BuiltinFunc(
@@ -376,7 +376,7 @@ class Interpreter:
                 func_pos=getattr(this.func, "pos", None),  # type: ignore
                 precision=self.precision,
                 interpreter=self if func.name == "filter" else None,
-                env=state.env,
+                state=state,
             )
 
             if isinstance(r, mpmath.mpc):
@@ -624,23 +624,11 @@ class Interpreter:
     def _eval(
         self, node: Expr | BuiltinFunc, is_tail: bool = False, state: State = State()
     ):
-        if state.env == {}:
-            if hasattr(node, "pos") and hasattr(node.pos, "index"):
-                print(
-                    "HAS AN INDEX",
-                    type(node).__name__,
-                    node.pos.index,
-                    state.index,
-                    node,
-                )
-            else:
-                print("NO INDEX", type(node).__name__)
         if (
             hasattr(node, "pos")
-            and hasattr(node.pos, "index")
-            and node.pos.index is not None
-        ):  # type: ignore
-            # print("INDEX EDITED", node.pos.index)
+            and hasattr(node.pos, "index")  # type: ignore
+            and node.pos.index is not None  # type: ignore
+        ):
             state = state.edit(index=node.pos.index)  # type: ignore
         if isinstance(node, Lambda):
             # Don't re-evaluate lambdas that already have a curry environment
@@ -754,14 +742,16 @@ class Interpreter:
                 pos = node.pos  # type:ignore
                 if isinstance(node, Constant):
                     self.modules[self.module_id].globals[node.name] = self._eval(
-                        node.value, state=State({}, self.module_id)
+                        node.value, state=State({}, self.module_id, tree.index(node))
                     )
                 elif isinstance(node, Delete):
                     del self.modules[self.module_id].globals[node.name]
                 elif isinstance(node, (Import, Export)):
                     pass
                 else:
-                    o = self._eval(node, state=State(env, self.module_id))
+                    o = self._eval(
+                        node, state=State(env, self.module_id, tree.index(node))
+                    )
                     if o is not None and not isinstance(o, PrintOutput):
                         self.put(self.get_repr([o])[0] + "\n")  # type:ignore
 
