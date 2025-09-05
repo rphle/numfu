@@ -83,20 +83,6 @@ def validate_imports(tree: Tree) -> Tree | None:
             return node
 
 
-class InvalidName:
-    def __init__(self, typ: str, name: str, pos: Pos):
-        self.label = "NameError"
-        self.typ, self.name, self.pos = typ, name, pos
-        self.message = (f"{typ}s cannot be named '{name}'",)
-
-
-class InvalidImport:
-    def __init__(self, module_name: str, pos: Pos):
-        self.label = "ImportError"
-        self.pos = pos
-        self.message = f"'{module_name}' is an invalid module name"
-
-
 grammar = importlib.resources.read_text("numfu", "grammar/numfu.lark")
 
 
@@ -121,7 +107,7 @@ class AstGenerator(Transformer):
     """
 
     def __init__(self, *args, **kwargs) -> None:
-        self.invalid = []
+        self.invalid: list[dict] = []
         super().__init__(*args, **kwargs)
 
     def start(self, *exprs):
@@ -243,7 +229,11 @@ class AstGenerator(Transformer):
         for param in params.children:
             if param.value in ("_", "$"):
                 self.invalid.append(
-                    InvalidName("function parameter", param.value, _tokpos(param))
+                    {
+                        "type": "NameError",
+                        "msg": f"function parameters cannot be named {param.value}",
+                        "pos": _tokpos(param),
+                    }
                 )
 
         pos = Pos(
@@ -402,7 +392,13 @@ class AstGenerator(Transformer):
 
     def del_stmt(self, token, name):
         if name.value in ("_", "$"):
-            self.invalid.append(InvalidName("constant", name.value, _tokpos(name)))
+            self.invalid.append(
+                {
+                    "type": "NameError",
+                    "msg": f"constants cannot be named '{ name.value}'",
+                    "pos": _tokpos(name),
+                }
+            )
         return Delete(name.value, pos=Pos(token.start_pos, name.end_pos))
 
     def conditional(self, test, then_body, else_body):
@@ -460,7 +456,13 @@ class AstGenerator(Transformer):
             or path.startswith("/")
             or path.startswith("~")
         ):
-            self.invalid.append(InvalidImport(path, _tokpos(args[-1])))
+            self.invalid.append(
+                {
+                    "type": "NameError",
+                    "msg": f"'{path}' is an invalid module name",
+                    "pos": _tokpos(args[-1]),
+                }
+            )
 
         return Import(
             names=[Variable(a.value, _tokpos(a)) for a in args[:-1]],
@@ -472,7 +474,13 @@ class AstGenerator(Transformer):
         if len(args) == 3 and isinstance(args[1], Token) and args[1].value == "=":
             name, value = args[0], args[2]
             if name.value in ("_", "$"):
-                self.invalid.append(InvalidName("export", name.value, _tokpos(name)))
+                self.invalid.append(
+                    {
+                        "type": "NameError",
+                        "msg": f"exports cannot be named {name.value}",
+                        "pos": _tokpos(name),
+                    }
+                )
             return InlineExport(
                 Variable(name.value, _tokpos(name)),
                 value,
@@ -538,7 +546,13 @@ class Parser:
         if self.generator.invalid:
             # We must handle this here because Lark does generally catch all Exceptions in its Transformer
             e = self.generator.invalid[0]
-            Error(e.message, e.pos, self.module, e.label, fatal=self.fatal)
+            Error(
+                message=e["msg"],
+                pos=e["pos"],
+                module=self.module,
+                name=e.get("type", "SyntaxError"),
+                fatal=self.fatal,
+            )
             return
 
         if not isinstance(ast_tree, list):
