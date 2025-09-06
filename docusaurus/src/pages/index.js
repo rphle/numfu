@@ -165,6 +165,20 @@ let distance = {x1, y1, x2, y2 ->
   );
 }
 
+function CopyrightNotice() {
+  return (
+    <p>
+      © 2025 Raphael Engel | All rights reserved.
+      <br />
+      This project is licensed under the &nbsp;
+      <a href="https://raw.githubusercontent.com/rphle/numfu/refs/heads/main/LICENSE">
+        Apache 2.0 license
+      </a>
+      .
+    </p>
+  );
+}
+
 export default function Home() {
   const { siteConfig } = useDocusaurusContext();
   return (
@@ -177,6 +191,9 @@ export default function Home() {
         <QuickstartSection />
         <IdeasSection />
       </main>
+      <footer>
+        <CopyrightNotice />
+      </footer>
     </Layout>
   );
 }

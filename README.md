@@ -84,9 +84,9 @@ NumFu REPL. Type 'exit' or press Ctrl+D to exit.
 
 ## 📖 Documentation
 
-- **[Language Guide](https://numfu-docs.example.com/docs/)** - Complete language tutorial & reference
-- **[Built-ins Reference](https://numfu-docs.example.com/docs/reference/builtins)** - All built-in functions and operators
-- **[CLI Reference](https://numfu-docs.example.com/docs/reference/cli)** - Command-line interface guide
+- **[Language Guide](https://rphl.github.io/numfu/docs/)** - Complete language tutorial & reference
+- **[Built-ins Reference](https://rphl.github.io/numfu/docs/reference/builtins)** - All built-in functions and operators
+- **[CLI Reference](https://rphl.github.io/numfu/docs/reference/cli)** - Command-line interface guide
 
 > [!NOTE]
 > As a language interpreted in Python, which is itself an interpreted language, NumFu is not especially fast. Therefore, it is not recommended for performance-critical applications or large-scale projects. However, NumFu has not yet been thoroughly optimized so you can expect some performance improvements in the future.
@@ -171,4 +171,4 @@ Want to contribute code?
 
 ## License
 
-This project is licensed under the GNU General Public License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under Apache License 2.0 - see the [LICENSE](LICENSE) file for details.

@@ -122,6 +122,16 @@ pre .token {
     animation: fade-in 0.5s ease-out;
 }
 
+footer {
+    color: rgba(30, 29, 28, 0.5);
+    text-align: center;
+}
+
+footer a {
+    color: rgba(30, 29, 28, 0.5);
+    text-decoration: underline;
+}
+
 @keyframes fade-in {
     from {
         opacity: 0;
