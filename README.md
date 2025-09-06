@@ -99,8 +99,6 @@ NumFu REPL. Type 'exit' or press Ctrl+D to exit.
 git clone https://github.com/dr-lego/numfu
 cd numfu
 
-pip install -r requirements.txt
-
 make build
 ```
 

@@ -1,5 +1,6 @@
 import os
 import pickle
+import platform
 from pathlib import Path
 from typing import List, Optional
 
@@ -23,7 +24,11 @@ class DefaultGroup(click.Group):
 
 
 @click.group(cls=DefaultGroup)
-@click.version_option(version=__version__, prog_name="NumFu")
+@click.version_option(
+    version=__version__,
+    prog_name="NumFu",
+    message=f"%(prog)s, version %(version)s (Python {platform.python_version()})",
+)
 @click.pass_context
 def cli(ctx: click.Context) -> None:
     """CLI tool for the NumFu programmming language."""
