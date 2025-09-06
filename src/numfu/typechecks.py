@@ -373,4 +373,4 @@ class BuiltinFunc:
         )
 
     def __repr__(self) -> str:
-        return f"{"Partial" if self.partial else ""}BuiltinFunction"
+        return f"{'Partial' if self.partial else ''}BuiltinFunction"

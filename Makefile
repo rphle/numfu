@@ -24,6 +24,10 @@ serve: # Serve docs locally
 	@echo "Serving docs locally..."
 	cd docusaurus && $(NPM) run start
 
+clean: # Clean __pycache__
+	@echo "Cleaning __pycache__..."
+	@find . -name "__pycache__" -type d -exec rm -rf {} +
+
 help: # Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?#' $(MAKEFILE_LIST) | \
 		awk 'BEGIN {FS = ":.*?# "}; {printf "  make %-12s %s\n", $$1, $$2}'

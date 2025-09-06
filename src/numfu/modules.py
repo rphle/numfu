@@ -33,13 +33,15 @@ class ImportResolver:
         self._import_stack: list[str] = []
 
     def stdlib(self, node):
-        path = f"stdlib/{node.module}.nfut"
+        path = f"{node.module}.nfut"
         if _id(path) in self.modules:
             return path
 
-        if importlib.resources.files("numfu").joinpath(path).is_file():
+        if importlib.resources.files("numfu.stdlib").joinpath(path).is_file():
             tree = pickle.loads(
-                importlib.resources.read_binary("numfu", path)[len(b"NFU-TREE-FILE") :]
+                importlib.resources.read_binary("numfu.stdlib", path)[
+                    len(b"NFU-TREE-FILE") :
+                ]
             )
             self._module(path=path, tree=tree, code="", builtins=False)
             return path
@@ -143,10 +145,7 @@ class ImportResolver:
 
     def _module(self, path: str, tree: list[Expr], code: str, builtins: bool = True):
         imports = (
-            {
-                e: "stdlib/builtins.nfut"
-                for e in self.modules[_id("stdlib/builtins.nfut")].exports
-            }
+            {e: "builtins.nfut" for e in self.modules[_id("builtins.nfut")].exports}
             if builtins
             else {}
         )

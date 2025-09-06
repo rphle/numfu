@@ -49,11 +49,12 @@ let square = {x -> x * x} in
 -----
 ## Installation
 
-### From PyPI (Python ≥ 3.13)
+### From PyPI
 
 *(not available yet)*
 
 ```bash
+# make sure you have Python >= 3.10 installed
 pip install numfu-lang
 ```
 

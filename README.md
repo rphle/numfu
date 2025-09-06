@@ -91,7 +91,7 @@ NumFu REPL. Type 'exit' or press Ctrl+D to exit.
 
 ### Prerequisites
 
-- Python ≥ 3.13
+- Python ≥ 3.10
 
 ### Setup Development Environment
 

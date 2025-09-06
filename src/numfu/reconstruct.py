@@ -9,7 +9,6 @@ Lambda AST objects save their Lark parse tree which can be reconstructed
 by Lark's reconstructor.
 """
 
-import importlib.resources
 import pickle
 import zlib
 
@@ -18,6 +17,7 @@ import lark.reconstruct
 import mpmath
 
 from .ast_types import Lambda, List, Number, String, Variable
+from .grammar.grammar import grammar
 
 
 def tree_repr(node, precision: int = 15, env: dict = {}):
@@ -100,8 +100,9 @@ def reconstruct(node: Lambda, precision: int = 15, env: dict = {}):
 
     if not node.tree:
         return None
-    grammar = importlib.resources.read_text("numfu", "grammar/numfu.lark")
-    reconstructor = lark.reconstruct.Reconstructor(lark.Lark(grammar, parser="lalr"))
+    reconstructor = lark.reconstruct.Reconstructor(
+        lark.Lark(grammar, parser="lalr", maybe_placeholders=False)
+    )
     tree = pickle.loads(zlib.decompress(node.tree))
     env = {k: v for k, v in node.curry.items() if k not in env}
 

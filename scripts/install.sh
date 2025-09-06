@@ -6,8 +6,8 @@ ver=$(python3 -V 2>&1 | sed -E 's/.* ([0-9]+)\.([0-9]+).*/\1 \2/')
 major=$(echo $ver | cut -d' ' -f1)
 minor=$(echo $ver | cut -d' ' -f2)
 
-if [ "$major" -lt 3 ] || { [ "$major" -eq 3 ] && [ "$minor" -le 12 ]; }; then
-    echo "NumFu requires python >= 3.13"
+if [ "$major" -lt 3 ] || { [ "$major" -eq 3 ] && [ "$minor" -le 9 ]; }; then
+    echo "NumFu requires python >= 3.10"
     exit 1
 fi
 
@@ -22,7 +22,6 @@ numfu parse src/numfu/stdlib/builtins.nfu
 
 # create an editable install and build wheels
 pip install -e .
-pip wheel . -w wheels
 
 # rm src/numfu/stdlib/*.nfut
 

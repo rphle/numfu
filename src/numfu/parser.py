@@ -7,7 +7,6 @@ done here.
 """
 
 import codecs
-import importlib.resources
 import pickle
 import re
 import zlib
@@ -36,6 +35,7 @@ from .ast_types import (
 )
 from .classes import Module
 from .errors import Error, LarkError, nSyntaxError
+from .grammar.grammar import grammar
 
 KEYWORDS = {
     "let",
@@ -83,7 +83,7 @@ def validate_top_level(tree: Tree) -> Tree | None:
                 elif (
                     isinstance(child, Tree)
                     and child.data == "let_binding"
-                    and len(child.children) == 2  # no body
+                    and len(child.children) == 3  # no body
                     and not top_level
                 ):
                     return child
@@ -104,9 +104,6 @@ def validate_imports(tree: Tree) -> Tree | None:
             seen_non_import = True
         elif seen_non_import:
             return node
-
-
-grammar = importlib.resources.read_text("numfu", "grammar/numfu.lark")
 
 
 @v_args(inline=True)
@@ -275,7 +272,7 @@ class AstGenerator(Transformer):
             tree=bytes.fromhex(tree),
         )
 
-    def let_binding(self, token, lambda_params, body=None):
+    def let_binding(self, _let, lambda_params, _in=None, body=None):
         """
         Handle let bindings like: let x = 49 in sqrt(x)
         and constant definitions at top level.
@@ -284,23 +281,24 @@ class AstGenerator(Transformer):
         'let x = 3 in x * x' becomes '{x -> x * x}(3)'
         """
         if body is None:
-            if len(lambda_params.children) != 2:
+            if len(lambda_params.children) != 3:
+                print(lambda_params)
                 self.invalid.append(
                     {
                         "type": "SyntaxError",
                         "msg": "cannot assign multiple identifiers here",
                         "pos": Pos(
-                            lambda_params.children[2].start_pos,
+                            lambda_params.children[3].start_pos,
                             lambda_params.children[-1].pos.end,
                         ),
                     }
                 )
                 return
-            name, value = lambda_params.children
+            name, _, value = lambda_params.children
             self._check_name(name.value, "variables", _tokpos(name))
-            return Constant(name.value, value, pos=Pos(token.start_pos, name.end_pos))
+            return Constant(name.value, value, pos=Pos(_let.start_pos, name.end_pos))
         else:
-            names, values = lambda_params.children[::2], lambda_params.children[1::2]
+            names, values = lambda_params.children[::3], lambda_params.children[2::3]
             for name in names:
                 self._check_name(name.value, "variables", _tokpos(name))
 
@@ -425,7 +423,7 @@ class AstGenerator(Transformer):
 
         return Delete(name.value, pos=Pos(token.start_pos, name.end_pos))
 
-    def conditional(self, test, then_body, else_body):
+    def conditional(self, _if, test, _then, then_body, _else, else_body):
         return Conditional(test, then_body, else_body, pos=test.pos)
 
     def index_op(self, target, index):
@@ -463,7 +461,7 @@ class AstGenerator(Transformer):
             pos=cond.pos,
         )
 
-    def import_stmt(self, token, *args):
+    def import_stmt(self, _import, *args):
         path = args[-1].value[1:-1]
         pattern = re.compile(
             r"^(?![~/])"  # must not start with / or ~
@@ -489,12 +487,12 @@ class AstGenerator(Transformer):
             )
 
         return Import(
-            names=[Variable(a.value, _tokpos(a)) for a in args[:-1]],
+            names=[Variable(a.value, _tokpos(a)) for a in args[:-2]],
             module=path,
             pos=_tokpos(args[-1]),
         )
 
-    def export_stmt(self, token, *args):
+    def export_stmt(self, _export, *args):
         if len(args) == 3 and isinstance(args[1], Token) and args[1].value == "=":
             name, value = args[0], args[2]
             if name.value in ("_", "$"):
@@ -503,7 +501,7 @@ class AstGenerator(Transformer):
             return InlineExport(
                 Variable(name.value, _tokpos(name)),
                 value,
-                pos=Pos(token.start_pos, name.end_pos),
+                pos=Pos(_export.start_pos, name.end_pos),
             )
         else:
             return Export(
@@ -525,7 +523,7 @@ class Parser:
     def __init__(self, fatal: bool = True):
         self.fatal = fatal
 
-        self.parser = Lark(grammar, parser="lalr")
+        self.parser = Lark(grammar, parser="lalr", maybe_placeholders=False)
         self.lambda_preprocessor = LambdaPreprocessor()
         self.generator = AstGenerator()
 
@@ -538,6 +536,7 @@ class Parser:
         try:
             parse_tree = self.parser.parse(code)
         except Exception as e:
+            raise e
             LarkError(str(e), self.module, fatal=self.fatal)
             return
 
@@ -551,8 +550,14 @@ class Parser:
             return
 
         if (res := validate_top_level(parse_tree)) is not None:
+            msg = {
+                "import_stmt": "Import",
+                "export_stmt": "Export",
+                "del_stmt": "Delete",
+                "let_binding": "Missing 'in' — bare 'let'",
+            }[res.data]
             nSyntaxError(
-                f"{ {'import_stmt':'Import', 'export_stmt':'Export', 'del_stmt':'Delete', 'let_binding':"Missing 'in' — bare 'let'"}[res.data] } allowed only at top level",
+                f"{msg} allowed only at top level",
                 Pos(res.children[0].start_pos, _find_tree_end_pos(res)),  # type: ignore
                 self.module,
                 fatal=self.fatal,
