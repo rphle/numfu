@@ -1,4 +1,4 @@
-![Logo](images/logo.png)
+![Logo](https://raw.githubusercontent.com/rphle/numfu/refs/heads/main/images/logo.png)
 
 # NumFu Programming Language
 
@@ -28,7 +28,7 @@ pip install numfu-lang
 
 #### From Source
 ```bash
-git clone https://github.com/dr-lego/numfu
+git clone https://github.com/rphle/numfu
 cd numfu
 make install
 ```
@@ -100,7 +100,7 @@ NumFu REPL. Type 'exit' or press Ctrl+D to exit.
 ### Setup Development Environment
 
 ```bash
-git clone https://github.com/dr-lego/numfu
+git clone https://github.com/rphle/numfu
 cd numfu
 
 make build
@@ -161,14 +161,14 @@ make test
 
 ## Contributing
 
-Found a bug or have an idea? [Open an issue](https://github.com/dr-lego/numfu/issues).
+Found a bug or have an idea? [Open an issue](https://github.com/rphle/numfu/issues).
 
 Want to contribute code?
-- Check existing issues and [TODO.md](TODO.md) for open tasks.
+- Check existing issues and [TODO.md](https://github.com/rphle/numfu/blob/main/TODO.md) for open tasks.
 - Run all tests before committing.
 - Pull requests are welcome!
 
 
 ## License
 
-This project is licensed under Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
+This project is licensed under Apache License 2.0 - see the [LICENSE](https://github.com/rphle/numfu/blob/main/LICENSE) file for details.

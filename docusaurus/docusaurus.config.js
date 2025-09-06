@@ -9,10 +9,10 @@ const config = {
     v4: true,
   },
 
-  url: "https://numfu.dev",
+  url: "https://rphle.github.io/numfu",
   baseUrl: "/",
 
-  organizationName: "dr-lego",
+  organizationName: "rphle",
   projectName: "numfu",
 
   onBrokenLinks: "throw",
@@ -31,7 +31,7 @@ const config = {
         docs: {
           path: "../docs",
           sidebarPath: "./sidebars.js",
-          editUrl: "https://github.com/dr-lego/numfu/tree/main/docs/",
+          editUrl: "https://github.com/rphle/numfu/tree/main/docs/",
         },
 
         theme: {

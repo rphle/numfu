@@ -26,7 +26,7 @@ function HomepageHeader() {
           </Link>
           <Link
             className="button button--outline button--lg margin-left--sm"
-            to="https://github.com/dr-lego/numfu"
+            to="https://github.com/rphle/numfu"
           >
             GitHub
           </Link>

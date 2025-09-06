@@ -59,7 +59,7 @@ pip install numfu-lang
 ### From Source
 
 ```bash
-git clone https://github.com/dr-lego/numfu
+git clone https://github.com/rphle/numfu
 cd numfu
 make install
 ```
@@ -114,5 +114,5 @@ NumFu REPL. Type 'exit' or press Ctrl+D to exit.
 ## What's Next?
 
 - Check out the language guide: Dive deeper into NumFu with the [comprehensive documentation](guide/basic-syntax).
-- Contribute: Help improve NumFu by contributing [code, documentation](https://github.com/Dr-Lego/numfu), or [bug reports](https://github.com/Dr-Lego/numfu/issues/new).
+- Contribute: Help improve NumFu by contributing [code, documentation](https://github.com/rphle/numfu), or [bug reports](https://github.com/rphle/numfu/issues/new).
 - Build Projects: Start creating your own projects and share them!

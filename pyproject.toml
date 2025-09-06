@@ -4,10 +4,11 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "numfu-lang"
-version = "0.1"
+version = "0.1.0"
 description = "The NumFu programming language"
 authors = [{ name = "Raphael Engel", email = "hello@alpharee.de" }]
 readme = "README.md"
+license = { file = "LICENSE" }
 requires-python = ">=3.10"
 dependencies = [
     "click==8.2.1",
@@ -16,6 +17,25 @@ dependencies = [
     "rich==14.0.0",
     "mpmath==1.3.0",
 ]
+keywords = ["programming language", "math", "functional", "interpreter", "numfu", "educational", "education", "programming", "language"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Topic :: Software Development :: Interpreters",
+    "Topic :: Scientific/Engineering :: Mathematics",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+
+[project.urls]
+Homepage = "https://rphle.github.io/numfu"
+Documentation = "https://rphle.github.io/numfu/docs"
+Source = "https://github.com/rphle/numfu"
+Issues = "https://github.com/rphle/numfu/issues"
+
 
 [project.scripts]
 numfu = "numfu:cli"
