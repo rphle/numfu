@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "numfu-lang"
-version = "0.1.0"
+version = "0.1.1"
 description = "The NumFu programming language"
 authors = [{ name = "Raphael Engel", email = "hello@alpharee.de" }]
 readme = "README.md"
