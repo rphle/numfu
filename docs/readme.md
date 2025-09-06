@@ -4,15 +4,15 @@ slug: /
 
 # Getting Started with NumFu
 
-**NumFu** is a functional programming language designed for readable and expressive code, extensibility, and ease of learning for beginners.
+**NumFu** is a pure, interpreted, functional programming language designed for readable and expressive code, extensibility, and ease of learning for beginners.
 
-As its name suggests, NumFu is ideal for mathematical computing because it natively supports arbitrary-precision arithmetic via its powerful Python runtime.
+NumFu's simple syntax and semantics make it well-suited for educational applications, such as courses in functional programming and general programming introductions. At the same time, as its name suggests, NumFu is also ideal for exploring mathematical ideas and sketching algorithms, thanks to its native support for arbitrary-precision arithmetic.
 
 - **Expressive syntax**: Infix operators `a + b`, spread/rest operator `...` and easy testing `---> $ == 42`
 - **Arbitrary precision arithmetic** for reliable mathematical computing
 - **First-class functions** with automatic partial application
 - **Tail call optimization** for efficient recursive algorithms without stack overflow
-- **Interactive development** with a friendly REPL and amazing errors
+- **Interactive development** with a friendly REPL and helpful errors
 - **Large standard library** provided by NumFu's python bindings
 - **Minimal complexity** by only having four types: `Number`, `Boolean`, `List` and `String`
 

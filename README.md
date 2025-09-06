@@ -1,6 +1,10 @@
+![Logo](images/logo.png)
+
 # NumFu Programming Language
 
 **NumFu** is a functional programming language designed for readable & expressive code, extensibility, and mathematical computing with arbitrary precision arithmetic.
+
+NumFu's simple syntax and semantics make it well-suited for educational applications, such as courses in functional programming and general programming introductions. At the same time, as its name suggests, NumFu is also ideal for exploring mathematical ideas and sketching algorithms, thanks to its native support for arbitrary-precision arithmetic.
 
 ## Features
 

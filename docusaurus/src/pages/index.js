@@ -12,11 +12,13 @@ function HomepageHeader() {
     <header className={clsx("hero", styles.heroMinimal)}>
       <div className="container text--center">
         <Heading as="h1" className="hero__title">
+          <img src="/img/logo.png" alt="Logo" id="logo" />
           <strong>NumFu</strong>
         </Heading>
         <p className="hero__subtitle">
-          A functional programming language designed for readability,
-          extensibility and math.
+          A pure functional programming language
+          <br />
+          designed for readability, extensibility and math.
         </p>
         <div className="buttons">
           <Link className="button button--primary button--lg" to="/docs/">
@@ -112,9 +114,9 @@ function IdeasSection() {
                 application is natively supported.
               </li>
               <li>
-                <strong>Tail Call Optimization:</strong> Write recursive
-                algorithms without fear of stack overflow. NumFu automatically
-                optimizes tail-recursive calls for constant memory usage.
+                <strong>Tail Call Optimization:</strong> NumFu automatically
+                optimizes tail-recursive calls so you don't run into stack
+                overflow issues.
               </li>
               <li>
                 <strong>Clean Syntax:</strong> Intuitive syntax inspired by
