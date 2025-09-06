@@ -3,9 +3,9 @@ requires = ["setuptools>=64", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "numfu"
+name = "numfu-lang"
 version = "0.1"
-description = "Parser and interpreter for the NumFu programming language"
+description = "The NumFu programming language"
 authors = [{ name = "Raphael Engel", email = "hello@alpharee.de" }]
 readme = "README.md"
 requires-python = ">=3.10"

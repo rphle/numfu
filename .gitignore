@@ -1,10 +1,14 @@
 __pycache__
 *.egg-info
-NOTES.md
 .ruff_cache
-wheels
+
 *.nfut
 build
+wheels
+dist
+
+upload.sh
+NOTES.md
 test.py
 
 node_modules

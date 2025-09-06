@@ -21,7 +21,7 @@ NumFu's simple syntax and semantics make it well-suited for educational applicat
 
 ### Installation
 
-#### From PyPI *(coming soon)*
+#### From PyPI
 ```bash
 pip install numfu-lang
 ```
