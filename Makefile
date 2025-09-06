@@ -18,7 +18,9 @@ test: # Run all tests
 
 docs: # Build documentation site
 	@echo "Building documentation..."
+	python3 scripts/make_ico.py docusaurus/static/img/logo.png -o docusaurus/static/img/favicon.ico
 	cd docusaurus && $(NPM) install && $(NPM) run build
+	@echo "Documentation built successfully."
 
 serve: # Serve docs locally
 	@echo "Serving docs locally..."

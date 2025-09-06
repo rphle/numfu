@@ -64,7 +64,7 @@ let fibonacci = {n ->
 fibonacci(10)    // 55
 ```
 
-You can control the maximum recursion depth using the CLI argument `--rec-depth` ([see CLI reference](cli#numfu-file-default-command)).
+You can control the maximum recursion depth using the CLI argument `--rec-depth` ([see CLI reference](/docs/reference/cli#numfu-file-default-command)).
 
 ### Tail Call Optimization
 
@@ -93,7 +93,7 @@ The tail-recursive version works, but the non-optimized version fails with large
 RecursionError: maximum recursion depth exceeded
 ```
 
-You can control the maximum maximum number of tail-call iterations using the CLI argument `--iter-depth` ([see CLI reference](cli#numfu-file-default-command)).
+You can control the maximum maximum number of tail-call iterations using the CLI argument `--iter-depth` ([see CLI reference](/docs/reference/cli#numfu-file-default-command)).
 
 -----
 ## Rest Parameters
