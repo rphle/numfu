@@ -8,6 +8,10 @@ install: # Install NumFu from source
 	@echo "Installing NumFu from source..."
 	./scripts/install.sh
 
+dev: # Install NumFu and its development dependencies
+	@echo "Installing NumFu and its development dependencies..."
+	./scripts/install.sh && pip install ruff pyright
+
 build: # Build NumFu (wheels, stdlib)
 	@echo "Building NumFu..."
 	./scripts/build.sh

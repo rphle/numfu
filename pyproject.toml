@@ -45,3 +45,6 @@ where = ["src"]
 
 [tool.setuptools.package-data]
 numfu = ["grammar/numfu.lark", "stdlib/*.nfut"]
+
+[tool.setuptools]
+include-package-data = true

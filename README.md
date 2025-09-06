@@ -1,4 +1,12 @@
-![Logo](https://raw.githubusercontent.com/rphle/numfu/refs/heads/main/images/logo.png)
+![Logo](images/banner.png)
+
+![PyPI - Version](https://img.shields.io/pypi/v/numfu-lang)
+![PyPI - License](https://img.shields.io/pypi/l/numfu-lang)
+![PyPI - Python Version](https://img.shields.io/pypi/pyversions/numfu-lang)
+![PyPI Downloads](https://img.shields.io/pypi/dm/numfu-lang)
+[![Docs](https://img.shields.io/badge/docs-NumFu-brightgreen)](https://rphle.github.io/numfu/)
+![GitHub stars](https://img.shields.io/github/stars/rphle/numfu-lang?style=social)
+
 
 # NumFu Programming Language
 
@@ -102,7 +110,13 @@ NumFu REPL. Type 'exit' or press Ctrl+D to exit.
 ```bash
 git clone https://github.com/rphle/numfu
 cd numfu
+make dev
+```
+The `make dev` command also installs Pyright and Ruff via Pip. To format code and check types, it is strongly recommended to run both `ruff check --fix` and `pyright` before committing.
 
+## Building NumFu
+
+```
 make build
 ```
 
@@ -166,6 +180,7 @@ Found a bug or have an idea? [Open an issue](https://github.com/rphle/numfu/issu
 Want to contribute code?
 - Check existing issues and [TODO.md](https://github.com/rphle/numfu/blob/main/TODO.md) for open tasks.
 - Run all tests before committing.
+- Please consider running `ruff check` and `pyright` to format code and check types before committing.
 - Pull requests are welcome!
 
 
