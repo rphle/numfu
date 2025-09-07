@@ -11,6 +11,7 @@ const config = {
 
   url: "https://rphle.github.io/numfu",
   baseUrl: "/",
+  trailingSlash: false,
 
   organizationName: "rphle",
   projectName: "numfu",
