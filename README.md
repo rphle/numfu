@@ -10,7 +10,7 @@
 
 # NumFu Programming Language
 
-**NumFu** is a functional programming language designed for readable & expressive code, extensibility, and mathematical computing with arbitrary precision arithmetic.
+**NumFu** is a pure, interpreted, functional programming language designed for readable & expressive code, extensibility, and ease of learning for beginners.
 
 NumFu's simple syntax and semantics make it well-suited for educational applications, such as courses in functional programming and general programming introductions. At the same time, as its name suggests, NumFu is also ideal for exploring mathematical ideas and sketching algorithms, thanks to its native support for arbitrary-precision arithmetic.
 
@@ -45,6 +45,8 @@ make install
 
 Create `hello.nfu`:
 ```numfu
+import sqrt from "math"
+
 // Mathematical computing with arbitrary precision
 let golden = {depth ->
   let recur =
@@ -86,6 +88,7 @@ NumFu REPL. Type 'exit' or press Ctrl+D to exit.
 14
 >>> let square = {x -> x * x} in square(7)
 49
+>>> import max from "math"
 >>> [1, 2, 3, 4, 5, 6, 7] |> filter(_, {x -> x%2 == 0}) |> max
 6
 ```
