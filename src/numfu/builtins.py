@@ -23,29 +23,6 @@ from .typechecks import BuiltinFunc, HelpMsg, InfiniteOf, ListOf, Validators
 Num = mpm.mpf
 mpm.e.name = "e"
 
-ESSENTIALS = [
-    "pi",
-    "e",
-    "nan",
-    "inf",
-    "_add",
-    "_sub",
-    "_mul",
-    "_div",
-    "_mod",
-    "_pow",
-    "_and",
-    "_or",
-    "_xor",
-    "_not",
-    "_eq",
-    "_ne",
-    "_lt",
-    "_le",
-    "_gt",
-    "_ge",
-]
-
 
 def overload(name, eval_lists: bool = False, help: HelpMsg = HelpMsg()):
     """
@@ -90,9 +67,6 @@ def division(a, b):
 
 @dataclass(frozen=True)
 class Builtins:
-    pi = mpm.pi
-    e = mpm.e
-
     nan = mpm.nan
     inf = mpm.inf
 
@@ -114,6 +88,19 @@ class Builtins:
     _lt = overload("<")
     _ge = overload(">=")
     _le = overload("<=")
+
+    _map = overload("map")
+    _filter = overload("filter")
+
+    _error = overload("error")
+    _assert = overload("assert", eval_lists=True)
+    _exit = overload("exit")
+
+
+@dataclass(frozen=True)
+class Math:
+    pi = mpm.pi
+    e = mpm.e
 
     sin = overload("sin")
     cos = overload("cos")
@@ -143,6 +130,9 @@ class Builtins:
     _max = overload("max", eval_lists=True)
     _min = overload("min", eval_lists=True)
 
+
+@dataclass(frozen=True)
+class Types:
     _isnan = overload("isnan")
     _isinf = overload("isinf")
 
@@ -151,7 +141,9 @@ class Builtins:
     _list = overload("List")
     _string = overload("String")
 
-    # Lists & Strings
+
+@dataclass(frozen=True)
+class Std:
     _append = overload("append")
     _length = overload("length")
     _contains = overload("contains", eval_lists=True)
@@ -169,24 +161,24 @@ class Builtins:
     _replace = overload("replace")
     _count = overload("count")
 
-    # Functions
-    _map = overload("map")
-    _filter = overload("filter")
     _range = overload("range")
 
-    # I/O
+
+@dataclass(frozen=True)
+class Io:
     _print = overload("print")
     _println = overload("println")
     _input = overload("input")
 
-    # Random
+
+@dataclass(frozen=True)
+class Random:
     _random = overload("random")
     _seed = overload("seed")
 
-    # System
-    _error = overload("error")
-    _assert = overload("assert", eval_lists=True)
-    _exit = overload("exit")
+
+@dataclass(frozen=True)
+class System:
     _time = overload("time")
 
 
@@ -234,33 +226,33 @@ Builtins._lt.add([Num, Num], bool, operator.lt)
 Builtins._ge.add([Num, Num], bool, operator.ge)
 Builtins._le.add([Num, Num], bool, operator.le)
 
-Builtins.sin.add([Num], Num, mpm.sin)
-Builtins.cos.add([Num], Num, mpm.cos)
-Builtins.tan.add([Num], Num, mpm.tan)
-Builtins.asin.add([Num], Num, mpm.asin)
-Builtins.acos.add([Num], Num, mpm.acos)
-Builtins.atan.add([Num], Num, mpm.atan)
-Builtins.atan2.add([Num, Num], Num, mpm.atan2)
+Math.sin.add([Num], Num, mpm.sin)
+Math.cos.add([Num], Num, mpm.cos)
+Math.tan.add([Num], Num, mpm.tan)
+Math.asin.add([Num], Num, mpm.asin)
+Math.acos.add([Num], Num, mpm.acos)
+Math.atan.add([Num], Num, mpm.atan)
+Math.atan2.add([Num, Num], Num, mpm.atan2)
 
-Builtins.sinh.add([Num], Num, mpm.sinh)
-Builtins.cosh.add([Num], Num, mpm.cosh)
-Builtins.tanh.add([Num], Num, mpm.tanh)
-Builtins.asinh.add([Num], Num, mpm.asinh)
-Builtins.acosh.add([Num], Num, mpm.acosh)
-Builtins.atanh.add([Num], Num, mpm.atanh)
+Math.sinh.add([Num], Num, mpm.sinh)
+Math.cosh.add([Num], Num, mpm.cosh)
+Math.tanh.add([Num], Num, mpm.tanh)
+Math.asinh.add([Num], Num, mpm.asinh)
+Math.acosh.add([Num], Num, mpm.acosh)
+Math.atanh.add([Num], Num, mpm.atanh)
 
-Builtins.exp.add([Num], Num, mpm.exp)
-Builtins.log.add([Num, Num], Num, mpm.log)
-Builtins.log10.add([Num], Num, mpm.log10)
-Builtins.sqrt.add([Num], Num, mpm.sqrt)
-Builtins._max.add([InfiniteOf(Num)], Num, max).add(
+Math.exp.add([Num], Num, mpm.exp)
+Math.log.add([Num, Num], Num, mpm.log)
+Math.log10.add([Num], Num, mpm.log10)
+Math.sqrt.add([Num], Num, mpm.sqrt)
+Math._max.add([InfiniteOf(Num)], Num, max).add(
     [ListOf(Num)],
     Num,
     max,
     transformer=lambda x: [x.elements],
     help=HelpMsg(invalid_arg="Only numbers are supported"),
 )
-Builtins._min.add([InfiniteOf(Num)], Num, min).add(
+Math._min.add([InfiniteOf(Num)], Num, min).add(
     [ListOf(Num)],
     Num,
     min,
@@ -268,21 +260,21 @@ Builtins._min.add([InfiniteOf(Num)], Num, min).add(
     help=HelpMsg(invalid_arg="Only numbers are supported"),
 )
 
-Builtins._isnan.add([Num], Num, mpm.isnan)
-Builtins._isinf.add([Num], bool, mpm.isinf)
+Types._isnan.add([Num], Num, mpm.isnan)
+Types._isinf.add([Num], bool, mpm.isinf)
 
-Builtins._ceil.add([Num], Num, mpm.ceil)
-Builtins._floor.add([Num], Num, mpm.floor)
-Builtins._round.add([Num], Num, lambda x: Num(round(x))).add(
+Math._ceil.add([Num], Num, mpm.ceil)
+Math._floor.add([Num], Num, mpm.floor)
+Math._round.add([Num], Num, lambda x: Num(round(x))).add(
     [Num, Num],
     Num,
     lambda x, p: Num(round(x, int(p)), validators=[None, Validators.is_integer]),
 )
-Builtins._sign.add([Num], Num, mpm.sign)
-Builtins._abs.add([Num], Num, mpm.fabs)
+Math._sign.add([Num], Num, mpm.sign)
+Math._abs.add([Num], Num, mpm.fabs)
 
-Builtins._bool.add([Any], bool, lambda a: bool(a))
-Builtins._number.add(
+Types._bool.add([Any], bool, lambda a: bool(a))
+Types._number.add(
     [bool | Num | str],
     Num,
     lambda x: Num(
@@ -296,18 +288,18 @@ Builtins._number.add(
     ),
     validators=[Validators.is_number],
 )
-Builtins._list.add([Any], List, lambda a: List(a), validators=[Validators.is_iterable])
-Builtins._string.add([Any], str, to_string)
+Types._list.add([Any], List, lambda a: List(a), validators=[Validators.is_iterable])
+Types._string.add([Any], str, to_string)
 
 # Lists & Strings
-Builtins._append.add(
+Std._append.add(
     [List, Any], List, lambda a, b: List(a.elements + [b], pos=a.pos, curry=a.curry)
 )
-Builtins._length.add([List | str], Num, lambda a: Num(len(a)))
-Builtins._contains.add([List, Any], bool, lambda a, b: b in a).add(
+Std._length.add([List | str], Num, lambda a: Num(len(a)))
+Std._contains.add([List, Any], bool, lambda a, b: b in a).add(
     [str, str], bool, lambda a, b: b in a
 )
-Builtins._set.add(
+Std._set.add(
     [List, Num, Any],
     List,
     lambda: None,
@@ -318,14 +310,14 @@ Builtins._set.add(
     lambda s, i, v: s[: int(i)] + v + s[int(i) + 1 :],
     validators=[None, Validators.string_index, None],
 )
-Builtins._reverse.add(
+Std._reverse.add(
     [List | str],
     List | str,
     lambda a: a[::-1]
     if isinstance(a, str)
     else List(a.elements[::-1], pos=a.pos, curry=a.curry),
 )
-Builtins._sort.add(
+Std._sort.add(
     [List],
     List,
     lambda a: List(sorted(a.elements), pos=a.pos, curry=a.curry),
@@ -334,7 +326,7 @@ Builtins._sort.add(
     str,
     lambda a: "".join(sorted(a)),
 )
-Builtins._slice.add(
+Std._slice.add(
     [List | str, Num, Num],
     List | str,
     lambda a, b, c: a[int(b) : int(c) + 1 if c != -1 else None]
@@ -344,23 +336,23 @@ Builtins._slice.add(
     ),
     validators=[None, Validators.string_index, Validators.string_index],
 )
-Builtins._join.add([ListOf(str), str], str, lambda a, b: b.join(a.elements))
-Builtins._split.add(
+Std._join.add([ListOf(str), str], str, lambda a, b: b.join(a.elements))
+Std._split.add(
     [str, str], List, lambda a, b: List(a.split(b) if b != "" else a.split())
 )
 
-Builtins._format.add(
+Std._format.add(
     [str, InfiniteOf(Any)],
     str,
     lambda a, *args, precision=15: a.format(
         *[to_string(a, precision=precision) for a in args]
     ),
 )
-Builtins._trim.add([str], str, lambda s: s.strip())
-Builtins._toLowerCase.add([str], str, lambda s: s.lower())
-Builtins._toUpperCase.add([str], str, lambda s: s.upper())
-Builtins._replace.add([str, str, str], str, lambda a, b, c: a.replace(b, c))
-Builtins._count.add([str, str], Num, lambda a, b: Num(a.count(b)))
+Std._trim.add([str], str, lambda s: s.strip())
+Std._toLowerCase.add([str], str, lambda s: s.lower())
+Std._toUpperCase.add([str], str, lambda s: s.upper())
+Std._replace.add([str, str, str], str, lambda a, b, c: a.replace(b, c))
+Std._count.add([str, str], Num, lambda a, b: Num(a.count(b)))
 
 Builtins._map.add(
     [List, Lambda | BuiltinFunc],
@@ -385,24 +377,24 @@ Builtins._filter.add(
     List,
     lambda: None,
 )
-Builtins._range.add(
+Std._range.add(
     [Num, Num],
     List,
     lambda: None,
     validators=[Validators.is_integer, Validators.is_integer],
 )
 
-Builtins._println.add(
+Io._println.add(
     [Any],
     Any,
     lambda expr: PrintOutput(expr, end="\n"),
 )
-Builtins._print.add(
+Io._print.add(
     [Any],
     Any,
     lambda expr: PrintOutput(expr),
 )
-Builtins._input.add(
+Io._input.add(
     [],
     str,
     input,
@@ -412,10 +404,10 @@ Builtins._input.add(
     input,
 )
 
-Builtins._random.add([], Num, lambda: Num(random.random()))
-Builtins._seed.add([Num | str], None, random.seed)
+Random._random.add([], Num, lambda: Num(random.random()))
+Random._seed.add([Num | str], None, random.seed)
 
 Builtins._error.add([str], None, lambda x: None).add([str, str], None, lambda x: None)
 Builtins._assert.add([bool], Any, lambda x: None).add([bool, Any], Any, lambda x: None)
 Builtins._exit.add([], None, sys.exit)
-Builtins._time.add([], Num, lambda: Num(time.time()))
+System._time.add([], Num, lambda: Num(time.time()))

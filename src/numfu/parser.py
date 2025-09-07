@@ -536,7 +536,6 @@ class Parser:
         try:
             parse_tree = self.parser.parse(code)
         except Exception as e:
-            raise e
             LarkError(str(e), self.module, fatal=self.fatal)
             return
 

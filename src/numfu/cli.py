@@ -189,14 +189,18 @@ def repl(
             no_builtins=no_builtins,
         )
         env = {}
+        modules = {}
 
         def interpret(code: str) -> None:
             tree = parser.parse(code, path=os.getcwd() + "/")
             if tree is None:
                 return
 
-            interpreter.run(tree, path=os.getcwd() + "/", code=code, env=env)
+            interpreter.run(
+                tree, path=os.getcwd() + "/", code=code, env=env, modules=modules
+            )
             env.update(interpreter.modules[interpreter.module_id].globals)
+            modules.update(interpreter.modules)
 
         repl_instance = REPL()
         repl_instance.start(interpret)

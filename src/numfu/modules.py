@@ -7,8 +7,9 @@ from functools import lru_cache
 from pathlib import Path
 
 from .ast_types import Constant, Export, Expr, Import, Variable
+from .builtins import Io, Math, Random, Std, System, Types
 from .classes import Module
-from .errors import nImportError
+from .errors import Pos, nImportError
 from .parser import Parser
 
 
@@ -20,7 +21,6 @@ def _id(path: str | Path):
 class ImportResolver:
     def __init__(
         self,
-        builtins: bool = True,
     ):
         self.precedence = (
             self.file,
@@ -28,23 +28,57 @@ class ImportResolver:
             self.stdlib,
         )
         self.modules: dict[str, Module] = {}
-        self.builtins = builtins
         self.parser = Parser()
         self._import_stack: list[str] = []
 
     def stdlib(self, node):
-        path = f"{node.module}.nfut"
-        if _id(path) in self.modules:
-            return path
+        if _id(node.module) in self.modules:
+            return node.module
 
-        if importlib.resources.files("numfu.stdlib").joinpath(path).is_file():
-            tree = pickle.loads(
-                importlib.resources.read_binary("numfu.stdlib", path)[
-                    len(b"NFU-TREE-FILE") :
+        modules = {
+            "builtins": {"builtins": None, "file": True},
+            "math": {"builtins": Math, "file": False},
+            "std": {"builtins": Std, "file": False},
+            "io": {"builtins": Io, "file": False},
+            "sys": {"builtins": System, "file": False},
+            "random": {"builtins": Random, "file": False},
+            "types": {"builtins": Types, "file": False},
+        }
+        if module := modules.get(node.module):
+            tree: list[Import | Constant | Export] = []
+            if module["builtins"] is not None:
+                available = {
+                    name: v
+                    for name, v in module["builtins"].__dict__.items()
+                    if not name.startswith("__")
+                }
+                tree = [
+                    Constant(name=getattr(v, "name", name), value=v, pos=Pos(index=-1))
+                    for name, v in available.items()
                 ]
-            )
-            self._module(path=path, tree=tree, code="", builtins=False)
-            return path
+                tree.append(
+                    Export(
+                        names=[
+                            Variable(getattr(v, "name", name))
+                            for name, v in available.items()
+                        ]
+                    )
+                )
+            if module["file"]:
+                # Allows importing files from the built-in standard library written in NumFu itself.
+                path = f"{node.module}.nfut"
+
+                if importlib.resources.files("numfu.stdlib").joinpath(path).is_file():
+                    tree.extend(
+                        pickle.loads(
+                            importlib.resources.read_binary("numfu.stdlib", path)[
+                                len(b"NFU-TREE-FILE") :
+                            ]
+                        )
+                    )
+
+            self._module(path=node.module, tree=tree, code="", builtins=False)  # type: ignore
+            return node.module
 
     def folder(self, node):
         """
@@ -145,7 +179,7 @@ class ImportResolver:
 
     def _module(self, path: str, tree: list[Expr], code: str, builtins: bool = True):
         imports = (
-            {e: "builtins.nfut" for e in self.modules[_id("builtins.nfut")].exports}
+            {e: "builtins" for e in self.modules[_id("builtins")].exports}
             if builtins
             else {}
         )
@@ -260,6 +294,6 @@ class ImportResolver:
         self.current_code: str = code
 
         self.stdlib(Import(names=[Variable(name="*")], module="builtins"))
-        self._module(path=self.path, tree=tree, code=code, builtins=self.builtins)
+        self._module(path=self.path, tree=tree, code=code, builtins=True)
 
         return self.modules

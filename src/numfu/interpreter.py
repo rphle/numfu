@@ -36,7 +36,7 @@ from .ast_types import (
     String,
     Variable,
 )
-from .builtins import ESSENTIALS, Builtins
+from .builtins import Builtins
 from .classes import Module, State
 from .errors import (
     Error,
@@ -88,7 +88,6 @@ class Interpreter:
         mpmath.mp.dps = precision
         self.rec_depth = rec_depth
         self.iter_depth = iter_depth if iter_depth >= 0 else math.inf
-        self.no_builtins = no_builtins
 
         self.fatal = fatal
         self.precision = precision
@@ -100,7 +99,7 @@ class Interpreter:
         self.builtins: dict[Any, Any] = {
             getattr(v, "name", name): v
             for name, v in Builtins.__dict__.items()
-            if (name in ESSENTIALS if no_builtins else True)
+            if not name.startswith("__")
         }
 
         self.output: list[str] = []  # this list collects all prints and program outputs
@@ -150,13 +149,24 @@ class Interpreter:
             elif isinstance(node, Constant):
                 declared.add(node.name)
 
+    def _merge_modules(self, modules: dict[str, Module]):
+        if len(modules) == 0:
+            return
+        for module_id, module in modules.items():
+            if module_id not in self.modules:
+                self.modules[module_id] = module
+
+        self.modules[list(self.modules.keys())[-1]].imports.update(
+            modules[list(modules.keys())[-1]].imports
+        )
+
     @lru_cache()
     def _declared_constants(self, module_id: str, index: int):
         # find all constants declared up to a given index in the tree
         return {
             c.name: c.value
-            for c in self.modules[module_id].tree[: index + 1]
-            if isinstance(c, Constant)
+            for c in self.modules[module_id].tree
+            if isinstance(c, Constant) and c.pos.index <= index  # type: ignore
         }
 
     def _partial_lambda(self, this: Lambda, args: list, state: State = State()):
@@ -650,7 +660,11 @@ class Interpreter:
             return lambda_copy
         elif isinstance(node, (float, int, mpmath.mpf)):
             return mpmath.mpf(node)
-        elif isinstance(node, str):
+        elif (
+            isinstance(node, str)
+            or type(node).__name__
+            == "constant"  # for some reason,  mpmath.ctx_mp_python.constant is not available
+        ):
             return node
         elif node is None:
             return mpmath.mpf(0)
@@ -705,6 +719,7 @@ class Interpreter:
         path: str | Path | None,
         code: str = "",
         env: dict[str, Expr] = {},
+        modules: dict[str, Module] = {},  # for REPL persistence
     ):
         if path and not str(path).endswith("/") and not code:
             try:
@@ -716,9 +731,8 @@ class Interpreter:
         pos = None
 
         try:
-            self.modules = ImportResolver(
-                builtins=not self.no_builtins,
-            ).resolve(tree, path=path, code=code)
+            self.modules = ImportResolver().resolve(tree, path=path, code=code)
+            self._merge_modules(modules)
             self.module_id = list(self.modules.keys())[-1]
             self.modules[self.module_id].globals = env
 
