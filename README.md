@@ -5,7 +5,7 @@
 ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/numfu-lang)
 ![PyPI Downloads](https://img.shields.io/pypi/dm/numfu-lang)
 [![Docs](https://img.shields.io/badge/docs-NumFu-brightgreen)](https://rphle.github.io/numfu/)
-![GitHub stars](https://img.shields.io/github/stars/rphle/numfu-lang?style=social)
+![GitHub stars](https://img.shields.io/github/stars/rphle/numfu?style=social)
 
 
 # NumFu Programming Language
