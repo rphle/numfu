@@ -117,6 +117,6 @@ NumFu REPL. Type 'exit' or press Ctrl+D to exit.
 -----
 ## What's Next?
 
-- Check out the language guide: Dive deeper into NumFu with the [comprehensive documentation](guide/basic-syntax).
+- Check out the language guide: Dive deeper into NumFu with the [comprehensive documentation](/docs/guide/basic-syntax).
 - Contribute: Help improve NumFu by contributing [code, documentation](https://github.com/rphle/numfu), or [bug reports](https://github.com/rphle/numfu/issues/new).
 - Build Projects: Start creating your own projects and share them!
