@@ -15,6 +15,7 @@ from prompt_toolkit.history import FileHistory
 from prompt_toolkit.output.color_depth import ColorDepth
 from prompt_toolkit.styles import Style
 
+from ._version import __version__
 from .parser import Expr
 
 
@@ -63,7 +64,9 @@ class REPL:
         return tree, output
 
     def start(
-        self, do: Callable, intro="NumFu REPL. Type 'exit' or press Ctrl+D to exit."
+        self,
+        do: Callable,
+        intro=f"NumFu v{__version__} REPL. Type 'exit' or press Ctrl+D to exit.",
     ):
         """Start a REPL."""
 

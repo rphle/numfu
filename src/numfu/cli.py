@@ -219,7 +219,7 @@ def repl_ast(max_depth: int, indent: int) -> None:
 
     repl.start(
         print_ast_repl,
-        intro="NumFu AST REPL. Type 'exit' or press Ctrl+D to exit.",
+        intro=f"NumFu v{__version__} AST REPL. Type 'exit' or press Ctrl+D to exit.",
     )
 
 
