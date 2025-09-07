@@ -1,3 +1,7 @@
+import * from "std"
+import * from "math"
+import * from "io"
+
 // Classic tail recursive factorial
 let factorialTail = {n, acc ->
   if n <= 1 then acc

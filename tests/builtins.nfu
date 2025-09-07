@@ -1,3 +1,7 @@
+import * from "math"
+import * from "std"
+import * from "types"
+
 5 + 3                      ---> $ ==  8
 "Hello" + " " + "World"    ---> $ ==  "Hello World";
 [1, 2] + [3, 4]            ---> $ ==  [1, 2, 3, 4]

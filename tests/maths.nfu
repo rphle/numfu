@@ -1,3 +1,5 @@
+import * from "math"
+
 let radius = 5 in pi * radius^2 ---> round($, 2) == 78.54
 
 let a = 1, b = 5, c = 6 in b^2 - 4*a*c  ---> $ == 1

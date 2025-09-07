@@ -1,3 +1,6 @@
+import * from "std"
+import * from "types"
+
 let name = "Alice" in
 let age = 30 in
   "Hello, " + name + "! You are " + String(age) + " years old."

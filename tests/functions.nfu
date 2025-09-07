@@ -1,3 +1,5 @@
+import * from "std"
+
 // Simple function definition
 let square = {x -> x * x} in square(5) ---> $ == 25;
 

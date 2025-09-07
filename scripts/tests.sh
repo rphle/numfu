@@ -4,7 +4,7 @@ set -e
 # Run all test files from the tests folder
 numfu tests/basics.nfu
 numfu tests/functions.nfu
-numfu tests/math.nfu
+numfu tests/maths.nfu
 numfu tests/operators.nfu
 numfu tests/lists.nfu
 numfu tests/logic.nfu
