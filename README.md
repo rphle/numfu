@@ -1,4 +1,4 @@
-![Logo](images/banner.png)
+![](https://raw.githubusercontent.com/rphle/numfu/main/images/banner.png)
 
 ![PyPI - Version](https://img.shields.io/pypi/v/numfu-lang)
 ![PyPI - License](https://img.shields.io/pypi/l/numfu-lang)
