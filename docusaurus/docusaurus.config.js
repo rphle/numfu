@@ -10,7 +10,7 @@ const config = {
   },
 
   url: "https://rphle.github.io/",
-  baseUrl: "/",
+  baseUrl: "/numfu",
   trailingSlash: false,
 
   organizationName: "rphle",
