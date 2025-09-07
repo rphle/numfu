@@ -12,7 +12,7 @@ function HomepageHeader() {
     <header className={clsx("hero", styles.heroMinimal)}>
       <div className="container text--center">
         <Heading as="h1" className="hero__title">
-          <img src="/img/logo.png" alt="Logo" id="logo" />
+          <img src="/numfu/img/logo.png" id="logo" />
           <strong>NumFu</strong>
         </Heading>
         <p className="hero__subtitle">
