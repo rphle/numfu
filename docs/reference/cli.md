@@ -32,7 +32,6 @@ This executes the NumFu program in `myprogram.nfu` and displays the results.
 - `-p, --precision INTEGER`: Floating point precision for calculations (default: 15)
 - `-r, --rec-depth INTEGER`: Maximum recursion depth during evaluation (default: 10000)
 - `--iter-depth INTEGER`: Maximum iteration depth for tail-call optimization (default: infinite)
-- `--no-builtins`: Disable automatic import of built-in functions and constants
 
 **Examples**:
 ```bash
@@ -97,7 +96,6 @@ The AST is displayed as a hierarchical tree structure showing the parsed program
 - `-p, --precision INTEGER`: Floating point precision (default: 15)
 - `-r, --rec-depth INTEGER`: Maximum recursion depth (default: 10000)
 - `--iter-depth INTEGER`: Maximum iteration depth for tail-call optimization (default: infinite)
-- `--no-builtins`: Disable automatic import of built-in functions and constants
 
 **Examples**:
 ```bash

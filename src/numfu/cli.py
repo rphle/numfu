@@ -63,12 +63,6 @@ def cli(ctx: click.Context) -> None:
     type=int,
     help="Maximum iterations of tail-call optimized recursion during evaluation.",
 )
-@click.option(
-    "--no-builtins",
-    is_flag=True,
-    help="Disable automatic import of built-in functions and constants.",
-    default=False,
-)
 @click.pass_context
 def default(
     ctx: click.Context,
@@ -76,10 +70,9 @@ def default(
     precision: int,
     rec_depth: int,
     iter_depth: int,
-    no_builtins: bool,
 ) -> None:
     """Parse and run a NumFu source file."""
-    run_file(source, precision, rec_depth, iter_depth, no_builtins)
+    run_file(source, precision, rec_depth, iter_depth)
 
 
 @cli.command()
@@ -164,19 +157,12 @@ def parse(
     type=int,
     help="Maximum iterations of tail-call optimized recursion during evaluation.",
 )
-@click.option(
-    "--no-builtins",
-    is_flag=True,
-    help="Disable automatic import of built-in functions and constants.",
-    default=False,
-)
 @click.pass_context
 def repl(
     ctx: click.Context,
     precision: int,
     rec_depth: int,
     iter_depth: int,
-    no_builtins: bool,
 ) -> None:
     """Start an interactive REPL."""
     if ctx.invoked_subcommand is None:
@@ -186,7 +172,6 @@ def repl(
             rec_depth,
             iter_depth=iter_depth,
             fatal=False,
-            no_builtins=no_builtins,
         )
         env = {}
         modules = {}
@@ -238,9 +223,7 @@ def repl_ast(max_depth: int, indent: int) -> None:
     )
 
 
-def run_file(
-    source: str, precision: int, rec_depth: int, iter_depth: int, no_builtins: bool
-) -> None:
+def run_file(source: str, precision: int, rec_depth: int, iter_depth: int) -> None:
     source_path = Path(source)
     parsed = False
     tree = None
@@ -269,6 +252,5 @@ def run_file(
         rec_depth,
         fatal=True,
         iter_depth=iter_depth,
-        no_builtins=no_builtins,
     )
     interpreter.run(tree, path=source_path, code=code)

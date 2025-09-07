@@ -81,7 +81,6 @@ class Interpreter:
         rec_depth: int = 10000,
         iter_depth: int = -1,
         fatal: bool = True,
-        no_builtins: bool = False,
         _print: bool = True,
     ):
         sys.setrecursionlimit(rec_depth)
