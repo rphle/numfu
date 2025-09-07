@@ -152,9 +152,15 @@ class Interpreter:
     def _merge_modules(self, modules: dict[str, Module]):
         if len(modules) == 0:
             return
-        for module_id, module in modules.items():
-            if module_id not in self.modules:
-                self.modules[module_id] = module
+
+        self.modules = {
+            **{
+                module_id: module
+                for module_id, module in modules.items()
+                if module_id not in self.modules
+            },
+            **self.modules,  # keep -1 index
+        }
 
         this = list(self.modules.keys())[-1]
         self.modules[this].imports = (
