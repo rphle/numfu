@@ -174,6 +174,45 @@ min([1, 5, 3, 9, 2]) // 1
 ```
 
 -----
+### Utility Functions
+-----
+
+#### `sum(list)`
+
+**Parameters**: `List<Number>`
+
+**Returns**: `Number` - sum of all elements in the list
+
+```numfu
+sum([1, 2, 3])      // 6
+sum([1, 2, 3, 4])   // 10
+```
+-----
+
+#### `radians(x)`
+
+**Parameters**: `Number`
+
+**Returns**: `Number` - radians representation of x
+
+```numfu
+radians(180)         // 3.14159265358979
+radians(90) == pi/2  // true
+```
+-----
+
+#### `degrees(x)`
+
+**Parameters**: `Number`
+
+**Returns**: `Number` - degrees representation of x
+
+```numfu
+degrees(pi)          // 180
+degrees(pi/2) == 90  // true
+```
+
+-----
 ## `types`
 
 The `types` module provides functions for converting and checking data types.

@@ -132,6 +132,9 @@ class Math:
 
     _sum = overload("sum", eval_lists=True)
 
+    _radians = overload("radians")
+    _degrees = overload("degrees")
+
 
 @dataclass(frozen=True)
 class Types:
@@ -262,6 +265,9 @@ Math._min.add([InfiniteOf(Num)], Num, min).add(
     help=HelpMsg(invalid_arg="Only numbers are supported"),
 )
 Math._sum.add([ListOf(Num)], Num, sum)
+
+Math._radians.add([Num], Num, mpm.radians)
+Math._degrees.add([Num], Num, mpm.degrees)
 
 Types._isnan.add([Num], Num, mpm.isnan)
 Types._isinf.add([Num], bool, mpm.isinf)
