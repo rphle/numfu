@@ -9,7 +9,7 @@ const config = {
     v4: true,
   },
 
-  url: "https://rphle.github.io/numfu",
+  url: "https://rphle.github.io/",
   baseUrl: "/",
   trailingSlash: false,
 

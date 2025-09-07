@@ -115,6 +115,8 @@ Each function can only have a single rest parameter which must come at the end.
 ### Example
 
 ```numfu
+import length, slice from "std"
+
 let sum = {...numbers ->
   let helper = {nums, acc ->
     if length(nums) == 0 then acc
@@ -215,6 +217,8 @@ let processor = if operation == "square" then {x -> x * x}
 ### Mathematical Functions
 
 ```numfu
+import sqrt from "math"
+
 // Distance between two points
 let distance = {x1, y1, x2, y2 ->
   let dx = x2 - x1, dy = y2 - y1 in

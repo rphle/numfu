@@ -43,7 +43,9 @@ function HomepageHeader() {
 }
 
 function QuickstartSection() {
-  const example = `// Approximate the golden ratio
+  const example = `import sqrt from "math"
+
+// Approximate the golden ratio
 let golden = {depth ->
   let recur =
     {d -> if d <= 0 then 1 else 1 + 1 / recur(d - 1)}

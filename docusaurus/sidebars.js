@@ -37,7 +37,7 @@ const sidebars = {
       type: "category",
       label: "Reference",
       collapsed: false,
-      items: ["reference/builtins", "reference/cli"],
+      items: ["reference/builtins", "reference/stdlib", "reference/cli"],
     },
   ],
 };

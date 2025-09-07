@@ -49,31 +49,31 @@ export double = x -> x * 2
 The most common way to import specific values from a module is using named imports:
 
 ```numfu
-import PI, square from "math_utils"
+import pi, sqrt from "math"
 
-square(PI)  // Uses both imported values
+sqrt(pi)  // Uses both imported values
 ```
 
 ### Wildcard Imports
 To import all exported values from a module, use the `*` syntax:
 
 ```numfu
-import * from "math_utils"
+import * from "math"
 
 // All exported values are now available
-PI
-square(3)
-cube(2)
+pi
+sqrt(9)
+sin(0)
 ```
 
 ### Module-Prefixed Imports
 When importing without specifying names, the module's exports are prefixed with the module name:
 
 ```numfu
-import "math_utils"
+import "math"
 
-math_utils.PI
-math_utils.square(4)
+math.pi
+math.sqrt(4)
 ```
 
 ### Import Organization
@@ -81,15 +81,15 @@ All imports *must* be placed at the top of your file, before any other code. Thi
 
 ```numfu
 // Correct:
-import PI, E from "math_constants"
-import square, cube from "math_functions"
-import format from "string_utils"
+import pi, e from "math"
+import * from "random"
+import format from "std"
 
-let result = square(PI)  // Code after imports
+format("pi = {}", pi)  // Code after imports
 
 // Incorrect - will raise a syntax error:
 let x = 42
-import format from "string_utils"  // SyntaxError: Imports allowed only at top level
+import count from "std"  // SyntaxError: Imports allowed only at top level
 ```
 
 -----

@@ -74,6 +74,8 @@ max(1, _, _)(2)(3)    // 3
 
 #### Examples with built-ins
 ```numfu
+import max from "math"
+
 max(_, _, _)(2, 3)    // partially applied function
 max(2, _)(3, 4)       // 4
 ```
@@ -147,6 +149,8 @@ The spread operator requires fully evaluated values, not placeholders.
 ## More Examples
 
 ```numfu
+import join from "std"
+
 // Chain of partials
 {a, b -> a * b}(2)
 // {b -> 2 * b}
@@ -166,6 +170,8 @@ join(["x", "y"], _)("-")
 #### Rest parameters
 
 ```numfu
+import min, max from "math"
+
 // Rest parameter with placeholders
 {x, ...args -> args}(_, 1, 2)(5)
 // [1, 2]
@@ -180,11 +186,13 @@ max(5, _)(2, 8, 1)  // 8
 #### Combining with piping
 
 ```numfu
+import max from "math"
+
 5 |> max(_, 10)     // 10
 
 // Creating a reusable partial function
 let divideIt = {x, y -> x / y}(_, 2) in
-10 |> divideIt      // 5
+10 |> divideIt;     // 5
 
 [5, 12, 3] |> filter(_, _ > 4) |> map(_, _ * 2)
 // [10, 24]

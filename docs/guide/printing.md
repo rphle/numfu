@@ -6,10 +6,12 @@ NumFu offers simple tools for debugging and verification. Use `print`, `println`
 
 ## Printing Output
 
-Use `print` and `println` to display values.
+Use `print` and `println` from the `io` module to display values.
 All values are automatically converted to strings before printing.
 
 ```numfu
+import print, println from "io"
+
 print("I like cheese")
 print(" and tomatoes.\n")
 
@@ -36,6 +38,8 @@ The built-in function `input` lets you read text entered by the user.
 You can optionally pass a prompt string that will be displayed before the user types.
 
 ```numfu
+import input, println from "io"
+
 let name = input("What is your name? ")
 println("Hello, " + name + "!")
 ```

@@ -122,6 +122,12 @@ Compare lists for equality:
 -----
 ## Built-in List Functions
 
+All of these functions must be imported from the `std` standard library module. When running the examples below, remember to import it at the top of your file (or in the REPL):
+
+```numfu
+import * from "std"
+```
+
 ### Length
 
 ```numfu
@@ -204,6 +210,12 @@ let evens = filter(numbers, {x -> x % 2 == 0}) in
 
 -----
 ## Examples
+
+When running the examples below, remember to import the `std` standard library module at the top of your file (or in the REPL) because it provides essential functions for working with lists.
+
+```numfu
+import * from "std"
+```
 
 ### List Comprehension Style
 

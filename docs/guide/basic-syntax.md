@@ -100,16 +100,9 @@ f >> g >> h          // f >> (g >> h)
 -----
 ## Reserved Words
 
-The following words are reserved and cannot be used as identifiers (it does not immediately raise errors if you use them e.g. as variable names but you won't get very far):
+The keywords and special symbols listed below cannot be used as variable names or function parameters. The parser will throw an error if you try to use them.
 
-- `let`
-- `in`
-- `const`
-- `if`
-- `then`
-- `else`
-- `true`
-- `false`
+`let`, `in`, `if`, `then`, `else`, `del`,`import`, `export`, `from`, `true`, `false`, `$`, `_`
 
 -----
 ## Identifier Rules

@@ -128,6 +128,8 @@ let x = 10 in
 Shadowing is useful for transforming values step by step:
 
 ```numfu
+import trim, toLowerCase, replace from "std"
+
 let data = "  Hello World  " in
 let data = trim(data) in                // Remove whitespace
 let data = toLowerCase(data) in         // Convert to lowercase
@@ -141,6 +143,8 @@ let data = replace(data, " ", "_") in   // Replace spaces
 Let statements define variables that are available throughout your program:
 
 ```numfu
+import * from "io"
+
 let PI = 3.14159
 let greeting = "Welcome to NumFu!"
 
@@ -185,6 +189,7 @@ The keywords and special symbols listed below cannot be used as variable names o
 ### Basic Variable Usage
 
 ```numfu
+import pi from "math"
 // Calculate the volume of a cylinder
 let radius = 3, height = 10 in
 let baseArea = pi * radius^2 in
@@ -219,6 +224,8 @@ let x = 1 in
 ### Multiple Bindings
 
 ```numfu
+import sqrt from "math"
+
 let point = [3, 4] in
 let x = point[0], y = point[1] in
   sqrt(x^2 + y^2)
@@ -240,6 +247,8 @@ let homeworkWeight = 0.3, testWeight = 0.4, finalWeight = 0.3 in
 Quadratic formula: x = (-b ± √(b²-4ac)) / 2a
 
 ```numfu
+import sqrt from "math"
+
 let a = 1, b = -5, c = 6 in
 let discriminant = b^2 - 4*a*c in
 let sqrt_discriminant = sqrt(discriminant) in

@@ -71,6 +71,9 @@ Create a file called `hello.nfu`:
 
 ```numfu
 // hello.nfu
+import println from "io"
+import format from "std"
+
 println("Hello, NumFu!")
 
 // Let's do some math
@@ -106,6 +109,7 @@ NumFu REPL. Type 'exit' or press Ctrl+D to exit.
 14
 >>> let square = {x -> x * x} in square(7)
 49
+>>> import max from "math"
 >>> [1, 2, 3, 4, 5, 6, 7] |> filter(_, {x -> x%2 == 0}) |> max
 6
 ```

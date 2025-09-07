@@ -21,6 +21,8 @@ let add1ThenDouble = add1 >> double in
 You can chain as many functions as needed:
 
 ```numfu
+import * from "std"
+
 let capitalize = {s -> toUpperCase(s[0]) + slice(s, 1, -1)} in
 let clean = trim >> toLowerCase >> capitalize in
   clean("  HELLO WORLD  ")    // "Hello World"
@@ -44,11 +46,13 @@ This is equivalent to:
 Piping makes data processing chains more readable and expressive
 
 ```numfu
+import format from "std"
+
 let isEven = {x -> x % 2 == 0} in
 let double = {x -> x * 2} in
 let halve = {x -> x / 2} in
   6 |> {x -> if isEven(x) then double(x) else halve(x)}
-  |> {x -> println(format("Result: {}", x))}
+  |> {x -> format("Result: {}", x)}
 ```
 ```
 Result: 12
@@ -122,6 +126,8 @@ For *collecting* arguments, [see here](functions#rest-parameters).
 
 As within lists, you can use the spread operator inside function calls to *expand* arguments:
 ```numfu
+import log from "math"
+
 let args = [64, 2] in
   log(...args)    // same as log(64, 2) -> 6
 ```

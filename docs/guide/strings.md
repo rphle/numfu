@@ -82,6 +82,12 @@ Count from the end with negative indices:
 -----
 ## String Properties & Functions
 
+All of the functions shown below must be imported from the `std` standard library module. When running the examples, remember to import it at the top of your file (or in the REPL):
+
+```numfu
+import * from "std"
+```
+
 ### String Length
 
 ```numfu
@@ -143,8 +149,11 @@ let words = ["NumFu", "Programming", "Language"] in
 -----
 ## Template Strings & Formatting
 
-The `format()` function allows you to create formatted strings by inserting values into placeholders. It takes a string and the same number of additional arguments as there are placeholders (`{}`).
+The `format()` function from `std` allows you to create formatted strings by inserting values into placeholders. It takes a string and the same number of additional arguments as there are placeholders (`{}`).
 
+```
+import format from "std"
+```
 ```numfu
 format("Welcome to {}, {}!", "NumFu", "programmer")
 // "Welcome to NumFu, programmer!"
@@ -171,6 +180,12 @@ format("Using placeholders {{}}, you can format {}", "strings")
 
 -----
 ## Examples
+
+When running the examples below, remember to import the `std` standard library module at the top of your file (or in the REPL) because it provides essential functions for working with strings.
+
+```numfu
+import * from "std"
+```
 
 ### Bordered Title
 

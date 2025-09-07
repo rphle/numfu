@@ -157,6 +157,8 @@ else
 You can nest `if-then-else` statements to handle more complex conditions:
 
 ```numfu
+import println from "io"
+
 let score = 85 in
 if score >= 90 then
   println("Grade: A")
@@ -208,6 +210,8 @@ let isComfortable =
 ### Guard Clauses
 
 ```numfu
+import format from "std"
+
 let processAge = {age ->
   if age < 0 then error("Age cannot be negative")
   else if age > 150 then error("Hmmm, your age seems unrealistic")

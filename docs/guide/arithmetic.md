@@ -97,6 +97,7 @@ For a complete, easy-to-understand reference, see [this article](https://steve.h
 ### Circle Area
 
 ```numfu
+import pi from "math"
 let radius = 5 in pi * radius^2  // 78.53...
 ```
 
