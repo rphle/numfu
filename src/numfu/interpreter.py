@@ -156,8 +156,9 @@ class Interpreter:
             if module_id not in self.modules:
                 self.modules[module_id] = module
 
-        self.modules[list(self.modules.keys())[-1]].imports.update(
-            modules[list(modules.keys())[-1]].imports
+        this = list(self.modules.keys())[-1]
+        self.modules[this].imports = (
+            modules[list(modules.keys())[-1]].imports | self.modules[this].imports
         )
 
     @lru_cache()
@@ -732,8 +733,8 @@ class Interpreter:
 
         try:
             self.modules = ImportResolver().resolve(tree, path=path, code=code)
-            self._merge_modules(modules)
             self.module_id = list(self.modules.keys())[-1]
+            self._merge_modules(modules)
             self.modules[self.module_id].globals = env
 
             for module_id, module in self.modules.items():
