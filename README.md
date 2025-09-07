@@ -96,11 +96,105 @@ NumFu REPL. Type 'exit' or press Ctrl+D to exit.
 ## 📖 Documentation
 
 - **[Language Guide](https://rphle.github.io/numfu/docs/)** - Complete language tutorial & reference
-- **[Built-ins Reference](https://rphle.github.io/numfu/docs/reference/builtins)** - All built-in functions and operators
+- **[Stdlib Reference](https://rphle.github.io/numfu/docs/reference/stdlib)** - All built-in modules and utilities
 - **[CLI Reference](https://rphle.github.io/numfu/docs/reference/cli)** - Command-line interface guide
 
 > [!NOTE]
 > As a language interpreted in Python, which is itself an interpreted language, NumFu is not especially fast. Therefore, it is not recommended for performance-critical applications or large-scale projects. However, NumFu has not yet been thoroughly optimized so you can expect some performance improvements in the future.
+
+## Language Overview
+
+### Functions with Automatic Partial Application
+
+Functions are defined using `{a, b, ... -> ...}` syntax. They're automatically partially applied, so if you supply fewer arguments than expected, the function returns a new function that expects the remaining arguments:
+
+```numfu
+let fibonacci = {n ->
+    if n <= 1 then n
+    else fibonacci(n - 1) + fibonacci(n - 2)
+}
+fibonacci(10)
+```
+
+### Function Syntax Reconstruction
+
+When functions (even partially applied ones) are printed or cast to strings, NumFu reconstructs readable syntax!
+
+```numfu
+>>> {a, b, c -> a + b + c}(_, 5)
+{a, c -> a+5+c}  // Functions print as readable syntax!
+```
+
+### Function Composition and Piping
+
+```numfu
+let add1 = {x -> x + 1},
+    double = {x -> x * 2}
+in 5 |> (add1 >> double); // 12
+
+// List processing
+[5, 12, 3] |> filter(_, _ > 4) |> map(_, _ * 2)
+// [10, 24]
+```
+
+### Spread/Rest Operators
+
+Support for variable-length arguments and destructuring:
+
+```numfu
+import length from "std"
+
+{...args -> length(args)}(1, 2, 3)    // 3
+
+{first, ...rest -> [first, ...rest]}(1, 2, 3, 4, 5)
+// [1, 2, 3, 4, 5]
+```
+
+### Module System
+
+Export and import functions and values between modules. Supports path imports and directory modules with `index.nfu`:
+
+```numfu
+import sqrt from "math"
+import * from "io"
+
+let greeting = "Hello, " + input("What's your name? ")
+
+export distance = {x1, y1, x2, y2 ->
+    let dx = x2 - x1, dy = y2 - y1 in
+    sqrt(dx^2 + dy^2)
+}
+
+export greeting
+```
+
+### Arbitrary Precision Arithmetic
+
+All numbers use Python's `mpmath` for reliable mathematical computing without floating point errors. Precision can be configured via CLI arguments:
+
+```numfu
+import pi, degrees from "math"
+
+0.1 + 0.2 == 0.3 // true
+degrees(pi / 2) == 90 // true
+```
+
+### Precise Error Messages
+
+Errors always point to the exact line and column with proper preview and clear messages:
+
+```
+[at examples/bubblesort.nfu:11:17]
+[11]           else if workingarr[i] > workingArr[i + ...
+                       ^^^^^^^^^^
+NameError: 'workingarr' is not defined in the current scope
+```
+```
+[at tests/functions.nfu:36:20]
+[36]   let add1 = {x -> x + "lol"} in
+                          ^
+TypeError: Invalid argument type for operator '+': argument 2 must be Number, got String
+```
 
 ## 🛠️ Development
 
