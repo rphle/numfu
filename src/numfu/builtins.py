@@ -130,6 +130,8 @@ class Math:
     _max = overload("max", eval_lists=True)
     _min = overload("min", eval_lists=True)
 
+    _sum = overload("sum", eval_lists=True)
+
 
 @dataclass(frozen=True)
 class Types:
@@ -259,6 +261,7 @@ Math._min.add([InfiniteOf(Num)], Num, min).add(
     transformer=lambda x: [x.elements],
     help=HelpMsg(invalid_arg="Only numbers are supported"),
 )
+Math._sum.add([ListOf(Num)], Num, sum)
 
 Types._isnan.add([Num], Num, mpm.isnan)
 Types._isinf.add([Num], bool, mpm.isinf)
