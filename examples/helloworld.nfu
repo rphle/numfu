@@ -1,3 +1,5 @@
+import println from "io"
+
 println("Hello, NumFu!")
 
 let square = {x -> x * x} in

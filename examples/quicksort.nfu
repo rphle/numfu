@@ -1,4 +1,6 @@
 // Quick Sort implementation
+import length from "std"
+import round from "math"
 
 let quickSort = {lst ->
   if length(lst) <= 1 then lst

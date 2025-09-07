@@ -1,4 +1,7 @@
 // Statistics functions
+import length, format from "std"
+import println from "io"
+import sqrt, sum from "math"
 
 let mean = {nums ->
   sum(nums) / length(nums)
@@ -12,5 +15,5 @@ let variance = {nums ->
 let stddev = {nums -> sqrt(variance(nums))}
 
 let data = [2,4,4,4,5,5,7,9]
-println("mean = " + String(mean(data)))
-println("stddev = " + String(stddev(data)))
+println(format("mean = {}", mean(data)))
+println(format("stddev = {}", stddev(data)))

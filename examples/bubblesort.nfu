@@ -1,4 +1,5 @@
 // Bubble Sort implementation
+import length, set from "std"
 
 let bubbleSort = {arr ->
   let n = length(arr) in
