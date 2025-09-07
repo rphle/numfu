@@ -30,9 +30,10 @@ serve: # Serve docs locally
 	@echo "Serving docs locally..."
 	cd docusaurus && $(NPM) run start
 
-clean: # Clean __pycache__
-	@echo "Cleaning __pycache__..."
+clean: # Clean __pycache__ and .egg-info
+	@echo "Cleaning __pycache__ and .egg-info..."
 	@find . -name "__pycache__" -type d -exec rm -rf {} +
+	@find . -name "*.egg-info" -type d -exec rm -rf {} +
 
 help: # Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?#' $(MAKEFILE_LIST) | \
