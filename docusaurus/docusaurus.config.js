@@ -2,7 +2,7 @@
 const config = {
   title: "NumFu",
   tagline:
-    "Functional programming language designed for readability, extensibility and arbitrary precision.",
+    "Functional programming language designed for readability, extensibility and arbitrary precision math.",
   favicon: "img/favicon.ico",
 
   future: {
@@ -45,6 +45,7 @@ const config = {
   themeConfig:
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
     ({
+      image: "img/banner.png",
       metadata: [
         {
           name: "keywords",
